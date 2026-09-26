@@ -1,0 +1,21 @@
+﻿@using Carmasters.Core.Application.Configuration
+@using Carmasters.Core.Application.Model
+@using Carmasters.Core.Domain
+@using Carmasters.Http.Api
+@model PricingPrintModel
+@{ 
+    var pricing = (Invoice)Model.Pricing ; 
+    var pricingOptions = (PricingOptions) Model.PricingOptions; 
+}  
+ 
+<p class="text-sm text-gray-500">
+    Date: @pricing.IssuedOn.ToString("dd.MM.yyyy")
+</p>
+<p class="text-sm text-gray-500">
+    Terms: @(pricing.PaymentType == PaymentType.Cash ? "cash" : "bank transfer")
+    <br />
+    Due date: @pricing.IssuedOn.AddDays(pricing.DueDays).ToString("dd.MM.yyyy")
+</p>
+<p class="text-sm text-gray-500">
+    Late payment fee: @pricingOptions.Invoice.SurCharge
+</p>

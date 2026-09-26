@@ -1,0 +1,15 @@
+services:
+  api:
+    command: dotnet watch --project src/Carmasters.Http.Api run
+    volumes:
+      - ./backend/src:/src
+  web:
+    command: npm run dev
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules          # keeps container‑only deps intact
+  db:
+    ports:
+      - "5432:5432"               # optional: expose for local psql

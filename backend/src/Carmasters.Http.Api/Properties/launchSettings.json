@@ -1,0 +1,18 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Carmasters.Http.Api": {
+        "commandName": "Project",
+        "launchBrowser": false,
+        "launchUrl": "http://localhost:5567",
+        "applicationUrl": "",
+        "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development",
+            "ASPNETCORE_URLS": "http://+:5567",
+            "ASPNETCORE_Logging__LogLevel__Default": "Information",
+            "ASPNETCORE_Logging__LogLevel__Microsoft": "Information", 
+            "ASPNETCORE_PdfDirectory": "c:/temp/pdf"
+        }
+    }
+  }
+}

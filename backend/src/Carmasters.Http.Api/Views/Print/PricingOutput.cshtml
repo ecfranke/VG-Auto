@@ -1,0 +1,186 @@
+﻿@using Carmasters.Core.Application.Configuration
+@using Carmasters.Core.Application.Model
+@using Carmasters.Core.Domain
+@using Carmasters.Http.Api
+@model PricingPrintModel
+@{
+    var pricing = (Pricing)Model.Pricing;
+    var requisitesOptions = (RequisitesOptions)Model.RequisitesOptions;
+    var pricingOptions = (PricingOptions)Model.PricingOptions;
+    var isInvoice = pricing is Carmasters.Core.Domain.Invoice;
+    var hasDiscounts = pricing.Lines.Any(x => x.Discount != 0);
+}
+  
+<div class="grid grid-cols-2">
+    <div>
+        <h1 class=" text-indigo-500 font-medium text-3xl" id="logo">@requisitesOptions.Name</h1>
+        <p class="text-lg text-gray-500">@requisitesOptions.Phone</p>
+    </div>
+    <div class="text-right">
+        <p class="text-2xl font-medium text-gray-500">
+            @(pricing.GetDisplayName())
+        </p>
+    </div>
+</div>
+ 
+<div class="grid grid-cols-2 mt-8">
+    <div>
+        @{
+            await Html.RenderPartialAsync("Print/LeftTop." + pricing.GetType().Name, (object)Model);
+        }
+    </div>
+
+    <div class="text-right">
+        <p class="text-sm text-gray-500">@pricing.PartyName</p>
+        @if (!string.IsNullOrWhiteSpace(pricing.PartyCode))
+        {
+            <p class="text-sm text-gray-500"> @pricing.PartyCode</p>
+
+        }
+        @if (!string.IsNullOrWhiteSpace(pricing.PartyAddress))
+        {
+            <p class="text-sm text-gray-500">Address: @pricing.PartyAddress</p>
+        }
+    </div>
+</div>
+<table border="1" class="mt-2 min-w-full divide-y divide-gray-300">
+    <thead>
+        <tr>
+            <th class="pl-0 pr-2 py-1 text-start font-light text-sm font-semibold text-gray-900">Service / Product name</th>
+            <th class="px-2 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Quantity</th>
+            <th class="px-2 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Unit</th>
+            <th class="px-2 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Unit price</th>
+            @if (hasDiscounts)
+            {
+                <th class="px-2 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Discount %</th>
+            }
+            <th class="pl-2 pr-0 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Amount</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 bg-white">
+        @foreach (var item in pricing.Lines)
+        {
+
+            <tr>
+                <td class="w-full text-start pl-0 pr-2 py-1 text-sm text-gray-900">@item.Description</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Quantity</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Unit</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@(item.UnitPrice.ToString("0.00"))</td>
+                @if (hasDiscounts)
+                {
+                    <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@((item.Discount != null && item.Discount != 0) ? $"{item.Discount} %" : String.Empty)</td>
+                }
+                <td class="w-15 text-end pl-2 pr-0 py-1 text-sm whitespace-nowrap text-gray-900">@item.Total.ToString("0.00")</td>
+            </tr>
+        }
+    </tbody>
+    <tfoot class="border-t-2 border-indigo-600">
+        <tr>
+            <td></td>
+        </tr>
+    </tfoot>
+</table>
+<div class="pricesummary grid grid-cols-2">
+    <div>
+        <div class="grid grid-rows-3 gap-2 pt-2 pl-0">
+            <p class=" pt-2 text-start text-sm font-light text-gray-900 pl-0">
+                @(pricing.VehicleLine1)
+            </p>
+            <p class="pt-2 text-start text-sm font-light text-gray-900 pl-0">
+                @(pricing.VehicleLine2)
+            </p>
+            <p class="pt-2 text-start text-sm font-light text-gray-900 pl-0">
+                @(pricing.VehicleLine3)
+            </p>
+            <p class="pt-2 text-start text-sm font-light text-gray-900 pl-0">
+                @(pricing.VehicleLine4)
+            </p>
+        </div>
+    </div>
+    <div class="text-right">
+        <div class="grid grid-rows-3 gap-2 pt-2 pr-0">
+            <div class="flex flex-row-reverse ">
+                <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
+                    @pricing.GetTotal(false).ToString("0.00") EUR
+                </div>
+                <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
+                    Total
+                </div>
+            </div>
+            <div class="flex flex-row-reverse ">
+                <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
+                    @((pricing.GetTotal(true) - pricing.GetTotal(false)).ToString("0.00")) EUR
+                </div>
+                <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
+                    VAT
+                </div>
+            </div>
+            <div class="flex flex-row-reverse ">
+                <div class="pt-2 pl-4 text-end text-sm font-semibold text-gray-900 pl-0 w-35">
+                    @((pricing.GetTotal(true)).ToString("0.00")) EUR
+                </div>
+                <div class="pt-2 pr-3 pl-4 text-right text-sm font-semibold text-gray-900 t pl-0">
+                    To pay
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="grid grid-cols-2 mt-2 ">
+    <div>
+        @{
+            await Html.RenderPartialAsync("Print/LeftBottom." + pricing.GetType().Name, pricing);
+        }
+
+    </div>
+    <div class="float-right">
+        <div>
+            @{
+                await Html.RenderPartialAsync("Print/RightBottom." + pricing.GetType().Name, pricingOptions);
+            }
+        </div>
+
+    </div>
+</div>
+<div class="grid grid-cols-2 ">
+    <div>
+        @if (isInvoice && pricingOptions.Invoice.SignatureLine == true)
+        {
+            <p class="text-sm text-gray-500">Signature:</p>
+        }
+
+    </div>
+    <div class="float-right">
+        @if (isInvoice && pricingOptions.Invoice.SignatureLine == true)
+        {
+
+            <p class="text-sm text-gray-500">Signature:</p>
+        }
+    </div>
+</div>
+<footer class="border-t border-gray-200 w-full min-w-full grid grid-cols-2 ">
+    <div class="mt-2">
+        <p class="text-xs">
+            @requisitesOptions.Name
+        </p>
+        <p class="text-xs">
+            @requisitesOptions.Address
+        </p>
+        <p class="text-xs">
+            @requisitesOptions.Email
+        </p>
+    </div>
+    <div class="mt-2 text-right">
+        <div>
+            <p class="text-xs">
+                @requisitesOptions.BankAccount
+            </p>
+            <p class="text-xs">
+                Registration code: @requisitesOptions.RegNr
+            </p>
+            <p class="text-xs">
+                VAT no: @requisitesOptions.KMKR
+            </p>
+        </div>
+    </div>
+</footer>

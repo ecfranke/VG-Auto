@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+src/Carmasters.MySql.Migration/db_backup_02_04_2022.sql
+src/Carmasters.Http.Api/.local-chromium/
+src/Carmasters.Http.Api/puppeteer/
+src/pdf/
+src/Carmasters.MySql.Migration/db_backup_*.sql
+src/Carmasters.Http.Api/appsettings.Secrets.json
+src/dist/

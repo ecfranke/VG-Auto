@@ -1,0 +1,50 @@
+﻿@using Carmasters.Core.Application.Configuration
+@using Carmasters.Core.Application.Model
+@using Carmasters.Core.Domain
+@using Carmasters.Http.Api
+@model PricingPrintModel
+@{
+    var pricing = (Pricing)Model.Pricing;
+    var requisitesOptions = (RequisitesOptions)Model.RequisitesOptions;
+    var pricingOptions = (PricingOptions)Model.PricingOptions;
+    var isInvoice = pricing is Carmasters.Core.Domain.Invoice; 
+}
+ 
+
+<div style=" width: 210mm;font-size:12px;">
+    <div style="display: flex;flex-direction: column;">
+        <div>
+            <div style="display: inline-block;width:100%;">
+                <div style="margin-bottom:4px;border-top:solid; border-width:1px; border-color: #d1d5dc;margin-left:1cm;margin-right:1cm"></div>
+                <div style="display: grid;grid-template-columns: auto auto;">
+                    <div>
+                        <span style="margin-left: 1cm">
+                            @requisitesOptions.Name
+                        </span><br />
+                        <span style="margin-left: 1cm">
+                            @requisitesOptions.Address
+                        </span><br />
+                        <span style="margin-left: 1cm">
+                            @requisitesOptions.Email
+                        </span>
+                    </div>
+                    <div style="text-align: right; display: inline-block">
+                        <div>
+                            <span style="margin-right: 1cm">
+                                @requisitesOptions.BankAccount
+                            </span><br />
+                            <span style="margin-right: 1cm">
+                                Registration code: @requisitesOptions.RegNr
+                            </span><br />
+                            <span style="margin-right: 1cm">
+                                VAT no: @requisitesOptions.KMKR
+                            </span><br />
+                            <span style="margin-right: 1cm;font-size:8px"><span class="pageNumber"></span> / <span class="totalPages"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    
