@@ -27,12 +27,16 @@ namespace VgAuto.Core.Application.Authentication
         Disabled,
         InvalidPassword,
         EmailFailed,
-        TooManyRequests
+        TooManyRequests,
+        AccountDisabled
     }
 
     public record AuthResult(AuthStatus Status, AuthTokens Tokens = null, Guid? ChallengeId = null, string EmailHint = null, string Message = null)
     {
         public static AuthResult Fail(AuthStatus status, string message = null) => new(status, Message: message);
+
+        public static AuthResult AccountDisabled() =>
+            Fail(AuthStatus.AccountDisabled, "This account has been disabled. Contact an administrator.");
     }
 
     /// <summary>
@@ -102,6 +106,12 @@ namespace VgAuto.Core.Application.Authentication
                 users.Update(user);
             }
 
+            if (user.Disabled)
+            {
+                logger.LogInformation("Authentication refused, account disabled: {user}", userName);
+                return AuthResult.AccountDisabled();
+            }
+
             if (!options.EmailCode.RequireForPasswordLogin)
             {
                 return new AuthResult(AuthStatus.Success, tokens.Issue(user, "pwd"));
@@ -130,6 +140,7 @@ namespace VgAuto.Core.Application.Authentication
             var user = users.GetBy(challenge.User);
             if (user == null) return AuthResult.Fail(AuthStatus.InvalidCode);
             if (user.IsLockedOut(DateTime.UtcNow)) return AuthResult.Fail(AuthStatus.Locked);
+            if (user.Disabled) return AuthResult.AccountDisabled();
 
             if (!user.Validated)
             {
@@ -162,7 +173,7 @@ namespace VgAuto.Core.Application.Authentication
                 return AuthResult.Fail(AuthStatus.TooManyRequests);
 
             var user = users.GetBy(challenge.User);
-            if (user == null || string.IsNullOrWhiteSpace(user.Email)) return AuthResult.Fail(AuthStatus.InvalidCode);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email) || user.Disabled) return AuthResult.Fail(AuthStatus.InvalidCode);
 
             var code = NewCode();
             challenge.CodeHash = HashCode(challenge.Id, code);
@@ -196,9 +207,9 @@ namespace VgAuto.Core.Application.Authentication
                 }
             }
 
-            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            if (user == null || string.IsNullOrWhiteSpace(user.Email) || user.Disabled)
             {
-                logger.LogInformation("Password reset requested for unknown login or account without email: {login}", login);
+                logger.LogInformation("Password reset requested for unknown, disabled or email-less account: {login}", login);
                 return new AuthResult(AuthStatus.CodeRequired, ChallengeId: Guid.NewGuid());
             }
 
@@ -215,6 +226,7 @@ namespace VgAuto.Core.Application.Authentication
             if (challenge == null) return AuthResult.Fail(AuthStatus.InvalidCode);
             var user = users.GetBy(challenge.User);
             if (user == null) return AuthResult.Fail(AuthStatus.InvalidCode);
+            if (user.Disabled) return AuthResult.AccountDisabled();
 
             // check the password first so a weak password does not burn the code
             var policyError = PasswordPolicy.Validate(newPassword, user.UserName);
@@ -253,6 +265,7 @@ namespace VgAuto.Core.Application.Authentication
                 var linkedUser = users.GetBy(new UserIdentifier(linked.TenantName, linked.EmployeeId));
                 if (linkedUser == null) return AuthResult.Fail(AuthStatus.NoAccount);
                 if (linkedUser.IsLockedOut(DateTime.UtcNow)) return AuthResult.Fail(AuthStatus.Locked);
+                if (linkedUser.Disabled) return AuthResult.AccountDisabled();
                 return new AuthResult(AuthStatus.Success, tokens.Issue(linkedUser, identity.Provider));
             }
 
@@ -267,6 +280,7 @@ namespace VgAuto.Core.Application.Authentication
 
             var user = candidates[0];
             if (user.IsLockedOut(DateTime.UtcNow)) return AuthResult.Fail(AuthStatus.Locked);
+            if (user.Disabled) return AuthResult.AccountDisabled();
             var payload = $"{identity.Provider}|{identity.Subject}|{Truncate(identity.Email, 200)}";
             return await StartChallengeAsync(user, ChallengePurpose.LinkExternal, payload);
         }

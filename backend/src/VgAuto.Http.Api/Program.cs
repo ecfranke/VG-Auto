@@ -94,6 +94,7 @@ app.UseRouting();
 app.UseCors("DefaultPolicy");
 app.UseAuthentication();
 app.UseMiddleware<DbConnectionScopeMiddleware>();
+app.UseMiddleware<AccountStatusMiddleware>();
 app.UseMiddleware<PasswordChangeRequiredMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiting();

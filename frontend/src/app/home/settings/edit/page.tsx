@@ -10,10 +10,13 @@ import FormLabel from '@/_components/FormLabel';
 import FormTextArea from '@/_components/FormTextArea';
 import FormSwitch from '@/_components/FormSwitch';
 import { createOrUpdate } from '../createOrUpdate'; 
+import { currentAccount } from '@/_lib/server/account';
+import { redirect } from 'next/navigation';
 
  
 
 export default async function Page( ) {
+    if (!(await currentAccount()).isAdmin) redirect('/home/settings');
 
     const data = await httpGet('options'); 
     const options = await data.json() as IUserOptions; 

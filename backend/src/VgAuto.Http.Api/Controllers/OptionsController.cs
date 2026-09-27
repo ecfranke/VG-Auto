@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using VgAuto.Core.Domain;
 using VgAuto.Core.Application.Extensions;
+using VgAuto.Core.Application.Authorization;
 
 namespace VgAuto.Http.Api.Controllers
 {
@@ -50,12 +51,15 @@ namespace VgAuto.Http.Api.Controllers
             }
         }
 
+        [RequireAdmin]
         [HttpPut]
-        public async Task<ActionResult> Post([FromBody] AppOptions appOptions)
+        public async Task<ActionResult> Post([FromBody] AppOptions appOptions,
+            [FromServices] VgAuto.Core.Application.Authorization.IAdminAuditLog audit)
         {
             try
             {
                 await tenantConfigService.SaveAppOptionsAsync(appOptions);
+                await audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), "settings.update", null, "company settings");
                 return Ok();
             }
             catch (Exception ex)
@@ -68,6 +72,7 @@ namespace VgAuto.Http.Api.Controllers
         public record TestEmailDto(string To);
 
         /// <summary>Sends a test message through the configured transport (SMTP or Microsoft Graph).</summary>
+        [RequireAdmin]
         [HttpPost("testemail")]
         public async Task<ActionResult> SendTestEmail([FromBody] TestEmailDto model,
             [FromServices] VgAuto.Core.Application.Email.IEmailSender emailSender)
@@ -91,6 +96,7 @@ namespace VgAuto.Http.Api.Controllers
             return Ok(new { transport = emailSender.Name });
         }
 
+        [RequireAdmin]
         [HttpGet("dbdump")]
         public async Task<IActionResult> DumpDb()
         {

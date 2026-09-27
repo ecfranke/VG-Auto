@@ -79,6 +79,7 @@ namespace VgAuto.Http.Api.Controllers
             foreach (var id in ids)
             {
                 var dObj = repository.Get<DOMAINOBJECT>(id);
+                BeforeDelete(dObj);
                 repository.Delete(dObj);
             }
             return Ok();

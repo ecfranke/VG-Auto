@@ -24,7 +24,7 @@ namespace VgAuto.Core.Persistence
     {
         private readonly IDbConnectionFactory connections;
         private const string UserSelectQuery =
-            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil FROM public.user";
+            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil, role as Role, is_owner as IsOwner, disabled as Disabled FROM public.user";
 
         public UserRepository(IDbConnectionFactory connections)
         {
@@ -105,16 +105,7 @@ namespace VgAuto.Core.Persistence
             if (user == null)
                 return null;
 
-            return new User(
-                user.UserName,
-                user.Password,
-                user.Email,
-                user.Validated,
-                user.ProfileImage,
-                new UserIdentifier(user.TenantName, user.EmployeeId),
-                user.MustChangePassword,
-                user.FailedLoginCount,
-                user.LockedUntil);
+            return ToUser(user);
         }
 
         public void Update(User user)
@@ -142,7 +133,10 @@ namespace VgAuto.Core.Persistence
                                   Profile_Image = @ProfileImage,
                                   must_change_password = @MustChangePassword,
                                   failed_login_count = @FailedLoginCount,
-                                  locked_until = @LockedUntil
+                                  locked_until = @LockedUntil,
+                                  role = @Role,
+                                  is_owner = @IsOwner,
+                                  disabled = @Disabled
                               WHERE TenantName = @TenantName AND EmployeeId = @EmployeeId"),
                             new
                             {
@@ -154,6 +148,9 @@ namespace VgAuto.Core.Persistence
                                 MustChangePassword = user.MustChangePassword,
                                 FailedLoginCount = user.FailedLoginCount,
                                 LockedUntil = user.LockedUntil,
+                                Role = user.Role,
+                                IsOwner = user.IsOwner,
+                                Disabled = user.Disabled,
                                 TenantName = user.Id.TenantName,
                                 EmployeeId = user.Id.EmployeeId
                             }, transaction);
@@ -181,8 +178,8 @@ namespace VgAuto.Core.Persistence
 
             using var connection = CreateConnection(GetUserListDatabase());
             connection.Execute(
-                Sql(@"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password)
-                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword)"),
+                Sql(@"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password, role, is_owner, disabled)
+                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword, @Role, @IsOwner, @Disabled)"),
                 new
                 {
                     user.UserName,
@@ -192,7 +189,10 @@ namespace VgAuto.Core.Persistence
                     user.Validated,
                     user.ProfileImage,
                     EmployeeId = user.Id.EmployeeId,
-                    user.MustChangePassword
+                    user.MustChangePassword,
+                    user.Role,
+                    user.IsOwner,
+                    user.Disabled
                 });
         }
 
@@ -206,16 +206,7 @@ namespace VgAuto.Core.Persistence
 
                 foreach (var user in users)
                 {
-                    yield return new User(
-                        user.UserName,
-                        user.Password,
-                        user.Email,
-                        user.Validated,
-                        user.ProfileImage,
-                        new UserIdentifier(user.TenantName, user.EmployeeId),
-                        user.MustChangePassword,
-                        user.FailedLoginCount,
-                        user.LockedUntil);
+                    yield return ToUser(user);
                 }
             }
         }
@@ -237,6 +228,9 @@ namespace VgAuto.Core.Persistence
             new UserIdentifier(user.TenantName, user.EmployeeId),
             user.MustChangePassword,
             user.FailedLoginCount,
-            user.LockedUntil);
+            user.LockedUntil,
+            user.Role,
+            user.IsOwner,
+            user.Disabled);
     }
 }

@@ -9,9 +9,11 @@ export default function NavDialog({
   
   fullName,
   imageUrl,
+  isAdmin = false,
 }:{ 
   fullName:string,
-  imageUrl:string
+  imageUrl:string,
+  isAdmin?:boolean
 })
 {
  
@@ -38,7 +40,7 @@ export default function NavDialog({
                         </TransitionChild>
                         {/* Sidebar component, swap this element with another sidebar if you like */}
                         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10">
-                          <Nav fullName={fullName} imageUrl={imageUrl}  onSmallScreen={true}></Nav>
+                          <Nav fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={true}></Nav>
                         </div>
                       </DialogPanel>
                     </div>
@@ -51,7 +53,7 @@ export default function NavDialog({
           <div className="flex-1 text-sm/6 font-semibold text-white"></div>
          
              {/* Profile dropdown */}
-             <ProfileMenu fullName={fullName} imageUrl={imageUrl}  onSmallScreen={true}></ProfileMenu> 
+             <ProfileMenu fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={true}></ProfileMenu> 
         </div>
     </>)
 }

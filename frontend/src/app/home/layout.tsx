@@ -10,6 +10,7 @@ import { jwtDecode } from 'jwt-decode';
 
 interface CustomJwtPayload {
     FullName?: string; 
+    vg_role?: string;
   }
 export default async function Layout({ children }: { children: React.ReactNode }) {
     
@@ -22,6 +23,8 @@ export default async function Layout({ children }: { children: React.ReactNode }
     // Decode the JWT to get the claims
     const decodedToken = jwtDecode<CustomJwtPayload>(jwt);
     const fullName = decodedToken.FullName || ''; // Extract the FullName claim
+    // display only; the API checks the role for every administrative request
+    const isAdmin = decodedToken.vg_role === 'admin' || decodedToken.vg_role === 'superadmin';
     
     // If there's no full name in the token, you might want to redirect or handle it
     if(!fullName) {
@@ -38,10 +41,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
                 <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-62 lg:flex-col">
                     {/* Sidebar component, swap this element with another sidebar if you like */}
                     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
-                      <Nav  imageUrl={imageUrl} fullName={fullName}  onSmallScreen={false}></Nav>   
+                      <Nav  imageUrl={imageUrl} fullName={fullName} isAdmin={isAdmin} onSmallScreen={false}></Nav>   
                     </div>
                 </div>
-                 <NavDialog imageUrl={imageUrl} fullName={fullName} ></NavDialog>   
+                 <NavDialog imageUrl={imageUrl} fullName={fullName} isAdmin={isAdmin} ></NavDialog>   
                 {children}
               
               </div>

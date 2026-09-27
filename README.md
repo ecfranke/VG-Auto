@@ -157,7 +157,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 12. 设置
 
-**Settings → Invoice Options** 里是公司信息（名称、地址、银行账户、税号，会打印在 PDF 上）、增值税率、发票和报价单的邮件正文等。点右下角 **Edit** 修改。
+**Settings → Invoice Options** 里是公司信息（名称、地址、银行账户、税号，会打印在 PDF 上）、增值税率、发票和报价单的邮件正文等。管理员可以点右下角 **Edit** 修改；普通用户只能查看。
 
 ![设置](docs/screenshots/settings.png)
 
@@ -171,12 +171,29 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ![个人资料](docs/screenshots/profile.png)
 
-### 14. 员工和登录账号
+### 14. 用户管理后台（/admin）
 
-当前版本**还没有员工管理界面**：
+管理员在 `https://你的域名/admin` 管理员工和登录账号，也可以从左下角用户菜单里的 **Administration** 进入。后台界面支持中英文，右上角切换。
 
-- 只负责维修、不需要登录的技师：在新建工单时，从 **Mechanics** 旁的 **New** 直接添加。
-- 需要登录系统的员工：目前只能由管理员通过 API 创建，方法见 [开发者文档 → 创建登录账号](#创建登录账号)。
+| 角色 | 能做什么 |
+|---|---|
+| 普通用户 | 使用系统（工单、客户、车辆、库存），可以查看公司设置但不能修改，进不了后台 |
+| 管理员 | 另外可以修改公司设置；在后台新建普通员工账号、修改资料、重置密码、解除锁定、禁用/启用普通员工、解绑 Microsoft 账号 |
+| 超级管理员 | 另外可以新建管理员和超级管理员、修改任何人的角色，管理管理员账号 |
+
+- 初始账号 `admin` 是**所有者**（超级管理员）：只有本人能修改它，不能被禁用或降级。
+- 任何人都不能在后台修改自己的角色和状态，自己的密码在个人资料里改。
+- **新建用户**：填写姓名和邮箱，勾选“为这名员工创建登录账号”并填写用户名和角色。初始密码可以留空，系统会生成一个临时密码，**只显示一次**；用户首次登录时必须修改密码。登录验证码会发到填写的邮箱。
+- 只负责维修、不需要登录的技师：不勾选创建登录账号即可（新建工单时从 **Mechanics** 旁的 **New** 添加也一样）。以后需要时可以在后台为他创建登录账号。
+- **禁用账号**：员工离职时使用。禁用后立即退出、不能再登录，工单和历史记录都会保留。有登录账号的员工不能删除，只能禁用。
+- **重置密码**：生成新的临时密码并解除锁定，用户下次登录时必须修改。
+- **操作日志**：记录谁在什么时间新建账号、修改资料、重置密码、禁用/启用、修改角色，以及修改公司设置。
+
+![用户列表](docs/screenshots/admin-users.png)
+
+| 新建用户后显示临时密码 | 用户详情 |
+|---|---|
+| ![临时密码](docs/screenshots/admin-user-created.png) | ![用户详情](docs/screenshots/admin-user.png) |
 
 ---
 
@@ -349,36 +366,14 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `/api/work/*`、`/api/pricings/*` | 工单、报价、维修任务、发票、PDF、发送邮件 |
 | `/api/clients`、`/api/privateclients`、`/api/legalclients` | 客户 |
 | `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆、配件、库位 |
-| `/api/employees` | 员工和登录账号 |
+| `/api/employees` | 员工（技师）；创建登录账号需要管理员 |
+| `/api/admin/*` | 用户管理后台：`me`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`）、`audit` |
 | `/api/options`（含 `testemail`） | 公司设置、测试邮件 |
 | `/api/profile`（含 `changepassword`、`externallogins`） | 个人资料、改密码、Microsoft 账号绑定 |
 | `/api/query` | 列表查询 |
 | `GET /health` | 健康检查（不需要认证） |
 
 `/api/auth/*` 的请求都必须带 `serverSecret`，只能由前端服务端或管理员调用。
-
-### 创建登录账号
-
-在界面提供之前，可以用下面的方式创建能登录的员工（在服务器上执行，`SECRET` 是 `JwtOptions:ConsumerSecret`）：
-
-```bash
-API=http://localhost:15567
-SECRET=...   # /etc/vg-auto/appsettings.Secrets.json 中的 JwtOptions:ConsumerSecret
-
-# 1. 用管理员账号登录，返回 challengeId，验证码会发到管理员邮箱
-curl -s -X POST $API/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"userName":"admin","password":"<管理员密码>","serverSecret":"'$SECRET'"}'
-
-# 2. 提交验证码，返回的 jwt 就是令牌
-curl -s -X POST $API/api/auth/verify -H 'Content-Type: application/json' \
-  -d '{"challengeId":"<challengeId>","code":"<验证码>","serverSecret":"'$SECRET'"}'
-
-# 3. 创建员工；带 userName 和 password 时会同时创建登录账号
-curl -s -X POST $API/api/employees -H "Authorization: Bearer <jwt>" -H 'Content-Type: application/json' \
-  -d '{"firstName":"Tom","lastName":"Berg","email":"tom@example.com","phone":"","proffession":"Mechanic","description":"","userName":"tom","password":"<初始密码>"}'
-```
-
-新员工登录时，验证码会发到上面填写的 `email`，所以邮箱必须真实有效。请提醒员工登录后在个人资料里修改密码。
 
 ### 数据库迁移
 
@@ -414,7 +409,6 @@ cd ../../../frontend && npm run build                          # 前端构建（
 
 ### 已知限制
 
-- 还没有员工管理界面（见上文）。
 - 多租户只支持 PostgreSQL。
 - MySQL 需要 8.0 及以上版本，不支持 MariaDB。
 - 前端构建时需要能访问 Google Fonts。

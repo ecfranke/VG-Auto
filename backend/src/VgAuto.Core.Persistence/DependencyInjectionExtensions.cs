@@ -44,6 +44,7 @@ namespace VgAuto.Core.Persistence
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<VgAuto.Core.Application.Authentication.IAuthChallengeRepository, VgAuto.Core.Persistence.AuthChallengeRepository>();
             services.AddScoped<VgAuto.Core.Application.Authentication.IExternalLoginRepository, VgAuto.Core.Persistence.ExternalLoginRepository>();
+            services.AddScoped<VgAuto.Core.Application.Authorization.IAdminAuditLog, VgAuto.Core.Persistence.AdminAuditLog>();
             services.AddScoped<ISession>(x =>{
 
                 if (!multitenancyEnabled) return defaultFactory.OpenSession();

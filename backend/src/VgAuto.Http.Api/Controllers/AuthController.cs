@@ -122,6 +122,8 @@ namespace VgAuto.Http.Api.Controllers
                     return Unauthorized(Error(result));
                 case AuthStatus.Locked:
                     return Unauthorized(Error(result));
+                case AuthStatus.AccountDisabled:
+                    return StatusCode(StatusCodes.Status403Forbidden, Error(result));
                 case AuthStatus.TooManyRequests:
                     return StatusCode(StatusCodes.Status429TooManyRequests, Error(result));
                 case AuthStatus.Disabled:

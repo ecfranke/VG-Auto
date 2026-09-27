@@ -53,6 +53,10 @@ async function apiCall({
   };
    
   const response = await fetch(fullUrl,request);
+  if (response.status === 401 && authorize) {
+    // disabled account or expired API token: end the session
+    redirect('/home/logout');
+  }
   if (!response.ok && !raw) {
     const responseText = await response.text();
     // never log request bodies or headers: they contain passwords and tokens
@@ -154,4 +158,8 @@ export async function httpPut({
     body, 
     raw,
   }); 
+}
+/** Any method; non-OK responses are returned to the caller (for forms that show errors inline). */
+export async function httpRaw(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, body: any = null) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return apiCall({ url, method, body, raw: true });
 }

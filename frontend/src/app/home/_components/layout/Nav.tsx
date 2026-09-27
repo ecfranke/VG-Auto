@@ -24,10 +24,12 @@ export default   function Nav({
     onSmallScreen, 
     fullName,
     imageUrl,
+    isAdmin = false,
 }:{
     onSmallScreen:boolean, 
     fullName:string,
-    imageUrl:string
+    imageUrl:string,
+    isAdmin?:boolean
 }) {
     const currentPath = usePathname() ; 
     return (
@@ -66,7 +68,7 @@ export default   function Nav({
                             <Cog6ToothIcon aria-hidden="true" className="size-6 shrink-0" />
                             Settings
                         </a>
-                        <ProfileMenu  fullName={fullName} imageUrl={imageUrl} onSmallScreen={false}></ProfileMenu>
+                        <ProfileMenu  fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={false}></ProfileMenu>
                     </li>}
                 </ul>
             </nav>

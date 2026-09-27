@@ -6,7 +6,7 @@ namespace VgAuto.Core.Application.Authorization
 {
     public class ClaimsPrincipalBuilder 
     {
-        private static ClaimsPrincipal Build(string name, string fullName, string tenantName, string employeeId, bool publicUse, bool passwordChangeRequired, string authMethod)
+        private static ClaimsPrincipal Build(string name, string fullName, string tenantName, string employeeId, bool publicUse, bool passwordChangeRequired, string authMethod, string role)
         {
             var claims = new List<Claim> {
             new Claim(ClaimTypes.Name, name),
@@ -23,6 +23,7 @@ namespace VgAuto.Core.Application.Authorization
             {
                 claims.Add(new Claim(AppClaims.PasswordChangeRequired, "true"));
             }
+            claims.Add(new Claim(AppClaims.AccountRole, UserRoles.Normalize(role)));
             if (!string.IsNullOrWhiteSpace(authMethod))
             {
                 claims.Add(new Claim(AppClaims.AuthMethod, authMethod));
@@ -37,6 +38,6 @@ namespace VgAuto.Core.Application.Authorization
 
         public static ClaimsPrincipal Build(User user, string fullName, bool publicUse, string authMethod = "pwd") =>
             Build(user.UserName, fullName, user.Id.TenantName, user.Id.EmployeeId.ToString(), publicUse,
-                  user.MustChangePassword, authMethod);
+                  user.MustChangePassword, authMethod, user.Role);
     }
 } 

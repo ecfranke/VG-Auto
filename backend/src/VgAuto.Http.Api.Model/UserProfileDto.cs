@@ -53,6 +53,9 @@ namespace VgAuto.Http.Api.Models
         public bool MustChangePassword { get; set; }
         public int FailedLoginCount { get; set; }
         public DateTime? LockedUntil { get; set; }
+        public string Role { get; set; }
+        public bool IsOwner { get; set; }
+        public bool Disabled { get; set; }
     }
 
 }

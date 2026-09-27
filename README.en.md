@@ -157,7 +157,7 @@ Work that ends without an invoice (for example the client decided against the re
 
 ### 12. Settings
 
-**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, tax ID), the VAT rate, and the email texts for invoices and estimates. Click **Edit** to change them.
+**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, tax ID), the VAT rate, and the email texts for invoices and estimates. Administrators click **Edit** to change them; normal users can only view them.
 
 ![Settings](docs/screenshots/settings.png)
 
@@ -171,12 +171,29 @@ Work that ends without an invoice (for example the client decided against the re
 
 ![Profile](docs/screenshots/profile.png)
 
-### 14. Employees and user accounts
+### 14. User administration (/admin)
 
-This version has **no employee management screen** yet:
+Administrators manage employees and logins at `https://your-domain/admin`, also reachable through **Administration** in the user menu at the bottom left. The administration is available in English and Chinese (switch at the top right).
 
-- Mechanics who do not sign in: add them with **New** next to **Mechanics** when creating work.
-- Employees who need to sign in: an administrator creates them through the API, see [Developer documentation → Creating user accounts](#creating-user-accounts).
+| Role | Can do |
+|---|---|
+| User | Works in the application (work, clients, vehicles, inventory); can view but not change the company settings; no access to the administration |
+| Administrator | Additionally changes the company settings; in the administration creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
+| Super administrator | Additionally creates administrators and super administrators, changes roles and manages administrator accounts |
+
+- The initial account `admin` is the **owner** (a super administrator): only its owner can change it, and it cannot be disabled or demoted.
+- Nobody changes their own role or status in the administration; your own password is changed in your profile.
+- **New user**: enter name and email, tick "Create a login for this employee", then username and role. Leave the password empty to get a temporary password, **shown only once**; it must be changed at the first sign in. Sign in codes go to the email address.
+- Mechanics who do not sign in: leave the login unticked (or add them with **New** next to **Mechanics** when creating work). A login can be added later.
+- **Disable account**: for employees who leave. They are signed out at once and cannot sign in again; work and history are kept. Employees with a login cannot be deleted, only disabled.
+- **Reset password**: sets a new temporary password and unlocks the account; it must be changed at the next sign in.
+- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles or the company settings, and when.
+
+![Users](docs/screenshots/admin-users.png)
+
+| Temporary password after creating a user | User details |
+|---|---|
+| ![Temporary password](docs/screenshots/admin-user-created.png) | ![User details](docs/screenshots/admin-user.png) |
 
 ---
 
@@ -349,36 +366,14 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `/api/work/*`, `/api/pricings/*` | Work, estimates, repair jobs, invoices, PDFs, email |
 | `/api/clients`, `/api/privateclients`, `/api/legalclients` | Clients |
 | `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
-| `/api/employees` | Employees and user accounts |
+| `/api/employees` | Employees (mechanics); creating logins requires an administrator |
+| `/api/admin/*` | User administration: `me`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`), `audit` |
 | `/api/options` (with `testemail`) | Company settings, test email |
 | `/api/profile` (with `changepassword`, `externallogins`) | Profile, password, Microsoft account link |
 | `/api/query` | List queries |
 | `GET /health` | Health check (no authentication) |
 
 Every `/api/auth/*` request must carry `serverSecret`, so only the web server or an administrator can call them.
-
-### Creating user accounts
-
-Until there is a screen for it, create employees who can sign in like this (on the server; `SECRET` is `JwtOptions:ConsumerSecret`):
-
-```bash
-API=http://localhost:15567
-SECRET=...   # JwtOptions:ConsumerSecret from /etc/vg-auto/appsettings.Secrets.json
-
-# 1. Sign in as administrator; returns a challengeId and emails a code to the administrator
-curl -s -X POST $API/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"userName":"admin","password":"<admin password>","serverSecret":"'$SECRET'"}'
-
-# 2. Submit the code; the returned jwt is the token
-curl -s -X POST $API/api/auth/verify -H 'Content-Type: application/json' \
-  -d '{"challengeId":"<challengeId>","code":"<code>","serverSecret":"'$SECRET'"}'
-
-# 3. Create the employee; userName and password also create a user account
-curl -s -X POST $API/api/employees -H "Authorization: Bearer <jwt>" -H 'Content-Type: application/json' \
-  -d '{"firstName":"Tom","lastName":"Berg","email":"tom@example.com","phone":"","proffession":"Mechanic","description":"","userName":"tom","password":"<initial password>"}'
-```
-
-The new employee's sign in codes go to that `email`, so it must be a real address. Ask the employee to change the password in the profile after the first sign in.
 
 ### Database migrations
 
@@ -414,7 +409,6 @@ The integration tests create a temporary database, run all migrations, and exerc
 
 ### Known limitations
 
-- No employee management screen yet (see above).
 - Multi-tenancy is PostgreSQL only.
 - MySQL 8.0 or newer; MariaDB is not supported.
 - The web app build needs access to Google Fonts.

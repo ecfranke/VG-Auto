@@ -5,7 +5,7 @@ export default async function authorizationMiddleware(request: NextRequest,respo
   
    // 2. Check if the current route is protected or public
    const path = request.nextUrl.pathname
-   const isProtectedRoute = path.startsWith('/home');
+   const isProtectedRoute = path.startsWith('/home') || path.startsWith('/admin');
     // 3. Decrypt the session from the cookie
    
    // logout if /home/logout is called and redirect to login page

@@ -97,6 +97,9 @@ namespace VgAuto.Http.Api.Controllers
             base.AfterSaved(model, domainObj);
             if (!string.IsNullOrWhiteSpace(model.UserName))
             {
+                // logins are created by administrators (normal users may only add mechanics without a login)
+                var reason = AdminPermissions.Check(Actor(), new AdminTarget(false, UserRoles.User, false, false), AdminAction.CreateAccount, UserRoles.User);
+                if (reason != null) throw new UserException(reason);
                 if (string.IsNullOrWhiteSpace(model.Password))
                 {
                     throw new UserException("Password is required when a username is set.");
@@ -124,8 +127,31 @@ namespace VgAuto.Http.Api.Controllers
             return employee;
         }
 
+        private AdminActor Actor()
+        {
+            var me = this.CurrentAccount();
+            return new AdminActor(me?.Role, me?.IsOwner ?? false);
+        }
+
+        /// <summary>Employees with a login are managed in the administration (/admin).</summary>
+        private void RequireAccountPermission(Employee employee, AdminAction action)
+        {
+            var account = GetUser(employee);
+            if (account == null) return;
+            var me = this.CurrentAccount();
+            var reason = AdminPermissions.Check(Actor(), new AdminTarget(true, account.Role, account.IsOwner, me != null && me.Id.EmployeeId == employee.Id), action);
+            if (reason != null) throw new UserException(reason);
+        }
+
+        protected override void BeforeDelete(Employee employee)
+        {
+            if (GetUser(employee) != null)
+                throw new UserException("Employees with a login cannot be deleted. Disable the account in the administration instead.");
+        }
+
         protected override void Edit(Employee employee, EmployeeDto model)
         {
+            RequireAccountPermission(employee, AdminAction.EditProfile);
             employee.Change(model.FirstName, model.LastName, model.Phone, model.Email, model.Proffession, model.Description);
         }
     }
