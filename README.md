@@ -401,4 +401,6 @@ cd ../../../frontend && npm run build                          # 前端构建（
 
 ## 许可证
 
-VG Auto 以 [GNU AGPL v3](LICENSE) 发布，基于 rene98c 的开源项目 [CarCare](https://github.com/rene98c/carcareco)，详见 [NOTICE](NOTICE)。按照 AGPL 的要求，如果你把修改后的版本通过网络提供给别人使用，也需要向这些用户公开源代码。首页的 “Source code” 链接就是为此准备的。
+Copyright © 2026 V. G. Global Solution Canada Inc. 保留所有权利。
+
+本软件为专有软件，未经书面许可，不得复制、修改、分发或以其他方式使用，详见 [LICENSE](LICENSE)。项目使用的第三方开源组件及其许可证见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

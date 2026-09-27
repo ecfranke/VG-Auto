@@ -401,4 +401,6 @@ The integration tests create a temporary database, run all migrations, and exerc
 
 ## License
 
-VG Auto is released under the [GNU AGPL v3](LICENSE). It is based on [CarCare](https://github.com/rene98c/carcareco) by rene98c; see [NOTICE](NOTICE). If you offer a modified version to users over a network, the AGPL requires you to offer them its source code as well (the "Source code" link on the home page).
+Copyright © 2026 V. G. Global Solution Canada Inc. All rights reserved.
+
+VG Auto is proprietary software. It may not be copied, modified, distributed or otherwise used without written permission; see [LICENSE](LICENSE). The third-party open source components it uses, and their licenses, are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

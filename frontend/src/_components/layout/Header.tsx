@@ -57,17 +57,9 @@ function MobileNavigation() {
         transition
         className="absolute inset-x-0 top-full mt-4 flex origin-top flex-col rounded-2xl bg-white p-4 text-lg tracking-tight text-slate-900 ring-1 shadow-xl ring-slate-900/5 data-closed:scale-95 data-closed:opacity-0 data-enter:duration-150 data-enter:ease-out data-leave:duration-100 data-leave:ease-in"
       >
-        <hr className="m-2 border-slate-300/40" />
-        <Button
-          href="https://github.com/ecfranke/VG-Auto"
-          variant="outline"
-        >
-          Source code
-        </Button>
         <Button 
           href="/auth/login"
           color="blue"
-          className="mt-2"
         >
           Sign in
         </Button>
@@ -91,14 +83,6 @@ export function Header() {
             </div>
           </div>
           <div className="flex items-center gap-x-5 md:gap-x-8">
-            <div className="hidden md:block">
-              <Button
-                href="https://github.com/ecfranke/VG-Auto"
-                variant="outline"
-              >
-                Source code
-              </Button>
-            </div>
             <Button href="/auth/login" color="blue">
               <span>Sign in</span>
             </Button>

@@ -1,6 +1,6 @@
 # VG Auto 部署与配置指南（不使用 Docker）
 
-VG Auto 由三部分组成（本项目基于开源的 CarCare，遵循 AGPL-3.0，见 NOTICE）：
+VG Auto 由三部分组成：
 
 | 组件 | 技术 | 默认端口 | 运行方式 |
 |---|---|---|---|

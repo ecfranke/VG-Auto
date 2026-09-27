@@ -4,8 +4,6 @@ import { Container } from '@/_components/layout/Container'
 import { Header } from '@/_components/layout/Header'
 import { WrenchScrewdriverIcon, UsersIcon, ArchiveBoxIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 
-const SOURCE_URL = 'https://github.com/ecfranke/VG-Auto'
-
 const features = [
   { icon: WrenchScrewdriverIcon, title: 'Work orders', text: 'Estimates, repair jobs, parts and labour in one place. Turn an accepted estimate into a job with one click.' },
   { icon: UsersIcon, title: 'Clients & vehicles', text: 'Full history of every customer and car: estimates, invoices and work done.' },
@@ -46,14 +44,8 @@ export default function Home() {
         </Container>
       </main>
       <footer className="border-t border-slate-200 py-8">
-        <Container className="flex flex-col items-center gap-2 text-sm text-slate-500 sm:flex-row sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} VG Auto</p>
-          <p>
-            Free software under the{' '}
-            <a className="underline hover:text-slate-700" href="https://www.gnu.org/licenses/agpl-3.0.html">GNU AGPL v3</a>
-            {' · '}
-            <a className="underline hover:text-slate-700" href={SOURCE_URL}>Source code</a>
-          </p>
+        <Container className="flex justify-center text-sm text-slate-500">
+          <p>&copy; {new Date().getFullYear()} V. G. Global Solution Canada Inc. All rights reserved.</p>
         </Container>
       </footer>
     </>
