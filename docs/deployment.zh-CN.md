@@ -8,7 +8,7 @@ VG Auto 由三部分组成：
 | Web 前端 | Next.js 15 | 3000 | pm2 |
 | 数据库 | PostgreSQL 13+ **或** MySQL 8.0+ | 5432 / 3306 | 数据库自己的服务 |
 
-另外还需要：Nginx（Linux 上做反向代理和 HTTPS）、一个能发信的邮箱（SMTP 或 Microsoft 365 / Graph）。
+另外还需要：Nginx（Linux 上做反向代理和 HTTPS；用宝塔面板的见 [1.6 节](#16-使用宝塔面板部署ubuntu--debian)）、一个能发信的邮箱（SMTP 或 Microsoft 365 / Graph）。
 
 > 默认开启了“密码 + 邮件验证码”登录。**邮件没配好，就没人能登录。** 请先配好发信，
 > 或者在 `Authentication:EmailCode:RequireForPasswordLogin` 里临时关闭验证码。
@@ -97,6 +97,147 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 
 - 改了 `NEXT_PUBLIC_*`：这些值是编译进前端的，需要重新运行 `install.sh`，它会重新编译前端。
 - 只改了其他项：执行 `sudo -u vgauto pm2 restart vg-auto-web` 即可。
+
+### 1.6 使用宝塔面板部署（Ubuntu / Debian）
+
+适合服务器上已经装了宝塔面板的情况。分工如下：
+
+| 部分 | 由谁负责 |
+|---|---|
+| 网站、反向代理、HTTPS 证书 | 宝塔（宝塔自带的 Nginx） |
+| 数据库（MySQL 或 PostgreSQL） | 宝塔软件商店安装，在宝塔里建库 |
+| VG Auto 的 API 和前端 | `deploy/install.sh`：API 作为 systemd 服务 `vg-auto-api`，前端由 pm2 运行 `vg-auto-web` |
+
+> **注意**：不要运行 1.1 节的 `prerequisites-debian.sh`。它会用 apt 另装一个 Nginx，
+> 和宝塔的 Nginx 抢 80/443 端口。按下面的步骤只装需要的部分。
+>
+> 宝塔各版本的菜单名称略有不同，下面以宝塔 Linux 面板 9.x 为准。
+
+#### 1.6.1 在宝塔里准备环境
+
+1. **Nginx**：在「软件商店」里安装 Nginx（任意稳定版本）。
+2. **数据库**：二选一。
+   - **MySQL**：在「软件商店」里安装 **MySQL 8.0 或更高版本**。宝塔默认推荐的可能是 5.7，安装时要手动选择 8.0。
+     不能用 MariaDB。
+   - **PostgreSQL**：在「软件商店」里搜索并安装「PostgreSQL 管理器」，再在里面安装 PostgreSQL 13 或更高版本。
+3. **不要**用宝塔的「Node.js 版本管理器」装 Node。它装在 `/www/server/nodejs` 下，用 `sudo` 运行安装脚本时找不到。
+   下一步会用系统的包管理器安装 Node.js。
+
+#### 1.6.2 安装 .NET、Node.js 和 PDF 所需的系统库
+
+用 SSH 登录服务器（宝塔的「终端」也可以），执行：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg git rsync openssl python3 fonts-liberation \
+  libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 \
+  libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 libcairo2 xdg-utils
+sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+
+# .NET 9 SDK
+. /etc/os-release
+curl -fsSL "https://packages.microsoft.com/config/${ID}/${VERSION_ID}/packages-microsoft-prod.deb" -o /tmp/ms.deb
+sudo dpkg -i /tmp/ms.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0
+
+# Node.js 22 和 pm2
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
+sudo apt-get install -y nodejs
+sudo npm install -g pm2
+
+# 检查
+dotnet --list-sdks     # 应该有 9.x
+node -v                # 应该是 v20 或更高
+```
+
+#### 1.6.3 在宝塔里创建数据库
+
+先想好一个数据库密码（下面记作 `<数据库密码>`），后面安装时要用。
+
+**MySQL**：「数据库」→「MySQL」→「添加数据库」：
+
+| 项目 | 填写 |
+|---|---|
+| 数据库名 | `vgauto` |
+| 用户名 | `vgauto` |
+| 密码 | `<数据库密码>` |
+| 访问权限 | 本地服务器 |
+| 编码 / 字符集 | `utf8mb4` |
+
+**PostgreSQL**：「数据库」→「PgSQL」（或打开「PostgreSQL 管理器」）→「添加数据库」，
+数据库名和用户名都填 `vgauto`，密码填 `<数据库密码>`。
+
+建好后，表由安装脚本自动创建，不需要导入任何 SQL。
+
+> MySQL 常见问题：安装时如果报 `Access denied for user 'vgauto'@'127.0.0.1'`，是因为宝塔的 MySQL 默认开启了
+> `skip-name-resolve`，“本地服务器”权限只匹配 `localhost`。在「数据库」列表里点这个库的「权限」，
+> 改成「指定 IP」`127.0.0.1`，再重新运行安装脚本即可。
+
+#### 1.6.4 运行安装脚本
+
+先把两个子域名（例如 `app.你的域名` 和 `api.你的域名`）的 A 记录解析到这台服务器，然后执行：
+
+```bash
+sudo git clone https://github.com/ecfranke/VG-Auto.git /opt/src/vg-auto
+cd /opt/src/vg-auto
+
+# MySQL
+sudo deploy/install.sh \
+  --app-url https://app.你的域名 \
+  --api-url https://api.你的域名 \
+  --db-provider MySql --db-host 127.0.0.1 --db-password '<数据库密码>' \
+  --admin-email 管理员邮箱
+
+# PostgreSQL：把第 5 行换成
+#   --db-provider PostgreSql --db-host 127.0.0.1 --db-password '<数据库密码>' \
+```
+
+- **不要**加 `--nginx`，反向代理交给宝塔。
+- 第一次运行会生成配置，然后问 `Continue with the installation now?`。先输入 `N` 退出，
+  编辑 `/etc/vg-auto/appsettings.Secrets.json`，填好 `Email` 部分（见第 5 节）。
+  数据库已经在宝塔里建好了，**不需要**运行 `create-database.sh`。
+- 然后再运行一次同样的命令，这次输入 `y`。脚本会编译、建表、启动 API 和前端。
+
+完成后在服务器上检查：
+
+```bash
+curl http://127.0.0.1:15567/health     # API，应返回 Healthy
+curl -I http://127.0.0.1:3000          # 前端，应返回 HTTP 200
+```
+
+#### 1.6.5 在宝塔里配置反向代理和 HTTPS
+
+需要两个站点，一个给前端，一个给 API。
+
+1. 「网站」→「添加站点」，域名填 `app.你的域名`，PHP 版本选「纯静态」，不创建数据库。
+2. 打开这个站点的「设置」→「反向代理」→「添加反向代理」：
+   - 目标 URL：`http://127.0.0.1:3000`
+   - 发送域名：`$host`
+3. 同样再添加站点 `api.你的域名`，反向代理的目标 URL 填 `http://127.0.0.1:15567`，发送域名 `$host`。
+4. 分别在两个站点的「SSL」里申请 Let's Encrypt 证书，并打开「强制 HTTPS」。
+
+新版宝塔也可以直接在「网站」→「反向代理」→「添加反代」里创建，填写的内容相同。
+
+宝塔默认的反向代理配置会带上 `X-Real-IP` 和 `X-Forwarded-For`，VG Auto 用它们来识别客户端 IP（登录限流和账号锁定），不用额外修改。
+
+#### 1.6.6 防火墙
+
+在宝塔的「安全」页面，只放行 80、443、SSH 端口和宝塔面板端口。
+**不要**放行 3000 和 15567：没有加 `--nginx` 时，这两个服务监听在所有网卡上，外部只应该通过宝塔的反向代理访问。
+如果服务器在云平台上，云厂商的安全组也要做同样的检查。
+
+#### 1.6.7 日常运维
+
+和 1.5 节相同：
+
+```bash
+sudo systemctl status vg-auto-api              # API 状态
+journalctl -u vg-auto-api -f                   # API 日志
+sudo -u vgauto pm2 logs vg-auto-web            # 前端日志
+cd /opt/src/vg-auto && sudo git pull && sudo deploy/install.sh    # 升级
+```
+
+- 宝塔的「PM2 管理器」看不到 `vg-auto-web`：它由系统用户 `vgauto` 运行，请用上面的命令查看。
+- 数据库备份可以直接用宝塔「计划任务」里的「备份数据库」，另外记得备份 `/var/lib/vg-auto/pdf` 和 `/etc/vg-auto`。
 
 ---
 
