@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Generates backend/src/Carmasters.Http.Api/appsettings.Secrets.json and frontend/.env
+# Generates backend/src/VgAuto.Http.Api/appsettings.Secrets.json and frontend/.env
 # with random secrets. Existing files are kept unless --force is given.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APPSETTINGS=backend/src/Carmasters.Http.Api/appsettings.Secrets.json
+APPSETTINGS=backend/src/VgAuto.Http.Api/appsettings.Secrets.json
 ENVFILE=frontend/.env
 FORCE=${1:-}
 

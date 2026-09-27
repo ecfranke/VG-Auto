@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs what CarCare needs on Debian 12 / Ubuntu 22.04+ (run with sudo):
+# Installs what VG Auto needs on Debian 12 / Ubuntu 22.04+ (run with sudo):
 #   .NET 9 SDK, Node.js 22 + pm2, nginx + certbot, libraries for the PDF renderer (Chrome),
 #   and optionally a database server.
 #

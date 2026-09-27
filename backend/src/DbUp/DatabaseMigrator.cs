@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Carmasters.Core.Application.Configuration;
-using Carmasters.Core.Application.Database;
+using VgAuto.Core.Application.Configuration;
+using VgAuto.Core.Application.Database;
 using DbUp;
 using DbUp.Engine;
 using DbUp.Builder;

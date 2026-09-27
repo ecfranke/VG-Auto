@@ -1,0 +1,10 @@
+﻿@using VgAuto.Core.Application.Model
+@using VgAuto.Core.Domain
+@using VgAuto.Http.Api
+@model PricingPrintModel
+@{ 
+    var pricing = (Estimate)Model.Pricing ;  
+}  
+<p class="text-sm text-gray-500">
+    Date: @pricing.IssuedOn.ToLocalTime().ToString("dd.MM.yyyy")
+</p>

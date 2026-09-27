@@ -33,7 +33,8 @@ export default   function Nav({
     return (
         <>
             <div className="flex h-16 shrink-0 items-center">
-                <Image alt="B-dec" width="50" height="50" className="h-8 w-auto" src="/logo.png" ></Image>
+                <Image alt="VG Auto" width="50" height="50" className="h-8 w-auto" src="/logo.png" ></Image>
+                <span className="ml-3 text-base font-semibold text-white">VG Auto</span>
             </div>
             <nav className="flex flex-1 flex-col">
                 <ul role="list" className="flex flex-1 flex-col gap-y-7">

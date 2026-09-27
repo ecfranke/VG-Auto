@@ -1416,12 +1416,12 @@
           "System.Xml.ReaderWriter": "4.3.0"
         }
       },
-      "carmasters.core.application": {
+      "vgauto.core.application": {
         "type": "Project",
         "dependencies": {
           "BCrypt.Net-Next": "[4.0.3, )",
-          "Carmasters.Core.Domain": "[1.0.0, )",
-          "Carmasters.Http.Api.Model": "[1.0.0, )",
+          "VgAuto.Core.Domain": "[1.0.0, )",
+          "VgAuto.Http.Api.Model": "[1.0.0, )",
           "Dapper": "[2.1.66, )",
           "FluentNHibernate": "[3.4.0, )",
           "MailKit": "[4.18.0, )",
@@ -1439,17 +1439,17 @@
           "System.Text.RegularExpressions": "[4.3.1, )"
         }
       },
-      "carmasters.core.domain": {
+      "vgauto.core.domain": {
         "type": "Project",
         "dependencies": {
           "System.Net.Http": "[4.3.4, )",
           "System.Text.RegularExpressions": "[4.3.1, )"
         }
       },
-      "carmasters.http.api.model": {
+      "vgauto.http.api.model": {
         "type": "Project",
         "dependencies": {
-          "Carmasters.Core.Domain": "[1.0.0, )",
+          "VgAuto.Core.Domain": "[1.0.0, )",
           "System.Net.Http": "[4.3.4, )",
           "System.Text.RegularExpressions": "[4.3.1, )"
         }

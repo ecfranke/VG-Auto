@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# CarCare install / upgrade without Docker (Linux and macOS).
+# VG Auto install / upgrade without Docker (Linux and macOS).
 #
 #   Linux (Debian/Ubuntu):  API as a systemd service, web app under pm2, optional nginx site.
 #   macOS:                  API and web app under pm2 (pm2 startup -> launchd).
@@ -20,25 +20,25 @@ OS="$(uname -s)"
 
 # ---- defaults ----------------------------------------------------------------
 if [[ "$OS" == "Darwin" ]]; then
-  PREFIX="${HOME}/carcare"
+  PREFIX="${HOME}/vg-auto"
   CONFIG_DIR="${PREFIX}/config"
   DATA_DIR="${PREFIX}/data"
   SERVICE_MODE="pm2"
   RUN_USER="$(id -un)"
 else
-  PREFIX="/opt/carcare"
-  CONFIG_DIR="/etc/carcare"
-  DATA_DIR="/var/lib/carcare"
+  PREFIX="/opt/vg-auto"
+  CONFIG_DIR="/etc/vg-auto"
+  DATA_DIR="/var/lib/vg-auto"
   SERVICE_MODE="systemd"
-  RUN_USER="carcare"
+  RUN_USER="vgauto"
 fi
 APP_URL="http://localhost:3000"
 API_URL=""
 DB_PROVIDER="PostgreSql"
 DB_HOST="localhost"
 DB_PORT=""
-DB_NAME="carcare"
-DB_USER="carcare"
+DB_NAME="vgauto"
+DB_USER="vgauto"
 DB_PASSWORD=""
 ADMIN_EMAIL=""
 NGINX=0
@@ -205,8 +205,8 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
 if [[ $SKIP_API -eq 0 ]]; then
   log "Building the API and the migration tool"
   # the projects expect a secrets file at build time (it is not deployed, the symlink below is used)
-  touch "$REPO_DIR/backend/src/Carmasters.Http.Api/appsettings.Secrets.json"
-  dotnet publish "$REPO_DIR/backend/src/Carmasters.Http.Api/Carmasters.Http.Api.csproj" -c Release -o "$BUILD_DIR/api" --nologo -v quiet
+  touch "$REPO_DIR/backend/src/VgAuto.Http.Api/appsettings.Secrets.json"
+  dotnet publish "$REPO_DIR/backend/src/VgAuto.Http.Api/VgAuto.Http.Api.csproj" -c Release -o "$BUILD_DIR/api" --nologo -v quiet
   dotnet publish "$REPO_DIR/backend/src/DbUp/DbUp.csproj" -c Release -o "$BUILD_DIR/dbup" --nologo -v quiet
 
   mkdir -p "$PREFIX/api" "$PREFIX/dbup"
@@ -232,14 +232,14 @@ fi
 
 if [[ $SKIP_API -eq 0 ]]; then
   if [[ "$SERVICE_MODE" == "systemd" ]]; then
-    log "Installing systemd service carcare-api"
+    log "Installing systemd service vg-auto-api"
     API_BIND="http://0.0.0.0:15567"; [[ $NGINX -eq 1 ]] && API_BIND="http://127.0.0.1:15567"
     sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@USER@|$RUN_USER|g" -e "s|@DATA@|$DATA_DIR|g" \
         -e "s|@API_URL_BIND@|$API_BIND|g" -e "s|@DOTNET@|$(command -v dotnet)|g" \
-        "$REPO_DIR/deploy/templates/carcare-api.service" > /etc/systemd/system/carcare-api.service
+        "$REPO_DIR/deploy/templates/vg-auto-api.service" > /etc/systemd/system/vg-auto-api.service
     systemctl daemon-reload
-    systemctl enable carcare-api >/dev/null
-    systemctl restart carcare-api
+    systemctl enable vg-auto-api >/dev/null
+    systemctl restart vg-auto-api
   fi
 fi
 
@@ -262,7 +262,7 @@ ECOSYSTEM="$PREFIX/ecosystem.config.cjs"
   if [[ $SKIP_WEB -eq 0 || -d "$PREFIX/web/.next" ]]; then
     cat <<EOF
   {
-    name: 'carcare-web',
+    name: 'vg-auto-web',
     cwd: '$PREFIX/web',
     script: 'node_modules/next/dist/bin/next',
     args: 'start -p 3000 -H 127.0.0.1',
@@ -274,10 +274,10 @@ EOF
   if [[ "$SERVICE_MODE" == "pm2" ]]; then
     cat <<EOF
   {
-    name: 'carcare-api',
+    name: 'vg-auto-api',
     cwd: '$PREFIX/api',
     script: '$(command -v dotnet)',
-    args: 'Carmasters.Http.Api.dll',
+    args: 'VgAuto.Http.Api.dll',
     interpreter: 'none',
     env: {
       ASPNETCORE_ENVIRONMENT: 'Production',
@@ -300,7 +300,7 @@ if grep -q "name:" "$ECOSYSTEM"; then
   as_user pm2 startOrReload "$ECOSYSTEM" --update-env
   as_user pm2 save
   if [[ "$OS" == "Darwin" ]]; then
-    echo "To start CarCare at login run the command printed by:  pm2 startup"
+    echo "To start VG Auto at login run the command printed by:  pm2 startup"
   else
     env PATH="$PATH:$(dirname "$(command -v node)")" pm2 startup systemd -u "$RUN_USER" --hp "$(eval echo ~"$RUN_USER")" >/dev/null
     systemctl enable "pm2-$RUN_USER" >/dev/null 2>&1 || true
@@ -314,8 +314,8 @@ if [[ $NGINX -eq 1 ]]; then
   API_DOMAIN="$(url_host "$API_URL")"
   log "Writing nginx site for $APP_DOMAIN and $API_DOMAIN"
   sed -e "s|@APP_DOMAIN@|$APP_DOMAIN|g" -e "s|@API_DOMAIN@|$API_DOMAIN|g" \
-      "$REPO_DIR/deploy/templates/nginx-carcare.conf" > /etc/nginx/sites-available/carcare
-  ln -sfn /etc/nginx/sites-available/carcare /etc/nginx/sites-enabled/carcare
+      "$REPO_DIR/deploy/templates/nginx-vg-auto.conf" > /etc/nginx/sites-available/vg-auto
+  ln -sfn /etc/nginx/sites-available/vg-auto /etc/nginx/sites-enabled/vg-auto
   nginx -t && systemctl reload nginx
   echo "HTTPS: sudo certbot --nginx -d $APP_DOMAIN -d $API_DOMAIN"
 fi
@@ -331,6 +331,6 @@ cat <<EOF
   App:            $APP_URL
   API:            $API_URL   (health: /health)
   Configuration:  $SECRETS, $WEB_ENV
-  Logs:           $( [[ "$SERVICE_MODE" == "systemd" ]] && echo "journalctl -u carcare-api -f" || echo "pm2 logs carcare-api" ),  pm2 logs carcare-web
+  Logs:           $( [[ "$SERVICE_MODE" == "systemd" ]] && echo "journalctl -u vg-auto-api -f" || echo "pm2 logs vg-auto-api" ),  pm2 logs vg-auto-web
   Upgrade:        git pull && $0
 EOF

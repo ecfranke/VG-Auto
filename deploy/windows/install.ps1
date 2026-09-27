@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-  Installs or upgrades CarCare on Windows without Docker.
+  Installs or upgrades VG Auto on Windows without Docker.
 
 .DESCRIPTION
-  - API: published to <InstallDir>\api and registered as the Windows service "CarCareApi"
+  - API: published to <InstallDir>\api and registered as the Windows service "VGAutoApi"
          (or run under pm2 with -ApiUnderPm2).
   - Web: built in <InstallDir>\web and run under pm2; a scheduled task restores pm2 at logon.
   - Database migrations are applied on every run. Configuration in <InstallDir>\config is kept.
@@ -17,14 +17,14 @@
   .\deploy\windows\install.ps1 -DbProvider MySql -DbPassword "..." -AppUrl http://workshop-pc:3000 -AdminEmail boss@example.com
 #>
 param(
-  [string]$InstallDir = "C:\CarCare",
+  [string]$InstallDir = "C:\VGAuto",
   [string]$AppUrl = "http://localhost:3000",
   [string]$ApiUrl = "",
   [ValidateSet("PostgreSql", "MySql")][string]$DbProvider = "PostgreSql",
   [string]$DbHost = "localhost",
   [int]$DbPort = 0,
-  [string]$DbName = "carcare",
-  [string]$DbUser = "carcare",
+  [string]$DbName = "vgauto",
+  [string]$DbUser = "vgauto",
   [string]$DbPassword = "",
   [string]$AdminEmail = "",
   [switch]$ApiUnderPm2,
@@ -39,7 +39,7 @@ $DataDir = Join-Path $InstallDir "data"
 $Secrets = Join-Path $ConfigDir "appsettings.Secrets.json"
 $WebEnv = Join-Path $ConfigDir "web.env"
 $AdminPasswordFile = Join-Path $ConfigDir "initial-admin-password.txt"
-$ServiceName = "CarCareApi"
+$ServiceName = "VGAutoApi"
 
 function Log($message) { Write-Host "`n==> $message" -ForegroundColor Cyan }
 function Require($command, $hint) { if (-not (Get-Command $command -ErrorAction SilentlyContinue)) { throw "$command is required. $hint" } }
@@ -126,18 +126,18 @@ Then run this script again.
 Log "Using configuration in $ConfigDir"
 
 # ---- API + migrations ---------------------------------------------------------------
-$buildDir = Join-Path ([IO.Path]::GetTempPath()) ("carcare-build-" + [Guid]::NewGuid().ToString("N"))
+$buildDir = Join-Path ([IO.Path]::GetTempPath()) ("vg-auto-build-" + [Guid]::NewGuid().ToString("N"))
 try {
   if (-not $SkipApi) {
     Log "Building the API and the migration tool"
-    $devSecrets = Join-Path $RepoDir "backend\src\Carmasters.Http.Api\appsettings.Secrets.json"
+    $devSecrets = Join-Path $RepoDir "backend\src\VgAuto.Http.Api\appsettings.Secrets.json"
     if (-not (Test-Path $devSecrets)) { "{}" | Set-Content $devSecrets }   # needed at build time only
-    Invoke-Checked { dotnet publish (Join-Path $RepoDir "backend\src\Carmasters.Http.Api\Carmasters.Http.Api.csproj") -c Release -o "$buildDir\api" --nologo -v quiet } "API build"
+    Invoke-Checked { dotnet publish (Join-Path $RepoDir "backend\src\VgAuto.Http.Api\VgAuto.Http.Api.csproj") -c Release -o "$buildDir\api" --nologo -v quiet } "API build"
     Invoke-Checked { dotnet publish (Join-Path $RepoDir "backend\src\DbUp\DbUp.csproj") -c Release -o "$buildDir\dbup" --nologo -v quiet } "DbUp build"
 
     $service = Get-Service $ServiceName -ErrorAction SilentlyContinue
     if ($service -and $service.Status -eq "Running") { Stop-Service $ServiceName }
-    if ($ApiUnderPm2) { pm2 stop carcare-api 2>$null | Out-Null }
+    if ($ApiUnderPm2) { pm2 stop vg-auto-api 2>$null | Out-Null }
 
     foreach ($part in "api", "dbup") {
       $target = Join-Path $InstallDir $part
@@ -163,9 +163,9 @@ try {
 
   if (-not $SkipApi -and -not $ApiUnderPm2) {
     Log "Registering Windows service $ServiceName"
-    $exe = Join-Path $InstallDir "api\Carmasters.Http.Api.exe"
+    $exe = Join-Path $InstallDir "api\VgAuto.Http.Api.exe"
     if (-not (Get-Service $ServiceName -ErrorAction SilentlyContinue)) {
-      New-Service -Name $ServiceName -BinaryPathName "`"$exe`"" -DisplayName "CarCare API" -StartupType Automatic | Out-Null
+      New-Service -Name $ServiceName -BinaryPathName "`"$exe`"" -DisplayName "VG Auto API" -StartupType Automatic | Out-Null
       sc.exe failure $ServiceName reset= 86400 actions= restart/10000/restart/10000/restart/60000 | Out-Null
     }
     Start-Service $ServiceName
@@ -196,7 +196,7 @@ $apps = @()
 if (Test-Path (Join-Path $webDir ".next")) {
   $apps += @"
   {
-    name: 'carcare-web',
+    name: 'vg-auto-web',
     cwd: '$($webDir -replace '\\','/')',
     script: 'node_modules/next/dist/bin/next',
     args: 'start -p 3000',
@@ -207,9 +207,9 @@ if (Test-Path (Join-Path $webDir ".next")) {
 if ($ApiUnderPm2) {
   $apps += @"
   {
-    name: 'carcare-api',
+    name: 'vg-auto-api',
     cwd: '$((Join-Path $InstallDir 'api') -replace '\\','/')',
-    script: '$((Join-Path $InstallDir 'api\Carmasters.Http.Api.exe') -replace '\\','/')',
+    script: '$((Join-Path $InstallDir 'api\VgAuto.Http.Api.exe') -replace '\\','/')',
     interpreter: 'none',
     env: { ASPNETCORE_ENVIRONMENT: 'Production' },
   }
@@ -226,7 +226,7 @@ if ($apps.Count -gt 0) {
   $pm2 = (Get-Command pm2).Source
   $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$pm2`" resurrect"
   $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-  Register-ScheduledTask -TaskName "CarCare pm2" -Action $action -Trigger $trigger -Description "Starts the CarCare web app" -Force | Out-Null
+  Register-ScheduledTask -TaskName "VG Auto pm2" -Action $action -Trigger $trigger -Description "Starts the VG Auto web app" -Force | Out-Null
 }
 
 Log "Done"

@@ -1,6 +1,6 @@
-# VG-Auto 部署与配置指南（不使用 Docker）
+# VG Auto 部署与配置指南（不使用 Docker）
 
-本项目基于开源的 CarCare（AGPL-3.0）。系统由三部分组成：
+VG Auto 由三部分组成（本项目基于开源的 CarCare，遵循 AGPL-3.0，见 NOTICE）：
 
 | 组件 | 技术 | 默认端口 | 运行方式 |
 |---|---|---|---|
@@ -45,17 +45,17 @@ sudo deploy/install.sh \
 
 1. 创建数据库用户和数据库：
    ```bash
-   sudo deploy/create-database.sh /etc/carcare/appsettings.Secrets.json
+   sudo deploy/create-database.sh /etc/vg-auto/appsettings.Secrets.json
    ```
-2. 编辑 `/etc/carcare/appsettings.Secrets.json`，填写 `Email` 部分（见第 5 节）。
+2. 编辑 `/etc/vg-auto/appsettings.Secrets.json`，填写 `Email` 部分（见第 5 节）。
 
 然后再运行一次同样的 `install.sh`。它会依次完成下面这些事：
 
-- 编译 API 和数据库迁移工具，装到 `/opt/carcare/api` 和 `/opt/carcare/dbup`
+- 编译 API 和数据库迁移工具，装到 `/opt/vg-auto/api` 和 `/opt/vg-auto/dbup`
 - 执行数据库迁移，第一次会创建管理员 `admin`
-- 安装并启动 systemd 服务 `carcare-api`
-- 在本机编译前端（`/opt/carcare/web`），用 pm2 启动 `carcare-web`，并设置开机自启
-- 写入并启用 nginx 站点 `/etc/nginx/sites-available/carcare`
+- 安装并启动 systemd 服务 `vg-auto-api`
+- 在本机编译前端（`/opt/vg-auto/web`），用 pm2 启动 `vg-auto-web`，并设置开机自启
+- 写入并启用 nginx 站点 `/etc/nginx/sites-available/vg-auto`
 
 最后配置 HTTPS：
 
@@ -66,7 +66,7 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 ### 1.3 第一次登录
 
 - 用户名：`admin`
-- 密码：保存在 `/etc/carcare/initial-admin-password`，只有 root 能读
+- 密码：保存在 `/etc/vg-auto/initial-admin-password`，只有 root 能读
 - 登录时会把验证码发到 `--admin-email` 指定的邮箱
 - 首次登录必须修改密码（至少 10 位，不能包含用户名）。改完后请删除上面那个密码文件。
 
@@ -74,29 +74,29 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 
 | 路径 | 内容 |
 |---|---|
-| `/etc/carcare/appsettings.Secrets.json` | API 配置，包括密钥、数据库、邮件、登录方式（权限 600，属主 carcare） |
-| `/etc/carcare/web.env` | 前端配置（权限 600） |
-| `/opt/carcare/api`、`/opt/carcare/dbup`、`/opt/carcare/web` | 程序文件 |
-| `/var/lib/carcare/pdf`、`/var/lib/carcare/puppeteer` | 生成的 PDF、PDF 渲染用的 Chrome |
+| `/etc/vg-auto/appsettings.Secrets.json` | API 配置，包括密钥、数据库、邮件、登录方式（权限 600，属主 vgauto） |
+| `/etc/vg-auto/web.env` | 前端配置（权限 600） |
+| `/opt/vg-auto/api`、`/opt/vg-auto/dbup`、`/opt/vg-auto/web` | 程序文件 |
+| `/var/lib/vg-auto/pdf`、`/var/lib/vg-auto/puppeteer` | 生成的 PDF、PDF 渲染用的 Chrome |
 
 ### 1.5 日常运维
 
 ```bash
-sudo systemctl status carcare-api          # 查看 API 状态
-journalctl -u carcare-api -f               # API 日志
-sudo -u carcare pm2 logs carcare-web       # 前端日志
+sudo systemctl status vg-auto-api          # 查看 API 状态
+journalctl -u vg-auto-api -f               # API 日志
+sudo -u vgauto pm2 logs vg-auto-web       # 前端日志
 curl http://127.0.0.1:15567/health         # 健康检查
 
 # 升级：拉取新代码后重新运行安装脚本（配置会保留，数据库迁移会自动执行）
 cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 ```
 
-修改 `appsettings.Secrets.json` 后需要执行 `sudo systemctl restart carcare-api`。
+修改 `appsettings.Secrets.json` 后需要执行 `sudo systemctl restart vg-auto-api`。
 
 修改 `web.env` 后要看改的是哪一项：
 
 - 改了 `NEXT_PUBLIC_*`：这些值是编译进前端的，需要重新运行 `install.sh`，它会重新编译前端。
-- 只改了其他项：执行 `sudo -u carcare pm2 restart carcare-web` 即可。
+- 只改了其他项：执行 `sudo -u vgauto pm2 restart vg-auto-web` 即可。
 
 ---
 
@@ -108,11 +108,11 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
    brew services start postgresql@16
    npm install -g pm2
    ```
-2. 安装。API 和前端都用 pm2 运行，默认装到 `~/carcare`：
+2. 安装。API 和前端都用 pm2 运行，默认装到 `~/vg-auto`：
    ```bash
    deploy/install.sh --app-url http://localhost:3000 --admin-email you@example.com
    ```
-   第一次运行时，按提示创建数据库用户，并填写 `~/carcare/config/appsettings.Secrets.json` 里的 `Email` 部分，然后再运行一次。
+   第一次运行时，按提示创建数据库用户，并填写 `~/vg-auto/config/appsettings.Secrets.json` 里的 `Email` 部分，然后再运行一次。
 3. 开机自启：运行 `pm2 startup`，再执行它打印出来的那条命令。
 
 ---
@@ -124,12 +124,12 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
    ```powershell
    powershell -ExecutionPolicy Bypass -File deploy\windows\install.ps1 -DbProvider MySql -AppUrl http://workshop-pc:3000 -AdminEmail boss@example.com
    ```
-   第一次运行时，脚本会在 `C:\CarCare\config` 生成配置然后退出。按提示创建数据库用户、填写邮件配置，再运行一次。
+   第一次运行时，脚本会在 `C:\VGAuto\config` 生成配置然后退出。按提示创建数据库用户、填写邮件配置，再运行一次。
 3. 运行方式：
-   - API 注册为 Windows 服务 `CarCareApi`，开机自动启动。
-   - 前端由 pm2 运行，另有一个计划任务“CarCare pm2”，在登录时恢复 pm2 进程。
+   - API 注册为 Windows 服务 `VGAutoApi`，开机自动启动。
+   - 前端由 pm2 运行，另有一个计划任务“VG Auto pm2”，在登录时恢复 pm2 进程。
 4. 如果其他电脑也要访问，需要在 Windows 防火墙里放行 3000 和 15567 端口。
-5. 修改 `C:\CarCare\config` 下的配置后，需要重新运行安装脚本，它会把配置复制到程序目录并重启服务。
+5. 修改 `C:\VGAuto\config` 下的配置后，需要重新运行安装脚本，它会把配置复制到程序目录并重启服务。
 
 ---
 
@@ -139,12 +139,12 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 
 **PostgreSQL（默认）**
 ```json
-"DbOptions": { "Provider": "PostgreSql", "Host": "localhost", "Port": 5432, "UserId": "carcare", "Password": "...", "Name": "carcare" }
+"DbOptions": { "Provider": "PostgreSql", "Host": "localhost", "Port": 5432, "UserId": "vgauto", "Password": "...", "Name": "vgauto" }
 ```
 
 **MySQL 8**
 ```json
-"DbOptions": { "Provider": "MySql", "Host": "127.0.0.1", "Port": 3306, "UserId": "carcare", "Password": "...", "Name": "carcare" }
+"DbOptions": { "Provider": "MySql", "Host": "127.0.0.1", "Port": 3306, "UserId": "vgauto", "Password": "...", "Name": "vgauto" }
 ```
 
 - 数据库迁移工具 `DbUp` 会在数据库不存在时自动创建（前提是数据库用户有建库权限），然后执行对应的建表脚本：PostgreSQL 用 `backend/src/DbUp/scripts`，MySQL 用 `backend/src/DbUp/scripts_mysql`。
@@ -154,9 +154,9 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 - 数据库备份：请配置每天自动备份，例如在 crontab 里加一行：
   ```bash
   # PostgreSQL
-  0 2 * * * sudo -u postgres pg_dump carcare | gzip > /var/backups/carcare-$(date +\%F).sql.gz
+  0 2 * * * sudo -u postgres pg_dump vgauto | gzip > /var/backups/vg-auto-$(date +\%F).sql.gz
   # MySQL
-  0 2 * * * mysqldump --single-transaction carcare | gzip > /var/backups/carcare-$(date +\%F).sql.gz
+  0 2 * * * mysqldump --single-transaction vgauto | gzip > /var/backups/vg-auto-$(date +\%F).sql.gz
   ```
 
 ---
@@ -194,7 +194,7 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 3. 在“API 权限”里添加 Microsoft Graph → **应用程序权限** → `Mail.Send`，然后点“授予管理员同意”。
 4. 强烈建议把这个应用限制为只能用一个邮箱发信（Exchange Online PowerShell）：
    ```powershell
-   New-ApplicationAccessPolicy -AppId <ClientId> -PolicyScopeGroupId noreply@yourshop.com -AccessRight RestrictAccess -Description "CarCare sender"
+   New-ApplicationAccessPolicy -AppId <ClientId> -PolicyScopeGroupId noreply@yourshop.com -AccessRight RestrictAccess -Description "VG Auto sender"
    ```
 5. 填写配置：
    ```json
@@ -251,10 +251,10 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 
 ```bash
 scripts/setup-secrets.sh                   # 生成开发用的密钥（Windows 用 scripts/setup-secrets.ps1）
-# 编辑 backend/src/Carmasters.Http.Api/appsettings.Secrets.json：填写数据库和邮件
+# 编辑 backend/src/VgAuto.Http.Api/appsettings.Secrets.json：填写数据库和邮件
 # （AllowedOrigins 默认已包含 http://localhost:3000）
 cd backend/src/DbUp && dotnet run          # 建库、建表，并打印一次初始管理员密码
-cd ../Carmasters.Http.Api && ASPNETCORE_ENVIRONMENT=Development dotnet run
+cd ../VgAuto.Http.Api && ASPNETCORE_ENVIRONMENT=Development dotnet run
 cd ../../../frontend && npm ci && npm run dev
 ```
 
@@ -263,10 +263,10 @@ cd ../../../frontend && npm ci && npm run dev
 ## 9. 测试
 
 ```bash
-cd backend/tests/Carmasters.Tests
+cd backend/tests/VgAuto.Tests
 dotnet test                                                     # 只跑单元测试
-CARCARE_TEST_DB_HOST=localhost CARCARE_TEST_DB_PASSWORD=... dotnet test                                         # PostgreSQL 集成测试
-CARCARE_TEST_DB_PROVIDER=MySql CARCARE_TEST_DB_HOST=127.0.0.1 CARCARE_TEST_DB_PASSWORD=... dotnet test          # MySQL 集成测试
+VGAUTO_TEST_DB_HOST=localhost VGAUTO_TEST_DB_PASSWORD=... dotnet test                                         # PostgreSQL 集成测试
+VGAUTO_TEST_DB_PROVIDER=MySql VGAUTO_TEST_DB_HOST=127.0.0.1 VGAUTO_TEST_DB_PASSWORD=... dotnet test          # MySQL 集成测试
 ```
 
 集成测试会为每次运行新建一个临时数据库，跑完自动删除。

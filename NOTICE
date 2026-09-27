@@ -1,0 +1,13 @@
+VG Auto
+Copyright (C) 2026 ecfranke and contributors
+
+This program is a modified version of CarCare
+(https://github.com/rene98c/carcareco), Copyright (C) 2025 rene.
+
+Both are licensed under the GNU Affero General Public License, version 3 or
+(at your option) any later version. See the LICENSE file.
+
+Main modifications (2026): renamed to VG Auto; security hardening; email via
+SMTP or Microsoft Graph; login codes, password reset and Microsoft sign in;
+PostgreSQL or MySQL support; installation without Docker.
+The full history is available in the git log.

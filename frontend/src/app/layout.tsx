@@ -9,11 +9,12 @@ import '@/_styles/tailwind.css'
   
 export const metadata: Metadata = {
   title: {
-    template: '%s', // - B-dec
-    default: 'Repair and maintenance',
+    template: '%s | VG Auto',
+    default: 'VG Auto',
   },
+  applicationName: 'VG Auto',
   description:
-    'Streamline your car repair business with our all-in-one web app. Track work progress, create jobs, manage services and products, generate offers, issue invoices, and organize your cars and clients effortlessly. Designed to help you save time, boost productivity, and grow your business—your workshop deserves more than just tools; it deserves a partner in success.',
+    'VG Auto: workshop management for repair shops. Work orders, estimates, invoices, clients, vehicles and inventory.',
 }
 
 const inter = Inter({
@@ -42,6 +43,8 @@ export default function DefaultLayout({
     )}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className=" h-full ">
      

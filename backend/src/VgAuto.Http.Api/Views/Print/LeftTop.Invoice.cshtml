@@ -1,0 +1,21 @@
+﻿@using VgAuto.Core.Application.Configuration
+@using VgAuto.Core.Application.Model
+@using VgAuto.Core.Domain
+@using VgAuto.Http.Api
+@model PricingPrintModel
+@{ 
+    var pricing = (Invoice)Model.Pricing ; 
+    var pricingOptions = (PricingOptions) Model.PricingOptions; 
+}  
+ 
+<p class="text-sm text-gray-500">
+    Date: @pricing.IssuedOn.ToLocalTime().ToString("dd.MM.yyyy")
+</p>
+<p class="text-sm text-gray-500">
+    Terms: @(pricing.PaymentType == PaymentType.Cash ? "cash" : "bank transfer")
+    <br />
+    Due date: @pricing.IssuedOn.ToLocalTime().AddDays(pricing.DueDays).ToString("dd.MM.yyyy")
+</p>
+<p class="text-sm text-gray-500">
+    Late payment fee: @pricingOptions.Invoice.SurCharge
+</p>

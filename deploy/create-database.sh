@@ -2,9 +2,9 @@
 # Creates the database user and database described in appsettings.Secrets.json
 # on a PostgreSQL or MySQL server running on this machine. Run with sudo.
 #
-#   sudo deploy/create-database.sh /etc/carcare/appsettings.Secrets.json
+#   sudo deploy/create-database.sh /etc/vg-auto/appsettings.Secrets.json
 set -euo pipefail
-SECRETS="${1:-/etc/carcare/appsettings.Secrets.json}"
+SECRETS="${1:-/etc/vg-auto/appsettings.Secrets.json}"
 [[ -f "$SECRETS" ]] || { echo "Not found: $SECRETS" >&2; exit 1; }
 
 read_setting() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1]))["DbOptions"]; print(d.get(sys.argv[2], ""))' "$SECRETS" "$1"; }

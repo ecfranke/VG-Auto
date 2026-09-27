@@ -36,33 +36,33 @@ jobs:
         if: matrix.database == 'PostgreSql'
         run: |
           sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "CREATE ROLE carcare LOGIN SUPERUSER PASSWORD 'ci-password';"
+          sudo -u postgres psql -c "CREATE ROLE vgauto LOGIN SUPERUSER PASSWORD 'ci-password';"
 
       - name: Start MySQL
         if: matrix.database == 'MySql'
         run: |
           sudo systemctl start mysql.service
-          mysql -uroot -proot -e "CREATE USER 'carcare'@'%' IDENTIFIED BY 'ci-password'; GRANT ALL ON *.* TO 'carcare'@'%'; FLUSH PRIVILEGES;"
+          mysql -uroot -proot -e "CREATE USER 'vgauto'@'%' IDENTIFIED BY 'ci-password'; GRANT ALL ON *.* TO 'vgauto'@'%'; FLUSH PRIVILEGES;"
 
       - name: Build
         working-directory: backend/src
         run: |
-          touch Carmasters.Http.Api/appsettings.Secrets.json
-          dotnet build Carmasters.sln -c Release --nologo
+          touch VgAuto.Http.Api/appsettings.Secrets.json
+          dotnet build VgAuto.sln -c Release --nologo
 
       - name: Test
-        working-directory: backend/tests/Carmasters.Tests
+        working-directory: backend/tests/VgAuto.Tests
         env:
-          CARCARE_TEST_DB_PROVIDER: ${{ matrix.database }}
-          CARCARE_TEST_DB_HOST: 127.0.0.1
-          CARCARE_TEST_DB_USER: carcare
-          CARCARE_TEST_DB_PASSWORD: ci-password
+          VGAUTO_TEST_DB_PROVIDER: ${{ matrix.database }}
+          VGAUTO_TEST_DB_HOST: 127.0.0.1
+          VGAUTO_TEST_DB_USER: vgauto
+          VGAUTO_TEST_DB_PASSWORD: ci-password
         run: dotnet test -c Release --no-build --nologo --logger "console;verbosity=normal"
 
       - name: Check for vulnerable packages
         working-directory: backend/src
         run: |
-          dotnet list Carmasters.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          dotnet list VgAuto.sln package --vulnerable --include-transitive | tee vulnerable.txt
           ! grep -q "has the following vulnerable packages" vulnerable.txt
 
   frontend:

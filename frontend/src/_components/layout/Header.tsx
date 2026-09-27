@@ -40,11 +40,7 @@ function MobileNavIcon({ open }: { open: boolean }) {
   )
 }
 
-interface MobileNavigationProps {
-  onTryDemoClick?: () => void;
-}
-
-function MobileNavigation({ onTryDemoClick }: MobileNavigationProps) {
+function MobileNavigation() {
   return (
     <Popover>
       <PopoverButton
@@ -63,43 +59,32 @@ function MobileNavigation({ onTryDemoClick }: MobileNavigationProps) {
       >
         <hr className="m-2 border-slate-300/40" />
         <Button
-          href="https://github.com/rene98c/carcareco"
+          href="https://github.com/ecfranke/VG-Auto"
           variant="outline"
         >
-          View on GitHub
+          Source code
         </Button>
         <Button 
           href="/auth/login"
           color="blue"
           className="mt-2"
         >
-          Log in
+          Sign in
         </Button>
-        {onTryDemoClick && (
-          <button
-            onClick={onTryDemoClick}
-            className="mt-2 rounded-md bg-gray-200 px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-300"
-          >
-            Try the demo
-          </button>
-        )}
       </PopoverPanel>
     </Popover>
   )
 }
 
-interface HeaderProps {
-  onTryDemoClick?: () => void;
-}
-
-export function  Header({ onTryDemoClick }: HeaderProps) {
+export function Header() {
   return (
     <header className="py-10">
       <Container>
         <nav className="relative z-50 flex justify-between">
           <div className="flex items-center md:gap-x-12">
-            <Link href="#" aria-label="Home">
-              <Logo width={100} height={100} className="h-10 w-auto" /> 
+            <Link href="/" aria-label="VG Auto home" className="flex items-center gap-x-3">
+              <Logo width={100} height={100} className="h-10 w-auto" />
+              <span className="text-lg font-semibold text-slate-900">VG Auto</span>
             </Link>
             <div className="hidden md:flex md:gap-x-6">
               {/* Add navigation links here if needed */}
@@ -108,23 +93,17 @@ export function  Header({ onTryDemoClick }: HeaderProps) {
           <div className="flex items-center gap-x-5 md:gap-x-8">
             <div className="hidden md:block">
               <Button
-                href="https://github.com/rene98c/carcareco"
+                href="https://github.com/ecfranke/VG-Auto"
                 variant="outline"
               >
-                View on GitHub
+                Source code
               </Button>
             </div>
-            {onTryDemoClick ? (
-              <Button href="/auth/login" color="blue">
-                <span>Log in</span>
-              </Button>
-            ) : (
-              <Button href="/auth/login" color="blue">
-                <span>Log in</span>
-              </Button>
-            )}
+            <Button href="/auth/login" color="blue">
+              <span>Sign in</span>
+            </Button>
             <div className="-mr-1 md:hidden">
-              <MobileNavigation onTryDemoClick={onTryDemoClick} />
+              <MobileNavigation />
             </div>
           </div>
         </nav>

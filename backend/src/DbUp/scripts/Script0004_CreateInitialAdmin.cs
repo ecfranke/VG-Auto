@@ -1,6 +1,6 @@
 using System.Data;
 using System.Security.Cryptography;
-using Carmasters.Core.Application.Database;
+using VgAuto.Core.Application.Database;
 
 namespace DbUp.Scripts
 {
@@ -33,7 +33,7 @@ namespace DbUp.Scripts
             var email = string.IsNullOrWhiteSpace(settings.Email) ? null : settings.Email.Trim();
             var generated = string.IsNullOrWhiteSpace(settings.Password);
             var password = generated ? GeneratePassword() : settings.Password;
-            var passwordHash = Carmasters.Core.Application.Authorization.PasswordHasher.getHash(password);
+            var passwordHash = VgAuto.Core.Application.Authorization.PasswordHasher.getHash(password);
 
             byte[] profileImage = Array.Empty<byte>();
             var imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources", "default_admin.png");

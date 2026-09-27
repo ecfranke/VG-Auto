@@ -1,11 +1,11 @@
-# Generates backend/src/Carmasters.Http.Api/appsettings.Secrets.json and frontend/.env
+# Generates backend/src/VgAuto.Http.Api/appsettings.Secrets.json and frontend/.env
 # with cryptographically random secrets. Existing files are kept unless -Force is given.
 param([switch]$Force)
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 
-$AppSettingsExample = "backend/src/Carmasters.Http.Api/appsettings.Secrets.json.example"
-$AppSettingsTarget  = "backend/src/Carmasters.Http.Api/appsettings.Secrets.json"
+$AppSettingsExample = "backend/src/VgAuto.Http.Api/appsettings.Secrets.json.example"
+$AppSettingsTarget  = "backend/src/VgAuto.Http.Api/appsettings.Secrets.json"
 $EnvExample         = "frontend/.env.example"
 $EnvTarget          = "frontend/.env"
 
