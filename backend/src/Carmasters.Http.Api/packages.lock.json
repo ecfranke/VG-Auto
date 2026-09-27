@@ -25,9 +25,9 @@
       },
       "Npgsql": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "hCbO8box7i/XXiTFqCJ3GoowyLqx3JXxyrbOJ6om7dr+eAknvBNhhUHeJVGAQo44sySZTfdVffp4BrtPeLZOAA==",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "68BASXH0FAEuL/J4J0eRfYC8/3vzqQTmoW8zDzNf0JgaVxc7LZeEkS6jaG0ib3voFLxY5ZiCwJG+uQM+mzuu0Q==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         }
@@ -345,6 +345,15 @@
           "System.Security.Cryptography.Pkcs": "10.0.0"
         }
       },
+      "MySqlConnector": {
+        "type": "Transitive",
+        "resolved": "2.6.2",
+        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+        }
+      },
       "NETStandard.Library": {
         "type": "Transitive",
         "resolved": "1.6.1",
@@ -411,6 +420,15 @@
           "Remotion.Linq": "[2.2.0, 3.0.0)",
           "Remotion.Linq.EagerFetching": "[2.2.0, 3.0.0)",
           "System.Configuration.ConfigurationManager": "6.0.0"
+        }
+      },
+      "NHibernate.Driver.MySqlConnector": {
+        "type": "Transitive",
+        "resolved": "2.0.5",
+        "contentHash": "mKMKrr0vfj8m1zYiiZH76DRdN3cI/WMD1OCqmm7BHWcL/ofo+928JmTYFRXTD8KSmdol1T76hp+B0PzjVSVd4Q==",
+        "dependencies": {
+          "MySqlConnector": "1.0.0",
+          "NHibernate": "5.1.0"
         }
       },
       "Remotion.Linq": {
@@ -1370,7 +1388,7 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.2, )",
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
-          "Npgsql": "[9.0.2, )",
+          "Npgsql": "[9.0.4, )",
           "PuppeteerSharp": "[20.1.0, )",
           "Swashbuckle.AspNetCore.SwaggerGen": "[7.2.0, )",
           "System.IdentityModel.Tokens.Jwt": "[8.4.0, )",
@@ -1394,8 +1412,10 @@
           "FluentNHibernate": "[3.4.0, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.2, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.2, )",
+          "MySqlConnector": "[2.6.2, )",
           "NHibernate": "[5.5.2, )",
-          "Npgsql": "[9.0.2, )",
+          "NHibernate.Driver.MySqlConnector": "[2.0.5, )",
+          "Npgsql": "[9.0.4, )",
           "System.Net.Http": "[4.3.4, )",
           "System.Text.RegularExpressions": "[4.3.1, )"
         }

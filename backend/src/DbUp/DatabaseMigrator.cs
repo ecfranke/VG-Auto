@@ -4,6 +4,7 @@ using Carmasters.Core.Application.Configuration;
 using Carmasters.Core.Application.Database;
 using DbUp;
 using DbUp.Engine;
+using DbUp.Builder;
 using Microsoft.Extensions.Configuration;
 
 /// <summary>Creates / upgrades the database schema. Used by the DbUp console app and by the tests.</summary>
@@ -18,16 +19,29 @@ public static class DatabaseMigrator
         var options = new DbOptions();
         configuration.GetSection("DbOptions").Bind(options);
 
-        SqlDialect.Use(DatabaseProvider.PostgreSql);
-        var connectionString = PostgreSqlConnectionString(options);
+        SqlDialect.Use(options.Provider);
+        UpgradeEngineBuilder builder;
+        string scriptFolder;
 
-        // Creates the database on first run (the configured user needs CREATEDB, or create it beforehand).
-        EnsureDatabase.For.PostgresqlDatabase(connectionString);
+        if (options.Provider == DatabaseProvider.MySql)
+        {
+            var connectionString = MySqlConnectionString(options);
+            EnsureMySqlDatabase(options);
+            builder = DeployChanges.To.MySqlDatabase(connectionString);
+            scriptFolder = "DbUp.scripts_mysql.";
+        }
+        else
+        {
+            var connectionString = PostgreSqlConnectionString(options);
+            // Creates the database on first run (the configured user needs CREATEDB, or create it beforehand).
+            EnsureDatabase.For.PostgresqlDatabase(connectionString);
+            builder = DeployChanges.To.PostgresqlDatabase(connectionString);
+            scriptFolder = "DbUp.scripts.";
+        }
 
-        var builder = DeployChanges.To
-            .PostgresqlDatabase(connectionString)
+        builder = builder
             .WithScriptsAndCodeEmbeddedInAssembly(Assembly.GetExecutingAssembly(), scriptPath => scriptPath.EndsWith(".cs"))
-            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly(), script => script.StartsWith("DbUp.scripts.") && script.EndsWith(".sql"))
+            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly(), script => script.StartsWith(scriptFolder) && script.EndsWith(".sql"))
             .WithScriptNameComparer(new CustomScriptComparer())
             .WithVariablesDisabled();
 
@@ -46,6 +60,34 @@ public static class DatabaseMigrator
             Database = options.Name
         };
         return connectionBuilder.ToString();
+    }
+
+    public static string MySqlConnectionString(DbOptions options, bool withDatabase = true)
+    {
+        var connectionBuilder = new MySqlConnector.MySqlConnectionStringBuilder
+        {
+            Server = options.Host,
+            Port = (uint)options.Port,
+            UserID = options.UserId,
+            Password = options.Password,
+            GuidFormat = MySqlConnector.MySqlGuidFormat.Char36,
+            CharacterSet = "utf8mb4",
+            AllowUserVariables = true,
+        };
+        if (withDatabase) connectionBuilder.Database = options.Name;
+        return connectionBuilder.ToString();
+    }
+
+    /// <summary>Creates the database with utf8mb4 / case insensitive collation when it does not exist.</summary>
+    private static void EnsureMySqlDatabase(DbOptions options)
+    {
+        if (!Regex.IsMatch(options.Name ?? "", "^[A-Za-z0-9_\\-]+$"))
+            throw new ArgumentException("DbOptions:Name may only contain letters, digits, '_' and '-'.");
+        using var connection = new MySqlConnector.MySqlConnection(MySqlConnectionString(options, withDatabase: false));
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"CREATE DATABASE IF NOT EXISTS `{options.Name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci";
+        command.ExecuteNonQuery();
     }
 
     public record InitialAdminSettings(string? UserName, string? Password, string? Email);

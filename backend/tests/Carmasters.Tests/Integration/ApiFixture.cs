@@ -114,13 +114,15 @@ namespace Carmasters.Tests.Integration
         {
             var client = NewClient();
             var response = await client.PostAsJsonAsync("/api/auth/login", new { userName, password, serverSecret = ServerSecret });
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"login {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
             var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             if (json.TryGetProperty("codeRequired", out var required) && required.GetBoolean())
             {
                 var challengeId = json.GetProperty("challengeId").GetGuid();
                 var verify = await client.PostAsJsonAsync("/api/auth/verify", new { challengeId, code = Mailbox.LastCode(), serverSecret = ServerSecret });
-                verify.EnsureSuccessStatusCode();
+                if (!verify.IsSuccessStatusCode)
+                    throw new HttpRequestException($"verify {(int)verify.StatusCode}: {await verify.Content.ReadAsStringAsync()}");
                 json = await verify.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             }
             var login = System.Text.Json.JsonSerializer.Deserialize<LoginResult>(json, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));

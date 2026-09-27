@@ -57,6 +57,10 @@ builder.Services
     .AddLoginFlows(builder.Configuration);
 
 builder.Services.AddSingleton<RateLimitStrategyFactory>();
+if (builder.Configuration.GetValue("DbOptions:Provider", DatabaseProvider.PostgreSql) == DatabaseProvider.MySql)
+{
+    builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(o => o.JsonSerializerOptions.Converters.Add(new Carmasters.Http.Api.UtcDateTimeConverter()));
+}
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     // Only proxies on this machine (nginx, the Next.js server) are trusted by default.

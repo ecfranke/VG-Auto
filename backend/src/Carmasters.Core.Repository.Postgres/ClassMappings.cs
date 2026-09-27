@@ -77,7 +77,8 @@ namespace Carmasters.Core.Persistence.Postgres.Repositories
             var timestamp = NHibernateUtil.DateTime.NullSafeGet(rs, names[0], session, owner);
             if (timestamp != null && timestamp is DateTime)
             {
-                return DateTime.SpecifyKind(((DateTime)timestamp), DateTimeKind.Local);
+                // timestamps are stored in UTC
+                return DateTime.SpecifyKind(((DateTime)timestamp), DateTimeKind.Utc);
             }
             return null;
         }
@@ -86,7 +87,8 @@ namespace Carmasters.Core.Persistence.Postgres.Repositories
         {
             if (value != null)
             {
-                value = DateTime.SpecifyKind((DateTime)value, DateTimeKind.Utc);
+                var dt = (DateTime)value;
+                value = dt.Kind == DateTimeKind.Local ? dt.ToUniversalTime() : DateTime.SpecifyKind(dt, DateTimeKind.Utc);
             }
             NHibernateUtil.DateTime.NullSafeSet(cmd, value, index, session);
         }

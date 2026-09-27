@@ -44,13 +44,13 @@ namespace Carmasters.Core.Domain
 
         public  static Offer Create(Work work,Employee starter,  string notes)
         {
-            return new Offer(work,null,DateTime.Now, starter,notes: notes);
+            return new Offer(work,null,DateTime.UtcNow, starter,notes: notes);
         }
           
         public virtual RepairJob Accepted(short? targetJobNumber,string notes, Employee acceptor)
         {
             this.Acceptor = acceptor;
-            this.AcceptedOn = DateTime.Now;
+            this.AcceptedOn = DateTime.UtcNow;
             var targetJob =   work.Jobs.SingleOrDefault(x => x.OrderNr == targetJobNumber);
             if (targetJob == null) //create new job
             {
@@ -119,7 +119,7 @@ namespace Carmasters.Core.Domain
 
         protected internal virtual Offer MakeCopy(Work work,Employee starter)
         {
-            var offer = new Offer(work, null, DateTime.Now, starter, null,null, notes: Notes, IsVehicleLinesOnEstimate);
+            var offer = new Offer(work, null, DateTime.UtcNow, starter, null,null, notes: Notes, IsVehicleLinesOnEstimate);
 
             foreach (var product in this.products)
             {

@@ -312,20 +312,20 @@ $@" exists (select 1 from domain.productoffered p
 
             var issuanceSql = d.JsonObject(
                 ("invoiceNumber", "i.number"),
-                ("isPaid", "i.ispaid"),
+                ("isPaid", d.JsonBool("i.ispaid")),
                 ("dueDays", "i.duedays"),
-                ("issuedOn", "ip.issuedon"),
+                ("issuedOn", d.JsonTimestamp("ip.issuedon")),
                 ("issuedBy", "concat_ws(' ',ii.firstname,ii.lastname)"),
-                ("sentOn", "ip.senton"),
+                ("sentOn", d.JsonTimestamp("ip.senton")),
                 ("receiverEmail", "ip.email")) + " as issuance";
 
             var offerIssuanceSql = $@"(select {d.JsonObject(
                 ("id", "o.id"),
                 ("number", "e.number"),
-                ("acceptedOn", "o.acceptedon"),
+                ("acceptedOn", d.JsonTimestamp("o.acceptedon")),
                 ("acceptedBy", "concat_ws(' ',acp.firstname,acp.lastname)"),
-                ("sentOn", "p.senton"),
-                ("issuedOn", "p.issuedon"),
+                ("sentOn", d.JsonTimestamp("p.senton")),
+                ("issuedOn", d.JsonTimestamp("p.issuedon")),
                 ("issuedBy", "concat_ws(' ',emp.firstname,emp.lastname)"),
                 ("receiverEmail", "p.email"))}
 	from domain.offer o 

@@ -32,7 +32,7 @@ namespace Carmasters.Core.Domain
         
         public static RepairJob Create(  Work work,Employee starter, string notes)
         {
-            return new RepairJob( work, DateTime.Now, starter,notes: notes);
+            return new RepairJob( work, DateTime.UtcNow, starter,notes: notes);
         }
           
         public virtual void With(string notes)
@@ -62,7 +62,7 @@ namespace Carmasters.Core.Domain
 
         protected internal virtual RepairJob MakeCopy(Work work,Employee starter)
         {
-            var job = new RepairJob(work, DateTime.Now, starter, notes: Notes);
+            var job = new RepairJob(work, DateTime.UtcNow, starter, notes: Notes);
 
             foreach (var product in products)
             {

@@ -29,6 +29,16 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.2"
         }
       },
+      "MySqlConnector": {
+        "type": "Direct",
+        "requested": "[2.6.2, )",
+        "resolved": "2.6.2",
+        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+        }
+      },
       "NHibernate": {
         "type": "Direct",
         "requested": "[5.5.2, )",
@@ -42,11 +52,21 @@
           "System.Configuration.ConfigurationManager": "6.0.0"
         }
       },
+      "NHibernate.Driver.MySqlConnector": {
+        "type": "Direct",
+        "requested": "[2.0.5, )",
+        "resolved": "2.0.5",
+        "contentHash": "mKMKrr0vfj8m1zYiiZH76DRdN3cI/WMD1OCqmm7BHWcL/ofo+928JmTYFRXTD8KSmdol1T76hp+B0PzjVSVd4Q==",
+        "dependencies": {
+          "MySqlConnector": "1.0.0",
+          "NHibernate": "5.1.0"
+        }
+      },
       "Npgsql": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "hCbO8box7i/XXiTFqCJ3GoowyLqx3JXxyrbOJ6om7dr+eAknvBNhhUHeJVGAQo44sySZTfdVffp4BrtPeLZOAA==",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "68BASXH0FAEuL/J4J0eRfYC8/3vzqQTmoW8zDzNf0JgaVxc7LZeEkS6jaG0ib3voFLxY5ZiCwJG+uQM+mzuu0Q==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         }
@@ -1348,7 +1368,7 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.2, )",
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
-          "Npgsql": "[9.0.2, )",
+          "Npgsql": "[9.0.4, )",
           "PuppeteerSharp": "[20.1.0, )",
           "Swashbuckle.AspNetCore.SwaggerGen": "[7.2.0, )",
           "System.IdentityModel.Tokens.Jwt": "[8.4.0, )",

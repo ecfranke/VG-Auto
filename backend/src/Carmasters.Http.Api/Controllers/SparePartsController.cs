@@ -67,7 +67,7 @@ namespace Carmasters.Http.Api.Controllers
         {
 
             var storage = model.StorageId is not null ? repository.Get<Storage>(model.StorageId.GetValueOrDefault()) : null;
-            var spare = new SparePart(model.Code, model.Name, model.Price, model.Quantity, model.Discount, model.Description, DateTime.Now, storage);
+            var spare = new SparePart(model.Code, model.Name, model.Price, model.Quantity, model.Discount, model.Description, DateTime.UtcNow, storage);
             return spare;
         }
 

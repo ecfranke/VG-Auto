@@ -26,7 +26,8 @@ namespace Carmasters.Tests.Integration
                     {
                         var response = await server.PutAsJsonAsync("/api/profile/changepassword",
                             new { currentPassword = ApiFixture.AdminPassword, newPassword = NewPassword, confirmPassword = NewPassword });
-                        response.EnsureSuccessStatusCode();
+                        if (!response.IsSuccessStatusCode)
+                            throw new HttpRequestException($"changepassword {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
                     }
                     passwordChanged = true;
                 }

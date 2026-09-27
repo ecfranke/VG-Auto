@@ -119,7 +119,7 @@ namespace Carmasters.Http.Api.Controllers
         }
         protected override Employee CreateFrom(EmployeeDto model)
         {
-            var employee = new Employee(model.FirstName, model.LastName, DateTime.Now, model.Phone, model.Email, model.Proffession, model.Description);
+            var employee = new Employee(model.FirstName, model.LastName, DateTime.UtcNow, model.Phone, model.Email, model.Proffession, model.Description);
 
             return employee;
         }

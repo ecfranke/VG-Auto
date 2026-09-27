@@ -2,14 +2,24 @@
   "version": 1,
   "dependencies": {
     "net9.0": {
+      "dbup-mysql": {
+        "type": "Direct",
+        "requested": "[6.1.0, )",
+        "resolved": "6.1.0",
+        "contentHash": "ZPB9n/N+ABZJeTuDBAhXGk08NZ2Qw1DEy2seK/Ak7KhFzZGxOTiNkV50um495spoXPkHeSdQ+nj8YdUZ20H1Bg==",
+        "dependencies": {
+          "MySqlConnector": "2.3.5",
+          "dbup-core": "6.0.15"
+        }
+      },
       "dbup-postgresql": {
         "type": "Direct",
-        "requested": "[5.0.40, )",
-        "resolved": "5.0.40",
-        "contentHash": "w7uUc6ZIOIfp0BYV3PashcLP+GZTCG5oOkDJSk3pO/7B3zCbaeKTATtdnBzWbgL8ci6SYrCWgth3KvMtNMkvmg==",
+        "requested": "[6.1.5, )",
+        "resolved": "6.1.5",
+        "contentHash": "oIqxqC8f2j6/VLsvzV971sOcTugytrU2sot29GlBFMJQmnkBn3S15mSgA4Qt6fOx9sdbf2rp9yGUtvocBlKu3A==",
         "dependencies": {
-          "Npgsql": "3.2.7",
-          "dbup-core": "5.0.37"
+          "Npgsql": "9.0.4",
+          "dbup-core": "6.0.15"
         }
       },
       "Microsoft.Extensions.Configuration": {
@@ -43,11 +53,21 @@
           "Microsoft.Extensions.FileProviders.Abstractions": "9.0.2"
         }
       },
+      "MySqlConnector": {
+        "type": "Direct",
+        "requested": "[2.6.2, )",
+        "resolved": "2.6.2",
+        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+        }
+      },
       "Npgsql": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "hCbO8box7i/XXiTFqCJ3GoowyLqx3JXxyrbOJ6om7dr+eAknvBNhhUHeJVGAQo44sySZTfdVffp4BrtPeLZOAA==",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "68BASXH0FAEuL/J4J0eRfYC8/3vzqQTmoW8zDzNf0JgaVxc7LZeEkS6jaG0ib3voFLxY5ZiCwJG+uQM+mzuu0Q==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         }
@@ -120,11 +140,10 @@
       },
       "dbup-core": {
         "type": "Transitive",
-        "resolved": "5.0.37",
-        "contentHash": "++z5z25tgkJ4eiLp3MahAmTkEDQogj5SoGXfDX0PxatjQfGszuR5hK3JBaB1orfCJ68mjZGtKWEp9YcxXa4jjg==",
+        "resolved": "6.0.15",
+        "contentHash": "w0eaoyVitzgBiHTILEnj23smrbrxZ1nLF7K8uOyG6rvrctRtC0NTuSYHoB/3aq+B9hi9E/DiW9pOtNto5V9P3g==",
         "dependencies": {
-          "Microsoft.CSharp": "4.7.0",
-          "System.Diagnostics.TraceSource": "4.3.0"
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
         }
       },
       "FluentNHibernate": {
@@ -165,11 +184,6 @@
         "type": "Transitive",
         "resolved": "10.0.0",
         "contentHash": "2iilO1H+fkDBOsfYbFO57N1ElPsbWxNXyAekEtZ7b0sPrfm1akvLj+Wr7DzZy0fcEGUrez2jSyqAn4sTxDsgbg=="
-      },
-      "Microsoft.CSharp": {
-        "type": "Transitive",
-        "resolved": "4.7.0",
-        "contentHash": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Transitive",
@@ -718,22 +732,6 @@
           "Microsoft.NETCore.Platforms": "1.1.0",
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
-        }
-      },
-      "System.Diagnostics.TraceSource": {
-        "type": "Transitive",
-        "resolved": "4.3.0",
-        "contentHash": "VnYp1NxGx8Ww731y2LJ1vpfb/DKVNKEZ8Jsh5SgQTZREL/YpWRArgh9pI8CDLmgHspZmLL697CaLvH85qQpRiw==",
-        "dependencies": {
-          "Microsoft.NETCore.Platforms": "1.1.0",
-          "System.Collections": "4.3.0",
-          "System.Diagnostics.Debug": "4.3.0",
-          "System.Globalization": "4.3.0",
-          "System.Resources.ResourceManager": "4.3.0",
-          "System.Runtime": "4.3.0",
-          "System.Runtime.Extensions": "4.3.0",
-          "System.Threading": "4.3.0",
-          "runtime.native.System": "4.3.0"
         }
       },
       "System.Diagnostics.Tracing": {
@@ -1433,7 +1431,7 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.2, )",
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
-          "Npgsql": "[9.0.2, )",
+          "Npgsql": "[9.0.4, )",
           "PuppeteerSharp": "[20.1.0, )",
           "Swashbuckle.AspNetCore.SwaggerGen": "[7.2.0, )",
           "System.IdentityModel.Tokens.Jwt": "[8.4.0, )",

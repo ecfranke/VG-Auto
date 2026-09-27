@@ -46,9 +46,7 @@ namespace Carmasters.Core.Persistence.Postgres.NHibernate
             {
                 throw new Exception("Current principal is not valid, spn missing");
             }
-            var connectionBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString); 
-            connectionBuilder.Database = new MultiTenancyDbName(options, tenantName); 
-            connection.ConnectionString = connectionBuilder.ToString();
+            connection.ConnectionString = Carmasters.Core.Persistence.DbConnectionFactory.BuildConnectionString(options, new MultiTenancyDbName(options, tenantName));
             connection.Open();
             return connection;
         } 
@@ -57,15 +55,8 @@ namespace Carmasters.Core.Persistence.Postgres.NHibernate
             base.ConfigureDriver(settings);
         }
         public string BuildConnectionString()
-        {  
-            var connectionBuilder = new Npgsql.NpgsqlConnectionStringBuilder(); 
-            connectionBuilder.Host = options.Host;
-            connectionBuilder.Port = options.Port;
-            connectionBuilder.Database = new MultiTenancyDbName(options, DbKind.Template);
-            connectionBuilder.Username = options.UserId;
-            connectionBuilder.Password = options.Password;
-            return connectionBuilder.ToString();
-
+        {
+            return Carmasters.Core.Persistence.DbConnectionFactory.BuildConnectionString(options, new MultiTenancyDbName(options, DbKind.Template));
         } 
     }
 }

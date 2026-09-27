@@ -25,7 +25,7 @@ namespace Carmasters.Core.Domain
          
         public  virtual  SparePart AddNewSparePart(string code, string name, decimal price, decimal quantity, short? discount,string description)
         {
-            var spare = new SparePart(code, name, price, quantity, discount,description,DateTime.Now);
+            var spare = new SparePart(code, name, price, quantity, discount,description,DateTime.UtcNow);
             spare.StoredAt(this);
             return spare;
         }

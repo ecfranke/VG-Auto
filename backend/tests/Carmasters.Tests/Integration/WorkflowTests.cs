@@ -115,6 +115,13 @@ namespace Carmasters.Tests.Integration
             var activities = await Json(await server.GetAsync($"/api/work/{workId}/activities"));
             Assert.Equal("offer", activities.GetProperty("items")[0].GetProperty("name").GetString());
             var offerNumber = activities.GetProperty("items")[0].GetProperty("number").GetString();
+
+            // timestamps are UTC and identical whether they come from the ORM or from SQL queries
+            var workDetails = await Json(await server.GetAsync($"/api/work/{workId}"));
+            var startedByOrm = workDetails.GetProperty("startedOn").GetDateTimeOffset();
+            var startedBySql = activities.GetProperty("items")[0].GetProperty("startedOn").GetDateTimeOffset();
+            Assert.True(Math.Abs((startedByOrm - DateTimeOffset.UtcNow).TotalMinutes) < 5, $"work started {startedByOrm}");
+            Assert.True(Math.Abs((startedBySql - DateTimeOffset.UtcNow).TotalMinutes) < 5, $"offer started {startedBySql}");
             Assert.True(activities.GetProperty("current").GetProperty("priceSummary").GetProperty("totalWithVat").GetDecimal() > 0);
 
             // issue the estimate and send it

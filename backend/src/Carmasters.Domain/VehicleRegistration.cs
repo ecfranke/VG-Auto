@@ -20,7 +20,7 @@ namespace Carmasters.Core.Domain
                 throw new ArgumentNullException(nameof(owner));
             }
 
-            return new VehicleRegistration(vehicle,DateTime.Now, null) { Owner = owner };
+            return new VehicleRegistration(vehicle,DateTime.UtcNow, null) { Owner = owner };
         }
         private readonly Vehicle vehicle; 
         public  virtual Client Owner { get; protected set; }
@@ -30,7 +30,7 @@ namespace Carmasters.Core.Domain
 
         public  virtual void End() 
         {
-            this.DateTimeTo = DateTime.Now;
+            this.DateTimeTo = DateTime.UtcNow;
         }
 
         public override bool Equals(object obj)

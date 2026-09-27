@@ -21,7 +21,7 @@ namespace Carmasters.Core.Domain
         {
             Id = id.GetValueOrDefault();
             StartedOn = startedOn;
-            this.ChangedOn = DateTime.Now;
+            this.ChangedOn = DateTime.UtcNow;
             this.Starter = starter ?? throw new ArgumentNullException(nameof(starter));
             this.client = client;
             this.Vehicle = vehicle;
@@ -63,7 +63,7 @@ namespace Carmasters.Core.Domain
 
         public virtual Work CreateCopy( int newNumber,Employee starter)
         {
-            var work = new Work(newNumber,DateTime.Now,starter,Client,Vehicle,null,notes:Notes,odo:Odo);
+            var work = new Work(newNumber,DateTime.UtcNow,starter,Client,Vehicle,null,notes:Notes,odo:Odo);
             foreach (var job in jobs)
             {
                 work.jobs.Add(job.MakeCopy(work, starter));
@@ -79,7 +79,7 @@ namespace Carmasters.Core.Domain
         public virtual void Complete(Employee completer)
         {
             this.Completer = completer;
-            this.CompletedOn = DateTime.Now;
+            this.CompletedOn = DateTime.UtcNow;
         }
 
         public virtual void Assign(Employee mechanic) 
@@ -127,7 +127,7 @@ namespace Carmasters.Core.Domain
             var number = numberProvider.
                 GetNumberProvider<Work>().Next();
 
-            return new Work(number,DateTime.Now,starter,client,vehicle,null,notes,odo); 
+            return new Work(number,DateTime.UtcNow,starter,client,vehicle,null,notes,odo); 
         }
 
         public virtual int Number { get; protected set; }
@@ -194,7 +194,7 @@ namespace Carmasters.Core.Domain
 
         public virtual void Changed()
         {
-            ChangedOn = DateTime.Now;
+            ChangedOn = DateTime.UtcNow;
         }
     }
 }

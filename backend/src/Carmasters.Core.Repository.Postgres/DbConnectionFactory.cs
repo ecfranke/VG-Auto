@@ -39,6 +39,18 @@ namespace Carmasters.Core.Persistence
                         Password = options.Password,
                         Database = databaseName
                     }.ToString();
+                case DatabaseProvider.MySql:
+                    var builder = new MySqlConnector.MySqlConnectionStringBuilder
+                    {
+                        Server = options.Host,
+                        Port = (uint)options.Port,
+                        UserID = options.UserId,
+                        Password = options.Password,
+                        GuidFormat = MySqlConnector.MySqlGuidFormat.Char36,
+                        CharacterSet = "utf8mb4",
+                    };
+                    if (!string.IsNullOrEmpty(databaseName)) builder.Database = databaseName;
+                    return builder.ToString();
                 default:
                     throw new NotSupportedException($"Database provider {options.Provider} is not supported.");
             }
@@ -47,6 +59,7 @@ namespace Carmasters.Core.Persistence
         public DbConnection Create(string databaseName) => options.Provider switch
         {
             DatabaseProvider.PostgreSql => new Npgsql.NpgsqlConnection(ConnectionString(databaseName)),
+            DatabaseProvider.MySql => new MySqlConnector.MySqlConnection(ConnectionString(databaseName)),
             _ => throw new NotSupportedException($"Database provider {options.Provider} is not supported.")
         };
 

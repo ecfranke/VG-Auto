@@ -23,7 +23,7 @@ namespace Carmasters.Core.Domain
         public  virtual bool IsPaid { get; protected internal set; }
         public  virtual bool IsCredited { get; }
 
-        public virtual bool IsOverDue => !IsPaid && this.IssuedOn.AddDays(DueDays) <= DateTime.Now;
+        public virtual bool IsOverDue => !IsPaid && this.IssuedOn.AddDays(DueDays) <= DateTime.UtcNow;
         public override string GetFileName()
         {
             return $"invoice_nr_{Number}.pdf";
@@ -38,14 +38,14 @@ namespace Carmasters.Core.Domain
             get
             {
                 if (IsPaid) return "Paid";
-                if (IsOverDue) return $"Payment overdue {(DateTime.Today - this.IssuedOn.AddDays(DueDays).Date).Days} days";
-                return $"Duedate in {(this.IssuedOn.AddDays(DueDays).Date - DateTime.Today).Days} days";
+                if (IsOverDue) return $"Payment overdue {(DateTime.UtcNow.Date - this.IssuedOn.AddDays(DueDays).Date).Days} days";
+                return $"Duedate in {(this.IssuedOn.AddDays(DueDays).Date - DateTime.UtcNow.Date).Days} days";
             }
         }
 
         internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,int purchaseTax,PaymentType paymentType, short dueDays, Employee issuer)
         {
-            var invoice = new Invoice(numberProvider.Next(), issuer, DateTime.Now,paymentType, dueDays,null);
+            var invoice = new Invoice(numberProvider.Next(), issuer, DateTime.UtcNow,paymentType, dueDays,null);
             
             invoice.ApplyClientInformation(work.Client);
             invoice.ApplyVehicleInformation(null);

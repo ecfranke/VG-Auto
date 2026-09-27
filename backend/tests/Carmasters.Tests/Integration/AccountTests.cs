@@ -49,14 +49,7 @@ namespace Carmasters.Tests.Integration
             })).EnsureSuccessStatusCode();
 
             // simulate an administrator created account that must change its password
-            await using (var connection = new Npgsql.NpgsqlConnection(
-                $"Host={TestDatabase.Host};Port={TestDatabase.Port};Username={TestDatabase.User};Password={TestDatabase.Password};Database={api.DatabaseName}"))
-            {
-                await connection.OpenAsync();
-                await using var cmd = connection.CreateCommand();
-                cmd.CommandText = "update public.user set must_change_password = true where username = 'tempuser'";
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await TestDatabase.Execute(api.DatabaseName, "update public.user set must_change_password = true where username = 'tempuser'");
 
             var (tempServer, _, login) = await api.LoginAsync("tempuser", "Temp-Pass-2026-x");
             Assert.True(login.MustChangePassword);

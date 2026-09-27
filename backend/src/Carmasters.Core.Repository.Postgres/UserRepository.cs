@@ -156,7 +156,7 @@ namespace Carmasters.Core.Repository.Postgres
                                 LockedUntil = user.LockedUntil,
                                 TenantName = user.Id.TenantName,
                                 EmployeeId = user.Id.EmployeeId
-                            });
+                            }, transaction);
 
                         if (rowsAffected == 0)
                         {

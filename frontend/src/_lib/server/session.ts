@@ -22,6 +22,7 @@ interface SessionPayload extends JWTPayload{
 }
  
  async function decrypt(session: string | undefined = '') {
+  if (!session) return undefined;
   try {
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: ['HS256'],

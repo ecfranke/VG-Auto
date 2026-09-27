@@ -64,7 +64,7 @@ namespace Carmasters.Core.Domain
         public virtual async Task Send(IPricingSender sender, string receipient)
         { 
             this.Email = receipient;
-            this.SentOn = DateTime.Now;
+            this.SentOn = DateTime.UtcNow;
             await sender.Send(this);
         }
 
@@ -95,7 +95,7 @@ namespace Carmasters.Core.Domain
         protected void IssuedNowBy(Employee issuer)
         {
             Issuer = issuer ?? throw new ArgumentNullException(nameof(issuer));
-            IssuedOn = DateTime.Now;
+            IssuedOn = DateTime.UtcNow;
         }
 
         public abstract string GetNumber();

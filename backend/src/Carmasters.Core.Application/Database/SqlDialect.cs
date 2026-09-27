@@ -68,6 +68,12 @@ namespace Carmasters.Core.Application.Database
 
         public abstract string CurrentTimestamp { get; }
 
+        /// <summary>A timestamp inside a JSON object, formatted as ISO 8601 UTC.</summary>
+        public virtual string JsonTimestamp(string expression) => expression;
+
+        /// <summary>A boolean column inside a JSON object (true/false, not 1/0).</summary>
+        public virtual string JsonBool(string expression) => expression;
+
         public virtual string Paging(string limitParameter, string offsetParameter) => $"LIMIT {limitParameter} OFFSET {offsetParameter}";
 
         /// <summary>Escapes LIKE wildcards in user supplied text and wraps it with %.</summary>
@@ -132,5 +138,7 @@ namespace Carmasters.Core.Application.Database
         public override string AddDays(string timestampExpression, string daysExpression) => $"DATE_ADD({timestampExpression}, INTERVAL {daysExpression} DAY)";
         public override string FormatMonthYear(string dateExpression) => $"DATE_FORMAT({dateExpression}, '%m-%Y')";
         public override string CurrentTimestamp => "CURRENT_TIMESTAMP(6)";
+        public override string JsonTimestamp(string expression) => $"DATE_FORMAT({expression}, '%Y-%m-%dT%H:%i:%s.%fZ')";
+        public override string JsonBool(string expression) => $"IF({expression}, CAST('true' AS JSON), CAST('false' AS JSON))";
     }
 }

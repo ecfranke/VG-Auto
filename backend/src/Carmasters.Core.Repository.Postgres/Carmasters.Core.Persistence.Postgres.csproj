@@ -19,7 +19,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.2" />
     <PackageReference Include="NHibernate" Version="5.5.2" />
-    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="NHibernate.Driver.MySqlConnector" Version="2.0.5" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>

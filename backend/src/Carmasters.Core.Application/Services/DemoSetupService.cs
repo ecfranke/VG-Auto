@@ -38,6 +38,10 @@ namespace Carmasters.Core.Application.Services
             {
                 throw new InvalidOperationException("Multi-tenancy must be enabled for demo setup");
             }
+            if (_dbOptions.Provider != Carmasters.Core.Application.Database.DatabaseProvider.PostgreSql)
+            {
+                throw new InvalidOperationException("Demo tenants (multi-tenancy) are only supported on PostgreSQL.");
+            }
 
             string tenantName = ShortGuid.NewGuid();
             string username = $"demo{tenantName}";

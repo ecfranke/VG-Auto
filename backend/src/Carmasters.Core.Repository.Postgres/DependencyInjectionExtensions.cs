@@ -21,31 +21,25 @@ namespace Carmasters.Core.Repository.Postgres
         public static IServiceCollection AddPersistanceServices(this IServiceCollection services, IConfiguration configuration)
         {
             Dapper.SqlMapper.AddTypeHandler(new Carmasters.Core.Application.Dapper.JsonNodeTypeHandler());
-            var connectionBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
             var options = new DbOptions(); configuration.GetSection("DbOptions").Bind(options);
-            connectionBuilder.Host = options.Host;
-            connectionBuilder.Port = options.Port;
-            connectionBuilder.Username = options.UserId;
-            connectionBuilder.Password = options.Password;
-            connectionBuilder.Database = options.Name;
+            SqlDialect.Use(options.Provider);
+            var connectionFactory = new Carmasters.Core.Persistence.DbConnectionFactory(options);
             var multitenancyEnabled = options.MultiTenancy?.Enabled == true;
             var defaultFactory = default(ISessionFactory);
             var mappingAssemblies = new System.Collections.Generic.List<Assembly>() { typeof(UserDbMapping).Assembly };
             if (multitenancyEnabled)
             {
-                connectionBuilder.Database = new MultiTenancyDbName(options, DbKind.Tenancy);
-                defaultFactory = NNhibernateFactory.BuildSessionFactory(mappingAssemblies, connectionBuilder.ToString());
+                defaultFactory = NNhibernateFactory.BuildSessionFactory(options.Provider, mappingAssemblies,
+                    connectionFactory.ConnectionString(new MultiTenancyDbName(options, DbKind.Tenancy)));
             }
             else 
             {
                 mappingAssemblies.Add(typeof(WorkMapping).Assembly);
-                defaultFactory = NNhibernateFactory.BuildSessionFactory(mappingAssemblies, connectionBuilder.ToString());
+                defaultFactory = NNhibernateFactory.BuildSessionFactory(options.Provider, mappingAssemblies, connectionFactory.ConnectionString(options.Name));
             }        
 
             var appFactory = default(ISessionFactory);
             
-            SqlDialect.Use(options.Provider);
-            var connectionFactory = new Carmasters.Core.Persistence.DbConnectionFactory(options);
             services.AddSingleton<IDbConnectionFactory>(connectionFactory);
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<Carmasters.Core.Application.Authentication.IAuthChallengeRepository, Carmasters.Core.Persistence.AuthChallengeRepository>();
@@ -63,7 +57,7 @@ namespace Carmasters.Core.Repository.Postgres
                         {
                             if (appFactory == null) //double if, if anyone was waiting it might have been initialized already
                             {
-                                appFactory = NNhibernateFactory.BuildSessionFactory(new System.Collections.Generic.List<Assembly>() { typeof(WorkMapping).Assembly });
+                                appFactory = NNhibernateFactory.BuildSessionFactory(options.Provider, new System.Collections.Generic.List<Assembly>() { typeof(WorkMapping).Assembly });
                             }
                         }
                     } 
@@ -82,7 +76,7 @@ namespace Carmasters.Core.Repository.Postgres
             services.AddScoped<EstimateSequenceNumberProvider>(); 
             services.AddScoped<UnitOfWorkAspect>();
             services.AddSingleton<DbConnectionProvider>();
-            services.AddScoped<DbConnection>(x => new Npgsql.NpgsqlConnection());
+            services.AddScoped<DbConnection>(x => connectionFactory.Create(null));
             services.AddSingleton<MultiTenancyConnectionDriver>();
             services.AddSingleton<DatabaseBackup>();
             services.AddScoped<ITenancyRepository, TenancyRepository>();
