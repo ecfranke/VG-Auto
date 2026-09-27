@@ -19,6 +19,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NHibernate.Criterion;
 
+using System.Threading;
+
 namespace Carmasters.Core.Application.Services
 {
     public interface IPdfGenerator
@@ -124,7 +126,9 @@ namespace Carmasters.Core.Application.Services
             this.footerHtmlGenerator = footerHtmlGenerator;
             this.logger = logger;
             var addressFeature = server.Features.Get<IServerAddressesFeature>();
-            serverUri=  new Uri(addressFeature.Addresses.ToList().SingleOrDefault());
+            // the css used in the PDF is loaded from this API itself
+            var address = addressFeature?.Addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? addressFeature?.Addresses.FirstOrDefault() ?? "http://localhost:15567";
+            serverUri = new Uri(address.Replace("://+", "://localhost").Replace("://*", "://localhost").Replace("://0.0.0.0", "://localhost"));
             logger.LogDebug("Pdf service reachable at : " + serverUri); 
         }
 
@@ -141,7 +145,10 @@ namespace Carmasters.Core.Application.Services
         public async Task<byte[]> Generate(Pricing pricing ) 
         {  
             var stream = default(MemoryStream);
-            var pdfLocalFile = new FileInfo(Path.Combine(configuration["PdfDirectory"], pricing.GetFileName()));
+            var pdfDirectory = configuration["PdfDirectory"];
+            if (string.IsNullOrWhiteSpace(pdfDirectory)) pdfDirectory = Path.Combine(AppContext.BaseDirectory, "pdf");
+            Directory.CreateDirectory(pdfDirectory);
+            var pdfLocalFile = new FileInfo(Path.Combine(pdfDirectory, pricing.GetFileName()));
             stream = await Print(pricing);
             using (stream)
             {
@@ -152,23 +159,41 @@ namespace Carmasters.Core.Application.Services
             }
         }
 
-        private static string _executablePath; 
-        private async Task PreparePuppeteerAsync( )
+        private static string _executablePath;
+        private static readonly SemaphoreSlim browserGate = new(1, 1);
+
+        /// <summary>
+        /// Uses PuppeteerExecutablePath (an installed Chrome/Chromium/Edge) when configured,
+        /// otherwise downloads Chrome once into PuppeteerPath.
+        /// </summary>
+        private async Task PreparePuppeteerAsync()
         {
-            if (!string.IsNullOrWhiteSpace(_executablePath)) return;//TODO is it threadsafe?
+            if (!string.IsNullOrWhiteSpace(_executablePath)) return;
+            await browserGate.WaitAsync();
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(_executablePath)) return;
 
+                var installed = configuration["PuppeteerExecutablePath"];
+                if (!string.IsNullOrWhiteSpace(installed))
+                {
+                    if (!File.Exists(installed)) throw new FileNotFoundException($"PuppeteerExecutablePath '{installed}' does not exist.");
+                    _executablePath = installed;
+                    return;
+                }
 
-            var downloadPath = configuration["PuppeteerPath"];
-            var browserOptions = new BrowserFetcherOptions { 
-                Path = downloadPath , 
-            };
-            var browserFetcher = new BrowserFetcher(browserOptions);
-
-            var stableVersion = await browserFetcher.DownloadAsync(BrowserTag.Stable);
-
-            _executablePath = browserFetcher.GetExecutablePath(stableVersion.BuildId);
-            logger.LogDebug("Puppeteer downloaded browser : " + _executablePath);
-
+                var downloadPath = configuration["PuppeteerPath"];
+                if (string.IsNullOrWhiteSpace(downloadPath))
+                    downloadPath = Path.Combine(AppContext.BaseDirectory, "puppeteer");
+                var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions { Path = downloadPath });
+                var stableVersion = await browserFetcher.DownloadAsync(BrowserTag.Stable);
+                _executablePath = browserFetcher.GetExecutablePath(stableVersion.BuildId);
+                logger.LogInformation("Puppeteer browser: {path}", _executablePath);
+            }
+            finally
+            {
+                browserGate.Release();
+            }
         }
 
         private async Task<MemoryStream> Print(Pricing pricing )

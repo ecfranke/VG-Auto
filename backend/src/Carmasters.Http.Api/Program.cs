@@ -26,6 +26,9 @@ using Microsoft.Extensions.Logging;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseStaticWebAssets();
+// Integrates with systemd (Type=notify, journald) and Windows services; no effect when run from a console.
+builder.Host.UseSystemd();
+builder.Host.UseWindowsService();
 
 // Secrets live outside source control. Environment variables (e.g. DbOptions__Password) override files.
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: false);

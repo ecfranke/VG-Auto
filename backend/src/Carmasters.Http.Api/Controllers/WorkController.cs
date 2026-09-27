@@ -593,7 +593,9 @@ order by page.sortkey desc").ToResult();
 
         private void DeletePdf(Pricing pricing) 
         {
-            var pdfLocalFile = new FileInfo(Path.Combine(configuration["PdfDirectory"], pricing.GetFileName()));
+            var pdfDirectory = configuration["PdfDirectory"];
+            if (string.IsNullOrWhiteSpace(pdfDirectory)) pdfDirectory = Path.Combine(AppContext.BaseDirectory, "pdf");
+            var pdfLocalFile = new FileInfo(Path.Combine(pdfDirectory, pricing.GetFileName()));
             if (pdfLocalFile.Exists) 
             {
                 pdfLocalFile.Delete();

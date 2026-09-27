@@ -30,19 +30,17 @@ const patternsMap = new Map();
 const remotePatterns = [...patternsMap.values()];
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-module.exports = {
   images: {
     remotePatterns,
     formats: ['image/avif', 'image/webp'],
   },
   experimental: {
     serverActions: {
+      // profile pictures (max 5 MB) are uploaded through a server action
       bodySizeLimit: '10mb',
-    }, 
-  }, 
-}
+    },
+  },
+  poweredByHeader: false,
+};
 
 export default nextConfig;

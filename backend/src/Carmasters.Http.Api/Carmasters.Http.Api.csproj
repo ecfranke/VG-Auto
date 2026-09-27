@@ -33,6 +33,8 @@
 		<PackageReference Include="Npgsql" Version="9.0.4" />
 		<PackageReference Include="PuppeteerSharp" Version="20.1.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.20" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.20" />
 	</ItemGroup>
 	<PropertyGroup>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
