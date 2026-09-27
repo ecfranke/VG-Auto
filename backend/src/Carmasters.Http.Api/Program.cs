@@ -88,6 +88,8 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 app.UseStatusCodePages();
 app.UseNHibernate();
 
+// wwwroot (tailwind.css, print.css) is public: the PDF renderer loads it without a token
+app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("DefaultPolicy");
 app.UseAuthentication();

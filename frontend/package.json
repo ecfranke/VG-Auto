@@ -24,10 +24,10 @@
     "jose": "^5.9.6",
     "jwt-decode": "^4.0.0",
     "moment": "^2.30.1",
-    "next": "^15.1.7",
+    "next": "^15.5.26",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "uuid": "^11.0.5"
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

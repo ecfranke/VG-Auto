@@ -33,6 +33,15 @@ namespace Carmasters.Tests.Integration
         }
 
         [DbFact]
+        public async Task Stylesheets_for_the_pdf_renderer_are_public()
+        {
+            foreach (var css in new[] { "/tailwind.css", "/print.css" })
+            {
+                Assert.Equal(HttpStatusCode.OK, (await api.Anonymous().GetAsync(css)).StatusCode);
+            }
+        }
+
+        [DbFact]
         public async Task Wrong_server_secret_is_rejected()
         {
             var response = await api.Anonymous().PostAsJsonAsync("/api/users/authenticate",
