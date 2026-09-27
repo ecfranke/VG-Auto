@@ -10,6 +10,7 @@ using Carmasters.Core.Application.Extensions.DependencyInjection;
 using Carmasters.Core.Application.Printing;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
+using Carmasters.Core.Application.Email;
 using Carmasters.Core.Domain;
 using Carmasters.Core.Repository.Postgres;
 using Microsoft.AspNetCore.Builder;
@@ -40,7 +41,7 @@ builder.Services
     .AddScoped<PricingFooterHtmlGenerator>()
     .AddScoped<PricingBodyHtmlGenerator>()
     .AddScoped<IPricingSender, PricingPdfMailSender>()
-    .AddSingleton<ISmtpClientFactory, SmtpClientFactory>()
+    .AddEmail(builder.Configuration)
     .AddDemoSetupServices()
     .AddCorsToApp(builder.Configuration)
     .AddControllersWithViewsToApp()

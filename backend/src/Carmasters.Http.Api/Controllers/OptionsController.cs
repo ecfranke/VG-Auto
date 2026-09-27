@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 using Microsoft.Extensions.DependencyInjection;
+using Carmasters.Core.Domain;
 using Carmasters.Core.Application.Extensions;
 
 namespace Carmasters.Http.Api.Controllers
@@ -62,6 +63,32 @@ namespace Carmasters.Http.Api.Controllers
                 logger.LogError(ex, "Error saving tenant configuration");
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed to save configuration");
             }
+        }
+
+        public record TestEmailDto(string To);
+
+        /// <summary>Sends a test message through the configured transport (SMTP or Microsoft Graph).</summary>
+        [HttpPost("testemail")]
+        public async Task<ActionResult> SendTestEmail([FromBody] TestEmailDto model,
+            [FromServices] Carmasters.Core.Application.Email.IEmailSender emailSender)
+        {
+            if (string.IsNullOrWhiteSpace(model?.To)) throw new UserException("Recipient is required.");
+            var requisites = await tenantConfigService.GetRequisitesAsync();
+            var message = new Carmasters.Core.Application.Email.EmailMessage(model.To, "Test email", $"This is a test email sent via {emailSender.Name}.")
+            {
+                FromName = requisites.Name,
+                ReplyTo = requisites.Email,
+                FallbackFromAddress = requisites.Email,
+            };
+            try
+            {
+                await emailSender.SendAsync(message);
+            }
+            catch (Carmasters.Core.Application.Email.EmailDeliveryException ex)
+            {
+                throw new UserException(ex.Message);
+            }
+            return Ok(new { transport = emailSender.Name });
         }
 
         [HttpGet("dbdump")]

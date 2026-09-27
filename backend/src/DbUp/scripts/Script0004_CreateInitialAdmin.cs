@@ -45,7 +45,7 @@ namespace DbUp.Scripts
                 command.CommandText = $@"INSERT INTO {employeeTable} (id, firstname, lastname, email, phone, proffession, description, introducedat)
                     VALUES (@Id, 'System', 'Administrator', @Email, '', 'Administrator', 'Initial system administrator', {dialect.CurrentTimestamp})";
                 AddParameter(command, "@Id", employeeId);
-                AddParameter(command, "@Email", (object)email ?? DBNull.Value);
+                AddParameter(command, "@Email", (object?)email ?? DBNull.Value);
                 command.ExecuteNonQuery();
             }
 
@@ -55,7 +55,7 @@ namespace DbUp.Scripts
                     VALUES (@Username, @Password, 'template', @Email, @Validated, @ProfileImage, @EmployeeId, @MustChange)";
                 AddParameter(command, "@Username", userName);
                 AddParameter(command, "@Password", passwordHash);
-                AddParameter(command, "@Email", (object)email ?? DBNull.Value);
+                AddParameter(command, "@Email", (object?)email ?? DBNull.Value);
                 AddParameter(command, "@Validated", false);
                 AddParameter(command, "@ProfileImage", profileImage);
                 AddParameter(command, "@EmployeeId", employeeId);

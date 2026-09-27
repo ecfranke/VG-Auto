@@ -4,6 +4,7 @@ import SettingsTabs from "@/_components/SettingsTabs";
 import Main from "../_components/Main";
 import Link from "next/link";
 import { DescriptionItem } from "@/_components/DescriptionItem";
+import { sendTestEmail } from "./testEmail";
 
 export default async function Page() {
 
@@ -52,6 +53,17 @@ export default async function Page() {
                     <DescriptionItem label='Email content' className="whitespace-pre-line" value={options.pricing.estimate.emailContent}></DescriptionItem> 
                 </dl>
             </div>
+            <div className=" pt-8   px-0">
+                <h3 className="text-base/7 font-semibold text-gray-900">Email delivery</h3>
+                <p className="mt-1 max-w-2xl text-sm/6 text-gray-500">Estimates, invoices and login codes are sent through the transport configured on the server (SMTP or Microsoft Graph).</p>
+            </div>
+            <form action={sendTestEmail} className="mt-4 flex items-center gap-x-3">
+                <input name="testEmailTo" type="email" required placeholder="you@example.com" defaultValue={options.requisites.email}
+                    className="block w-full max-w-xs rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600" />
+                <button type="submit" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
+                    Send test email
+                </button>
+            </form>
              <div className="mt-6 flex items-center justify-end gap-x-6">
                 <Link href={`/home/settings/edit`}
                     type="button"

@@ -16,7 +16,6 @@ namespace Carmasters.Core.Application.Configuration
 
     public record AppOptions(RequisitesOptions Requisites, PricingOptions Pricing) { public AppOptions() : this(default, default) { } }
 
-    public record SmtpOptions(string Host, int Port, string User, string Password) { public SmtpOptions() : this(default, default, default, default) { } }
 
     public enum DbKind
     {

@@ -15,7 +15,6 @@ namespace Carmasters.Core.Application.Extensions.DependencyInjection
             services.ConfigureWritable<RequisitesOptions>(configuration.GetSection("Requisites"));
             services.Configure<PricingOptions>(configuration.GetSection("Pricing"));
             services.Configure<RequisitesOptions>(configuration.GetSection("Requisites"));
-            services.Configure<SmtpOptions>(configuration.GetSection("SmtpOptions"));
             services.Configure<DbOptions>(configuration.GetSection("DbOptions"));
             return services;
         }

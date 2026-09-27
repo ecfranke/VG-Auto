@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Carmasters.Core.Persistence.Postgres")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Carmasters.Tests")]
 
 namespace Carmasters.Core.Application.Model
 {

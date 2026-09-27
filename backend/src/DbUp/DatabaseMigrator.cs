@@ -48,7 +48,7 @@ public static class DatabaseMigrator
         return connectionBuilder.ToString();
     }
 
-    public record InitialAdminSettings(string UserName, string Password, string Email);
+    public record InitialAdminSettings(string? UserName, string? Password, string? Email);
 
     public static InitialAdminSettings InitialAdmin => new InitialAdminSettings(
         Configuration["DefaultAdmin:UserName"], Configuration["DefaultAdmin:Password"], Configuration["DefaultAdmin:Email"]);

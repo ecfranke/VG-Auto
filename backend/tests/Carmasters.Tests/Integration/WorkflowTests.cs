@@ -119,7 +119,10 @@ namespace Carmasters.Tests.Integration
 
             // issue the estimate and send it
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/estimate/issue/{offerNumber}", new { showVehicleOnPricing = true, sendClientEmail = true, clientEmail = $"jane{suffix}@example.com" }));
-            Assert.Contains(api.Mailbox.Pricings, m => m.To == $"jane{suffix}@example.com");
+            var estimateMail = api.Mailbox.LastTo($"jane{suffix}@example.com");
+            Assert.NotNull(estimateMail);
+            Assert.Equal("application/pdf", Assert.Single(estimateMail.Attachments).ContentType);
+            Assert.Equal("Default Company", estimateMail.FromName);
             var offers = await Json(await server.GetAsync($"/api/pricings/offers/{workId}"));
             Assert.Equal("System Administrator", offers[0].GetProperty("issuedBy").GetString());
 
@@ -160,7 +163,7 @@ namespace Carmasters.Tests.Integration
             Assert.Single(overdue.GetProperty("items").EnumerateArray());
 
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/invoice/send", new { emailAddress = $"acme{suffix}@example.com" }));
-            Assert.Contains(api.Mailbox.Pricings, m => m.To == $"acme{suffix}@example.com");
+            Assert.NotNull(api.Mailbox.LastTo($"acme{suffix}@example.com"));
 
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/invoice/paid", true));
             overdue = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&status=overdue&searchText=REG{suffix}"));
