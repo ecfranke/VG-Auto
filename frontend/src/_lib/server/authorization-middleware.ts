@@ -1,35 +1,43 @@
- 
 import { NextResponse, NextRequest } from 'next/server'
-import { deleteSession,getJwt } from '@/_lib/server/session'
-export default async function authorizationMiddleware(request: NextRequest,response: NextResponse) {
-  
-   // 2. Check if the current route is protected or public
-   const path = request.nextUrl.pathname
-   const isProtectedRoute = path.startsWith('/home') || path.startsWith('/admin');
-    // 3. Decrypt the session from the cookie
-   
-   // logout if /home/logout is called and redirect to login page
-  if (path.includes("/home/logout")) { 
-    await deleteSession();
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+import { getJwt } from '@/_lib/server/session'
+
+/**
+ * Public origin of the app. Behind a reverse proxy (nginx, Baota) the URL Next.js sees is the internal
+ * address (localhost:3000), so redirects use APP_URL, or the Host / X-Forwarded-* headers of the proxy.
+ */
+function publicOrigin(request: NextRequest): string {
+  const configured = process.env.APP_URL?.trim()
+  if (configured) return configured.replace(/\/$/, '')
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  if (!host) return request.nextUrl.origin
+  const proto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() ?? request.nextUrl.protocol.replace(':', '')
+  return `${proto}://${host.split(',')[0].trim()}`
+}
+
+export default async function authorizationMiddleware(request: NextRequest, response: NextResponse) {
+  const redirectTo = (path: string) => NextResponse.redirect(new URL(path, publicOrigin(request)))
+  const path = request.nextUrl.pathname
+  const isProtectedRoute = path.startsWith('/home') || path.startsWith('/admin')
+
+  // logout: remove the session cookies and go to the login page
+  if (path.includes('/home/logout')) {
+    const logout = redirectTo('/auth/login')
+    for (const name of ['session', 'jwt', 'session_timestamp']) logout.cookies.delete(name)
+    return logout
   }
 
-  const jwt =await getJwt();
+  const jwt = await getJwt()
   if (path.startsWith('/auth/change-password') && !jwt) {
-    return NextResponse.redirect(new URL('/auth/login', request.nextUrl))
+    return redirectTo('/auth/login')
   }
-  // 4. Redirect to /login if the user is not authenticated
+  // not signed in
   if (isProtectedRoute && !jwt) {
-    return NextResponse.redirect(new URL('/auth/login', request.nextUrl))
+    return redirectTo('/auth/login')
   }
- 
-  // 5. Redirect to /home if the user is authenticated (the forced password change page stays reachable)
-  if (
-    !isProtectedRoute && jwt && !path.startsWith('/auth/change-password')
-  ) {
-    return NextResponse.redirect(new URL('/home/work', request.nextUrl))
+  // signed in users skip the auth pages (the forced password change page stays reachable)
+  if (!isProtectedRoute && jwt && !path.startsWith('/auth/change-password')) {
+    return redirectTo('/home/work')
   }
 
   return response
 }
- 
