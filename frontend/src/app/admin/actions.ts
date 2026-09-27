@@ -104,3 +104,42 @@ export async function setLanguage(form: FormData) {
   ;(await cookies()).set(LANG_COOKIE, lang, { path: '/admin', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' })
   redirect(form.get('returnTo')?.toString().startsWith('/admin') ? form.get('returnTo')!.toString() : '/admin/users')
 }
+
+function text(form: FormData, name: string): string {
+  return form.get(name)?.toString() ?? ''
+}
+
+/** Full company settings (administrators only; the API enforces it). */
+export async function saveCompany(_: ActionState, form: FormData): Promise<ActionState> {
+  const vatRate = Number(text(form, 'vatRate'))
+  if (!Number.isInteger(vatRate) || vatRate < 0 || vatRate > 100) return { ok: false, error: 'VAT rate must be a whole number between 0 and 100.' }
+  return send('PUT', 'options', {
+    requisites: {
+      name: text(form, 'name'),
+      phone: text(form, 'phone'),
+      address: text(form, 'address'),
+      email: text(form, 'email'),
+      bankAccount: text(form, 'bankAccount'),
+      regNr: text(form, 'regNr'),
+      kmkr: text(form, 'kmkr'),
+    },
+    pricing: {
+      invoice: {
+        vatRate,
+        surCharge: text(form, 'surCharge'),
+        disclaimer: text(form, 'disclaimer'),
+        signatureLine: form.get('signatureLine') === 'on',
+        emailContent: text(form, 'emailContent'),
+      },
+      estimate: { emailContent: text(form, 'estimateEmailContent') },
+      currency: text(form, 'currency'),
+    },
+  })
+}
+
+export async function sendTestEmail(_: ActionState, form: FormData): Promise<ActionState & { transport?: string }> {
+  const response = await httpRaw('POST', 'options/testemail', { to: field(form, 'to') })
+  if (!response.ok) return { ok: false, error: await errorOf(response) }
+  const json = await response.json()
+  return { ok: true, transport: json.transport }
+}

@@ -11,12 +11,11 @@ import FormTextArea from '@/_components/FormTextArea';
 import FormSwitch from '@/_components/FormSwitch';
 import { createOrUpdate } from '../createOrUpdate'; 
 import { currentAccount } from '@/_lib/server/account';
-import { redirect } from 'next/navigation';
 
  
 
 export default async function Page( ) {
-    if (!(await currentAccount()).isAdmin) redirect('/home/settings');
+    const { isAdmin } = await currentAccount();
 
     const data = await httpGet('options'); 
     const options = await data.json() as IUserOptions; 
@@ -36,7 +35,7 @@ export default async function Page( ) {
 
           <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div className="sm:col-span-4">
-                <FormInput name='name' label='Name'  defaultValue={options.requisites.name}></FormInput> 
+                <FormInput name='name' label='Name'  defaultValue={options.requisites.name} disabled={!isAdmin}></FormInput> 
               </div>
               <div className="sm:col-span-3">
                 <FormInput name='phone' label='Phone' defaultValue={options.requisites.phone}></FormInput> 
@@ -51,12 +50,13 @@ export default async function Page( ) {
                 <FormInput name='bankAccount' label='Bank account' defaultValue={options.requisites.bankAccount}></FormInput> 
               </div>
               <div className="sm:col-span-3">
-                <FormInput name='regNr' label='RegNr' defaultValue={options.requisites.regNr}></FormInput> 
+                <FormInput name='regNr' label='Reg No' defaultValue={options.requisites.regNr} disabled={!isAdmin}></FormInput> 
               </div>
               <div className="sm:col-span-3">
-                <FormInput name='kmkr' label='KMKR' defaultValue={options.requisites.kmkr}></FormInput> 
+                <FormInput name='kmkr' label='Tax ID' defaultValue={options.requisites.kmkr} disabled={!isAdmin}></FormInput> 
               </div>
             </div> 
+            {!isAdmin && <p className="mt-4 text-sm text-gray-500">Name, Reg No, Tax ID and currency are set by an administrator.</p>}
           </div>
          
         <div className="border-b border-gray-900/10 pb-12">
@@ -65,11 +65,11 @@ export default async function Page( ) {
           <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
              <div className="sm:col-span-2">
                 <FormLabel name="currency" label="Currency"></FormLabel>
-                <select id="currency" name="currency" defaultValue={options.pricing.currency}
-                  className="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                <select id="currency" name="currency" defaultValue={options.pricing.currency} disabled={!isAdmin}
+                  className="mt-2 block w-full rounded-md bg-white disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                   {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">Used for new estimates and invoices. Issued documents keep their currency.</p>
+                <p className="mt-1 text-xs text-gray-500">{isAdmin ? 'Used for new estimates and invoices. Issued documents keep their currency.' : 'Set by an administrator.'}</p>
               </div>
              <div className="sm:col-span-2">
                 <FormInput name='vatRate' label='VAT Rate' defaultValue={options.pricing.invoice.vatRate}></FormInput> 

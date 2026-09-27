@@ -62,13 +62,29 @@ namespace VgAuto.Tests.Integration
             // normal users: no administration, no company settings, no logins through /api/employees
             Assert.Equal(HttpStatusCode.Forbidden, (await staff.GetAsync("/api/admin/users")).StatusCode);
             Assert.Equal("user", (await Json(await staff.GetAsync("/api/admin/me"))).GetProperty("role").GetString());
+            // normal users change contact details and invoice options, but not name, reg no, tax ID or currency
             var options = await Json(await owner.GetAsync("/api/options"));
-            Assert.Equal(HttpStatusCode.Forbidden, (await staff.PutAsJsonAsync("/api/options", options)).StatusCode);
+            var edited = System.Text.Json.Nodes.JsonNode.Parse(options.GetRawText())!;
+            edited["requisites"]!["name"] = "Hacked Name";
+            edited["requisites"]!["regNr"] = "HACK-1";
+            edited["requisites"]!["kmkr"] = "HACK-2";
+            edited["requisites"]!["phone"] = "+1 555 0199";
+            edited["pricing"]!["invoice"]!["disclaimer"] = "Changed by staff";
+            edited["pricing"]!["currency"] = "JPY";
+            (await staff.PutAsJsonAsync("/api/options", edited)).EnsureSuccessStatusCode();
+            var after = await Json(await owner.GetAsync("/api/options"));
+            Assert.Equal(options.GetProperty("requisites").GetProperty("name").GetString(), after.GetProperty("requisites").GetProperty("name").GetString());
+            Assert.Equal(options.GetProperty("requisites").GetProperty("regNr").GetString(), after.GetProperty("requisites").GetProperty("regNr").GetString());
+            Assert.Equal(options.GetProperty("requisites").GetProperty("kmkr").GetString(), after.GetProperty("requisites").GetProperty("kmkr").GetString());
+            Assert.Equal(options.GetProperty("pricing").GetProperty("currency").GetString(), after.GetProperty("pricing").GetProperty("currency").GetString());
+            Assert.Equal("+1 555 0199", after.GetProperty("requisites").GetProperty("phone").GetString());
+            Assert.Equal("Changed by staff", after.GetProperty("pricing").GetProperty("invoice").GetProperty("disclaimer").GetString());
+            Assert.Equal(HttpStatusCode.Forbidden, (await staff.PostAsJsonAsync("/api/options/testemail", new { to = "x@example.com" })).StatusCode);
             Assert.False((await staff.PostAsJsonAsync("/api/employees", new { firstName = "X", lastName = "Y", userName = "sneaky", password = "Sneaky-Pass-2026" })).IsSuccessStatusCode);
             (await staff.PostAsJsonAsync("/api/employees", new { firstName = "Mechanic", lastName = "Only" })).EnsureSuccessStatusCode();
 
             // administrators: company settings and normal users, but no administrators
-            (await admin.PutAsJsonAsync("/api/options", options)).EnsureSuccessStatusCode();
+            (await admin.PutAsJsonAsync("/api/options", options)).EnsureSuccessStatusCode(); // administrators restore everything
             (await admin.PutAsJsonAsync($"/api/admin/users/{staffId}", new { firstName = "Staff", lastName = "Renamed", email = "staff1@example.com" })).EnsureSuccessStatusCode();
             Assert.False((await admin.PostAsJsonAsync("/api/admin/users", new { firstName = "A", lastName = "B", email = "x@example.com", createAccount = true, userName = "another_admin", role = "admin" })).IsSuccessStatusCode);
             Assert.False((await admin.PutAsJsonAsync($"/api/admin/users/{staffId}/role", new { role = "admin" })).IsSuccessStatusCode);

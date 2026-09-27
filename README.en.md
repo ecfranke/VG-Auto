@@ -157,13 +157,16 @@ Work that ends without an invoice (for example the client decided against the re
 
 ### 12. Settings
 
-**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, tax ID), the VAT rate, and the email texts for invoices and estimates. Administrators click **Edit** to change them; normal users can only view them.
+**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, Reg No, Tax ID), the VAT rate, and the email texts for invoices and estimates. Click **Edit** to change them:
+
+- Everybody can change phone, address, email, bank account, the invoice options and the offer options.
+- **Company name, Reg No, Tax ID and currency** can only be changed by an administrator on the **Company** page of the administration (section 14); in the app they are shown greyed out.
 
 The **currency** is set here too: one currency per company, Canadian dollar (CAD) by default, with common alternatives such as USD, EUR, CNY, GBP, HKD and JPY. Amounts are formatted the way the currency is written (`$1,234.50`, `1.234,50 €`, `¥1,234.50`); only the label changes, there is no conversion. Estimates and invoices keep the currency they were issued in, so changing the setting does not affect documents already issued.
 
 ![Settings](docs/screenshots/settings.png)
 
-**Email delivery** at the bottom checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.
+**Email delivery** at the bottom (visible to administrators only, also on the Company page of the administration) checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.
 
 ![Test email](docs/screenshots/settings-test-email.png)
 
@@ -179,8 +182,8 @@ Administrators manage employees and logins at `https://your-domain/admin`, also 
 
 | Role | Can do |
 |---|---|
-| User | Works in the application (work, clients, vehicles, inventory); can view but not change the company settings; no access to the administration |
-| Administrator | Additionally changes the company settings; in the administration creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
+| User | Works in the application (work, clients, vehicles, inventory); changes contact details, invoice and offer options, but not the company name, Reg No, Tax ID or currency; no access to the administration |
+| Administrator | Additionally manages all company settings (including name, Reg No, Tax ID, currency) and sends test emails on the **Company** page of the administration; creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
 | Super administrator | Additionally creates administrators and super administrators, changes roles and manages administrator accounts |
 
 - The initial account `admin` is the **owner** (a super administrator): only its owner can change it, and it cannot be disabled or demoted.
@@ -189,7 +192,10 @@ Administrators manage employees and logins at `https://your-domain/admin`, also 
 - Mechanics who do not sign in: leave the login unticked (or add them with **New** next to **Mechanics** when creating work). A login can be added later.
 - **Disable account**: for employees who leave. They are signed out at once and cannot sign in again; work and history are kept. Employees with a login cannot be deleted, only disabled.
 - **Reset password**: sets a new temporary password and unlocks the account; it must be changed at the next sign in.
-- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles or the company settings, and when.
+- **Company**: one page for all company details, currency, invoice and offer options, and the test email.
+- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles or the company settings, sent test emails, and when.
+
+![Company](docs/screenshots/admin-company.png)
 
 ![Users](docs/screenshots/admin-users.png)
 

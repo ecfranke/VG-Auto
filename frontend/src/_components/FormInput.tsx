@@ -19,6 +19,7 @@ export default function FormInput({
     onInputChange,
     step,
     className,
+    disabled,
 }: {
     name: string,
     label?: string | undefined,
@@ -29,7 +30,8 @@ export default function FormInput({
     placeholder?: string | undefined,
     onInputChange?: IInputOnChange,
     step?: string | undefined,
-    className?: string | undefined
+    className?: string | undefined,
+    disabled?: boolean | undefined
 }) {
      
     let hasError = false;
@@ -50,13 +52,14 @@ export default function FormInput({
                     value={value}
 
                     placeholder={placeholder}
+                    disabled={disabled}
                     autoComplete={name}
                     aria-invalid={hasError}
                     aria-describedby={name + '-error'}
                     className={clsx(className,
                         hasError ? "col-start-1 row-start-1 text-red-900 outline-red-300 placeholder:text-red-400 focus:outline-red-600"
                             : "text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-indigo-600"
-                        , "block w-full   rounded-md bg-white px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2 text-sm/6")}
+                        , "block w-full   rounded-md bg-white disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2 text-sm/6")}
                 />
                 {hasError && <ExclamationCircleIcon
                     aria-hidden="true"
