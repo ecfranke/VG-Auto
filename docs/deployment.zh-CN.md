@@ -55,7 +55,11 @@ sudo deploy/install.sh \
 - 执行数据库迁移，第一次会创建管理员 `admin`
 - 安装并启动 systemd 服务 `vg-auto-api`
 - 在本机编译前端（`/opt/vg-auto/web`），用 pm2 启动 `vg-auto-web`，并设置开机自启
-- 写入并启用 nginx 站点 `/etc/nginx/sites-available/vg-auto`
+- 写入并启用 nginx 站点 `/etc/nginx/sites-available/vg-auto`（已存在时保留不动，以免覆盖 certbot 的修改）
+- 创建全局控制命令 `vgauto`（见 1.5 节）
+
+加了 `--nginx` 时，API 和前端只监听 127.0.0.1，外网只能通过 nginx 访问。
+用别的反向代理（宝塔、Caddy 等）时改用 `--proxy`，效果相同，只是不写 nginx 配置。
 
 最后配置 HTTPS：
 
@@ -79,24 +83,34 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 | `/opt/vg-auto/api`、`/opt/vg-auto/dbup`、`/opt/vg-auto/web` | 程序文件 |
 | `/var/lib/vg-auto/pdf`、`/var/lib/vg-auto/puppeteer` | 生成的 PDF、PDF 渲染用的 Chrome |
 
-### 1.5 日常运维
+### 1.5 日常运维：`vgauto` 控制命令
 
-```bash
-sudo systemctl status vg-auto-api          # 查看 API 状态
-journalctl -u vg-auto-api -f               # API 日志
-sudo -u vgauto pm2 logs vg-auto-web       # 前端日志
-curl http://127.0.0.1:15567/health         # 健康检查
+安装脚本会把 `deploy/vgauto.sh` 链接成全局命令 `vgauto`。直接运行 `sudo vgauto` 会出现数字菜单；也可以带参数运行，方便写进计划任务：
 
-# 升级：拉取新代码后重新运行安装脚本（配置会保留，数据库迁移会自动执行）
-cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
-```
+| 命令 | 作用 |
+|---|---|
+| `sudo vgauto status` | 服务状态、健康检查、访问地址、数据库和版本 |
+| `sudo vgauto start` / `stop` / `restart` | 同时启动 / 停止 / 重启 API 和前端 |
+| `sudo vgauto logs api` / `logs web` | 实时查看 API 或前端日志（Ctrl+C 退出） |
+| `sudo vgauto upgrade` | 先自动备份，再 `git pull`，然后重新安装（配置保留，数据库迁移自动执行） |
+| `sudo vgauto backup` | 把数据库、PDF 和配置打包成一个 `.tar.gz`，默认放在 `/var/backups/vg-auto` |
+| `sudo vgauto restore <文件>` | 从备份恢复数据库和 PDF（要输入 `yes` 确认，恢复前会自动再备份一次当前状态） |
+| `sudo vgauto help` | 全部命令和选项 |
 
-修改 `appsettings.Secrets.json` 后需要执行 `sudo systemctl restart vg-auto-api`。
+- 备份：`--dir <目录>` 指定目录，`--keep 14` 只保留最近 14 份（更早的会被删除）。
+  每天自动备份可以在 root 的 crontab 里加一行：`30 2 * * * /usr/local/bin/vgauto backup --keep 14`
+- 备份文件里有数据库密码等配置，权限是 600，请妥善保存，最好再复制一份到别的机器。
+- 恢复：默认只恢复数据库和 PDF，保留当前服务器的配置；在新服务器上整体迁移时加 `--with-config`，连配置一起恢复。
+  备份和恢复必须是同一种数据库（PostgreSQL 的备份不能恢复到 MySQL）。
+- 备份需要数据库客户端工具（`pg_dump` / `psql` 或 `mysqldump` / `mysql`），脚本也会在宝塔的安装目录里查找。
 
-修改 `web.env` 后要看改的是哪一项：
+安装时的选项（安装目录、运行账号、API 的运行方式、是否只监听本机）保存在 `/etc/vg-auto/install.conf`。
+以后升级不用再写这些参数，`sudo vgauto upgrade` 或 `git pull && sudo deploy/install.sh` 都会沿用它们。
 
-- 改了 `NEXT_PUBLIC_*`：这些值是编译进前端的，需要重新运行 `install.sh`，它会重新编译前端。
-- 只改了其他项：执行 `sudo -u vgauto pm2 restart vg-auto-web` 即可。
+修改 `appsettings.Secrets.json` 后执行 `sudo vgauto restart`。修改 `web.env` 后要看改的是哪一项：
+
+- 改了 `NEXT_PUBLIC_*`：这些值是编译进前端的，需要执行 `sudo vgauto upgrade`（或重新运行 `install.sh`）重新编译前端。
+- 只改了其他项：`sudo vgauto restart` 即可。
 
 ### 1.6 使用宝塔面板部署（Ubuntu / Debian）
 
@@ -106,10 +120,10 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
 |---|---|
 | 网站、反向代理、HTTPS 证书 | 宝塔（宝塔自带的 Nginx） |
 | 数据库（MySQL 或 PostgreSQL） | 宝塔软件商店安装，在宝塔里建库 |
-| VG Auto 的 API 和前端 | `deploy/install.sh`：API 作为 systemd 服务 `vg-auto-api`，前端由 pm2 运行 `vg-auto-web` |
+| VG Auto 的 API 和前端 | `vgauto baota`：API 作为 systemd 服务 `vg-auto-api`，前端由 pm2 运行 `vg-auto-web`，两者都只监听 127.0.0.1 |
 
-> **注意**：不要运行 1.1 节的 `prerequisites-debian.sh`。它会用 apt 另装一个 Nginx，
-> 和宝塔的 Nginx 抢 80/443 端口。按下面的步骤只装需要的部分。
+> **注意**：不要运行 1.1 节的 `prerequisites-debian.sh`，也不要加 `--nginx`。前者会用 apt 另装一个 Nginx，
+> 和宝塔的 Nginx 抢 80/443 端口。`vgauto baota` 只安装需要的部分，不碰 Nginx 和数据库。
 >
 > 宝塔各版本的菜单名称略有不同，下面以宝塔 Linux 面板 9.x 为准。
 
@@ -120,38 +134,12 @@ cd /opt/src/vg-auto && git pull && sudo deploy/install.sh
    - **MySQL**：在「软件商店」里安装 **MySQL 8.0 或更高版本**。宝塔默认推荐的可能是 5.7，安装时要手动选择 8.0。
      不能用 MariaDB。
    - **PostgreSQL**：在「软件商店」里搜索并安装「PostgreSQL 管理器」，再在里面安装 PostgreSQL 13 或更高版本。
-3. **不要**用宝塔的「Node.js 版本管理器」装 Node。它装在 `/www/server/nodejs` 下，用 `sudo` 运行安装脚本时找不到。
-   下一步会用系统的包管理器安装 Node.js。
+3. **不要**用宝塔的「Node.js 版本管理器」装 Node。它装在 `/www/server/nodejs` 下，用 `sudo` 运行时找不到。
+   `vgauto baota` 会用系统的包管理器安装 Node.js。
 
-#### 1.6.2 安装 .NET、Node.js 和 PDF 所需的系统库
+#### 1.6.2 在宝塔里创建数据库
 
-用 SSH 登录服务器（宝塔的「终端」也可以），执行：
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg git rsync openssl python3 fonts-liberation \
-  libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 \
-  libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 libcairo2 xdg-utils
-sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
-
-# .NET 9 SDK
-. /etc/os-release
-curl -fsSL "https://packages.microsoft.com/config/${ID}/${VERSION_ID}/packages-microsoft-prod.deb" -o /tmp/ms.deb
-sudo dpkg -i /tmp/ms.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0
-
-# Node.js 22 和 pm2
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-sudo apt-get install -y nodejs
-sudo npm install -g pm2
-
-# 检查
-dotnet --list-sdks     # 应该有 9.x
-node -v                # 应该是 v20 或更高
-```
-
-#### 1.6.3 在宝塔里创建数据库
-
-先想好一个数据库密码（下面记作 `<数据库密码>`），后面安装时要用。
+先想好一个数据库密码（下面记作 `<数据库密码>`），安装时要用。
 
 **MySQL**：「数据库」→「MySQL」→「添加数据库」：
 
@@ -170,41 +158,42 @@ node -v                # 应该是 v20 或更高
 
 > MySQL 常见问题：安装时如果报 `Access denied for user 'vgauto'@'127.0.0.1'`，是因为宝塔的 MySQL 默认开启了
 > `skip-name-resolve`，“本地服务器”权限只匹配 `localhost`。在「数据库」列表里点这个库的「权限」，
-> 改成「指定 IP」`127.0.0.1`，再重新运行安装脚本即可。
+> 改成「指定 IP」`127.0.0.1`，再重新运行安装命令即可。
 
-#### 1.6.4 运行安装脚本
+#### 1.6.3 一键安装
 
-先把两个子域名（例如 `app.你的域名` 和 `api.你的域名`）的 A 记录解析到这台服务器，然后执行：
+先把两个子域名（例如 `app.你的域名` 和 `api.你的域名`）的 A 记录解析到这台服务器，然后用 SSH（或宝塔的「终端」）执行：
 
 ```bash
+sudo apt-get install -y git
 sudo git clone https://github.com/ecfranke/VG-Auto.git /opt/src/vg-auto
 cd /opt/src/vg-auto
 
 # MySQL
-sudo deploy/install.sh \
+sudo deploy/vgauto.sh baota \
   --app-url https://app.你的域名 \
   --api-url https://api.你的域名 \
   --db-provider MySql --db-host 127.0.0.1 --db-password '<数据库密码>' \
   --admin-email 管理员邮箱
 
-# PostgreSQL：把第 5 行换成
+# PostgreSQL：把 --db-provider 那一行换成
 #   --db-provider PostgreSql --db-host 127.0.0.1 --db-password '<数据库密码>' \
 ```
 
-- **不要**加 `--nginx`，反向代理交给宝塔。
-- 第一次运行会生成配置，然后问 `Continue with the installation now?`。先输入 `N` 退出，
-  编辑 `/etc/vg-auto/appsettings.Secrets.json`，填好 `Email` 部分（见第 5 节）。
-  数据库已经在宝塔里建好了，**不需要**运行 `create-database.sh`。
-- 然后再运行一次同样的命令，这次输入 `y`。脚本会编译、建表、启动 API 和前端。
+`vgauto baota` 会依次：
 
-完成后在服务器上检查：
+1. 安装 .NET 9 SDK、Node.js 22、pm2，以及生成 PDF 所需的系统库（**不装** Nginx，**不装也不建**数据库）；
+2. 以 `--proxy` 方式运行 `install.sh`：API 和前端只监听 `127.0.0.1`，外网只能通过宝塔的反向代理访问。
 
-```bash
-curl http://127.0.0.1:15567/health     # API，应返回 Healthy
-curl -I http://127.0.0.1:3000          # 前端，应返回 HTTP 200
-```
+第一次运行时，`install.sh` 会生成配置，然后问 `Continue with the installation now?`：
 
-#### 1.6.5 在宝塔里配置反向代理和 HTTPS
+- 先输入 `N` 退出，编辑 `/etc/vg-auto/appsettings.Secrets.json`，填好 `Email` 部分（见第 5 节）。
+  数据库已经在宝塔里建好，**不需要**运行 `create-database.sh`。
+- 再运行一次同样的命令，这次输入 `y`。脚本会编译、建表、启动 API 和前端，并创建全局命令 `vgauto`。
+
+完成后执行 `sudo vgauto status`，两项服务都应显示 online，健康检查都应通过。
+
+#### 1.6.4 在宝塔里配置反向代理和 HTTPS
 
 需要两个站点，一个给前端，一个给 API。
 
@@ -219,25 +208,19 @@ curl -I http://127.0.0.1:3000          # 前端，应返回 HTTP 200
 
 宝塔默认的反向代理配置会带上 `X-Real-IP` 和 `X-Forwarded-For`，VG Auto 用它们来识别客户端 IP（登录限流和账号锁定），不用额外修改。
 
-#### 1.6.6 防火墙
+#### 1.6.5 防火墙
 
-在宝塔的「安全」页面，只放行 80、443、SSH 端口和宝塔面板端口。
-**不要**放行 3000 和 15567：没有加 `--nginx` 时，这两个服务监听在所有网卡上，外部只应该通过宝塔的反向代理访问。
-如果服务器在云平台上，云厂商的安全组也要做同样的检查。
+在宝塔的「安全」页面，只放行 80、443、SSH 端口和宝塔面板端口，**不需要**放行 3000 和 15567。
+这两个端口只监听在 127.0.0.1 上，就算放行了外网也连不上。云服务器的安全组同样只开放 80 和 443 即可。
 
-#### 1.6.7 日常运维
+#### 1.6.6 日常运维
 
-和 1.5 节相同：
+用 1.5 节的 `vgauto` 命令：`sudo vgauto status`、`restart`、`logs`、`backup`、`upgrade` 等。
+升级时直接 `sudo vgauto upgrade`，会沿用宝塔模式（只监听本机），不会装 Nginx。
 
-```bash
-sudo systemctl status vg-auto-api              # API 状态
-journalctl -u vg-auto-api -f                   # API 日志
-sudo -u vgauto pm2 logs vg-auto-web            # 前端日志
-cd /opt/src/vg-auto && sudo git pull && sudo deploy/install.sh    # 升级
-```
-
-- 宝塔的「PM2 管理器」看不到 `vg-auto-web`：它由系统用户 `vgauto` 运行，请用上面的命令查看。
-- 数据库备份可以直接用宝塔「计划任务」里的「备份数据库」，另外记得备份 `/var/lib/vg-auto/pdf` 和 `/etc/vg-auto`。
+- 宝塔的「PM2 管理器」看不到 `vg-auto-web`：它由系统用户 `vgauto` 运行，请用 `sudo vgauto status` / `sudo vgauto logs web` 查看。
+- 备份：`sudo vgauto backup` 会同时备份数据库、PDF 和配置。可以在宝塔「计划任务」里添加一个 Shell 脚本任务，
+  内容是 `/usr/local/bin/vgauto backup --keep 14`，每天执行一次。
 
 ---
 
@@ -255,6 +238,8 @@ cd /opt/src/vg-auto && sudo git pull && sudo deploy/install.sh    # 升级
    ```
    第一次运行时，按提示创建数据库用户，并填写 `~/vg-auto/config/appsettings.Secrets.json` 里的 `Email` 部分，然后再运行一次。
 3. 开机自启：运行 `pm2 startup`，再执行它打印出来的那条命令。
+4. 日常运维用 `vgauto`（不用 sudo）：`vgauto status`、`vgauto restart`、`vgauto backup` 等，见 1.5 节。
+   备份默认放在 `~/vg-auto/backups`。如果安装脚本没能创建 `/usr/local/bin/vgauto`（没有写权限），就用仓库里的 `deploy/vgauto.sh`。
 
 ---
 

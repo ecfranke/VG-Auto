@@ -198,8 +198,31 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 ```
 
 - First sign in: user `admin`, password in `/etc/vg-auto/initial-admin-password`. The code goes to the `--admin-email` address.
-- Upgrade: `git pull && sudo deploy/install.sh`
 - Services: the API is the systemd service `vg-auto-api`, the web app is the pm2 process `vg-auto-web`.
+
+### Baota panel
+
+The database and the reverse proxy are set up in the Baota panel; one command does the rest (no nginx, the database is not touched):
+
+```bash
+sudo deploy/vgauto.sh baota --app-url https://app.example.com --api-url https://api.example.com \
+     --db-provider MySql --db-host 127.0.0.1 --db-password '<password set in Baota>' --admin-email you@example.com
+```
+
+Step by step (Chinese): [deployment guide, section 1.6](docs/deployment.zh-CN.md#16-使用宝塔面板部署ubuntu--debian).
+
+### Day-to-day: `vgauto`
+
+After installation `sudo vgauto` works from any directory (no sudo on macOS). Without arguments it shows a menu.
+
+| Command | Purpose |
+|---|---|
+| `sudo vgauto status` | Services, health check, URLs and version |
+| `sudo vgauto start` / `stop` / `restart` | Start / stop / restart the API and the web app |
+| `sudo vgauto logs api` / `logs web` | Follow the logs |
+| `sudo vgauto upgrade` | Back up → `git pull` → reinstall |
+| `sudo vgauto backup [--keep 14]` | Database + PDFs + configuration in one archive |
+| `sudo vgauto restore <file>` | Restore a backup (asks for confirmation, backs up the current state first) |
 
 ### macOS
 
@@ -223,7 +246,7 @@ The API is installed as the Windows service `VGAutoApi`; the web app runs under 
 
 1. **Email**: sign in codes depend on it. Configure SMTP or Microsoft Graph in the `Email` section of `appsettings.Secrets.json` and check it with **Send test email**.
 2. **HTTPS**: required in production (the session cookie is only sent over HTTPS).
-3. **Backups**: back up the database and the PDF directory (`PdfDirectory`) regularly.
+3. **Backups**: run `sudo vgauto backup --keep 14` regularly (crontab or a Baota scheduled task) and copy the backups to another machine.
 
 SMTP and Microsoft Graph details, the app registration for Microsoft sign in, security settings and backups are covered in the **[deployment guide](docs/deployment.zh-CN.md)** (Chinese).
 

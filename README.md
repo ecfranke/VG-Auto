@@ -198,8 +198,31 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 ```
 
 - 首次登录：用户名 `admin`，密码在 `/etc/vg-auto/initial-admin-password`。验证码会发到 `--admin-email` 指定的邮箱。
-- 升级：`git pull && sudo deploy/install.sh`
 - 服务：API 是 systemd 服务 `vg-auto-api`，前端是 pm2 进程 `vg-auto-web`。
+
+### 宝塔面板
+
+数据库和反向代理在宝塔里配置，其余一条命令完成（不装 Nginx，不动数据库）：
+
+```bash
+sudo deploy/vgauto.sh baota --app-url https://app.example.com --api-url https://api.example.com \
+     --db-provider MySql --db-host 127.0.0.1 --db-password '<宝塔里建库时的密码>' --admin-email you@example.com
+```
+
+完整步骤见 [部署指南 1.6 节](docs/deployment.zh-CN.md#16-使用宝塔面板部署ubuntu--debian)。
+
+### 日常运维：`vgauto`
+
+安装后可以在任何目录使用 `sudo vgauto`（macOS 不用 sudo）。不带参数运行会出现菜单。
+
+| 命令 | 作用 |
+|---|---|
+| `sudo vgauto status` | 服务状态、健康检查、访问地址和版本 |
+| `sudo vgauto start` / `stop` / `restart` | 启动 / 停止 / 重启 API 和前端 |
+| `sudo vgauto logs api` / `logs web` | 实时日志 |
+| `sudo vgauto upgrade` | 自动备份 → `git pull` → 重新安装 |
+| `sudo vgauto backup [--keep 14]` | 数据库 + PDF + 配置打包备份 |
+| `sudo vgauto restore <文件>` | 从备份恢复（需要确认，恢复前自动备份当前状态） |
 
 ### macOS
 
@@ -223,7 +246,7 @@ API 注册为 Windows 服务 `VGAutoApi`，前端由 pm2 运行。
 
 1. **邮件**：登录验证码依赖邮件。在 `appsettings.Secrets.json` 的 `Email` 节配置 SMTP 或 Microsoft Graph，然后用设置页的 **Send test email** 验证。
 2. **HTTPS**：生产环境必须启用 HTTPS（登录 Cookie 只在 HTTPS 下发送）。
-3. **备份**：定期备份数据库，以及 PDF 目录（`PdfDirectory`）。
+3. **备份**：定期运行 `sudo vgauto backup --keep 14`（可以放进 crontab 或宝塔的计划任务），并把备份复制到别的机器。
 
 SMTP 和 Microsoft Graph 的详细设置、Microsoft 登录的应用注册、安全配置和备份方法，见 **[部署与配置指南](docs/deployment.zh-CN.md)**。
 

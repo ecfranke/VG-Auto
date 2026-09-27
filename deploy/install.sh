@@ -12,6 +12,11 @@
 #        --nginx --db-provider PostgreSql --admin-email you@example.com
 #
 #   deploy/install.sh --help
+#
+# Options that shape the installation (directories, service account, how the API runs,
+# whether the apps listen only on 127.0.0.1) are saved in <config-dir>/install.conf and
+# reused by later runs, so an upgrade is simply: git pull && sudo deploy/install.sh
+# (or: sudo vgauto upgrade). deploy/vgauto.sh reads the same file.
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
@@ -42,6 +47,7 @@ DB_USER="vgauto"
 DB_PASSWORD=""
 ADMIN_EMAIL=""
 NGINX=0
+LISTEN=""        # local (127.0.0.1, behind a reverse proxy) or all; saved in install.conf
 SKIP_WEB=0
 SKIP_API=0
 SKIP_MIGRATIONS=0
@@ -68,10 +74,26 @@ Usage: $0 [options]
   --db-password PASS     (default: random, create the database user with it)
   --admin-email EMAIL    email of the initial administrator (login codes are sent there)
 
-  --nginx                write and enable an nginx site for the app and API domains (Linux)
+  --nginx                write and enable an nginx site for the app and API domains (Linux);
+                         an existing site is kept (certbot edits it). Implies --proxy.
+  --proxy                API and web app listen on 127.0.0.1 only, for a reverse proxy on this
+                         machine that this script does not manage (Baota panel, Caddy, ...)
+  --listen-all           API and web app listen on all interfaces (default without a proxy)
   --skip-web | --skip-api | --skip-migrations
 EOF
 }
+
+# ---- saved options of an existing installation ------------------------------------
+for ((i = 1; i <= $#; i++)); do
+  if [[ "${!i}" == "--config-dir" ]]; then j=$((i + 1)); CONFIG_DIR="${!j}"; fi
+done
+if [[ -f "$CONFIG_DIR/install.conf" ]]; then
+  # shellcheck disable=SC1091
+  . "$CONFIG_DIR/install.conf"
+  REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"   # always the checkout this script runs from
+elif [[ "$OS" != "Darwin" && -e /etc/nginx/sites-enabled/vg-auto ]]; then
+  LISTEN="local"   # installed with --nginx before install.conf existed
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -89,7 +111,9 @@ while [[ $# -gt 0 ]]; do
     --db-user) DB_USER="$2"; shift 2 ;;
     --db-password) DB_PASSWORD="$2"; shift 2 ;;
     --admin-email) ADMIN_EMAIL="$2"; shift 2 ;;
-    --nginx) NGINX=1; shift ;;
+    --nginx) NGINX=1; LISTEN="local"; shift ;;
+    --proxy) LISTEN="local"; shift ;;
+    --listen-all) LISTEN="all"; shift ;;
     --skip-web) SKIP_WEB=1; shift ;;
     --skip-api) SKIP_API=1; shift ;;
     --skip-migrations) SKIP_MIGRATIONS=1; shift ;;
@@ -111,6 +135,8 @@ case "$DB_PROVIDER" in
   *) die "--db-provider must be PostgreSql or MySql" ;;
 esac
 [[ "$SERVICE_MODE" == "systemd" || "$SERVICE_MODE" == "pm2" ]] || die "--service must be systemd or pm2"
+LISTEN="${LISTEN:-all}"
+[[ "$LISTEN" == "local" || "$LISTEN" == "all" ]] || die "LISTEN must be local or all"
 [[ "$SERVICE_MODE" == "systemd" && "$OS" == "Darwin" ]] && die "systemd is not available on macOS, use --service pm2"
 
 if [[ "$OS" != "Darwin" && "$(id -u)" -ne 0 && "$SERVICE_MODE" == "systemd" ]]; then
@@ -143,7 +169,7 @@ WEB_ENV="$CONFIG_DIR/web.env"
 
 if [[ -z "$API_URL" ]]; then
   APP_HOST="$(url_host "$APP_URL")"
-  if [[ $NGINX -eq 1 ]]; then API_URL="https://api.${APP_HOST#www.}"; else API_URL="http://${APP_HOST}:15567"; fi
+  if [[ "$LISTEN" == "local" ]]; then API_URL="https://api.${APP_HOST#www.}"; else API_URL="http://${APP_HOST}:15567"; fi
 fi
 
 if [[ ! -f "$SECRETS" ]]; then
@@ -185,6 +211,19 @@ else
 fi
 chown "$RUN_USER" "$SECRETS" "$WEB_ENV" 2>/dev/null || true
 chmod 600 "$SECRETS" "$WEB_ENV"
+
+cat > "$CONFIG_DIR/install.conf" <<CONF
+# Saved by deploy/install.sh, read by later runs and by deploy/vgauto.sh.
+REPO_DIR="$REPO_DIR"
+PREFIX="$PREFIX"
+CONFIG_DIR="$CONFIG_DIR"
+DATA_DIR="$DATA_DIR"
+RUN_USER="$RUN_USER"
+SERVICE_MODE="$SERVICE_MODE"
+LISTEN="$LISTEN"
+CONF
+chmod 644 "$CONFIG_DIR/install.conf"
+if [[ "$LISTEN" == "local" ]]; then BIND_HOST="127.0.0.1"; else BIND_HOST="0.0.0.0"; fi
 
 if [[ $CREATED_CONFIG -eq 1 ]]; then
   cat <<EOF
@@ -233,7 +272,7 @@ fi
 if [[ $SKIP_API -eq 0 ]]; then
   if [[ "$SERVICE_MODE" == "systemd" ]]; then
     log "Installing systemd service vg-auto-api"
-    API_BIND="http://0.0.0.0:15567"; [[ $NGINX -eq 1 ]] && API_BIND="http://127.0.0.1:15567"
+    API_BIND="http://$BIND_HOST:15567"
     sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@USER@|$RUN_USER|g" -e "s|@DATA@|$DATA_DIR|g" \
         -e "s|@API_URL_BIND@|$API_BIND|g" -e "s|@DOTNET@|$(command -v dotnet)|g" \
         "$REPO_DIR/deploy/templates/vg-auto-api.service" > /etc/systemd/system/vg-auto-api.service
@@ -265,7 +304,7 @@ ECOSYSTEM="$PREFIX/ecosystem.config.cjs"
     name: 'vg-auto-web',
     cwd: '$PREFIX/web',
     script: 'node_modules/next/dist/bin/next',
-    args: 'start -p 3000 -H 127.0.0.1',
+    args: 'start -p 3000 -H $BIND_HOST',
     env: { NODE_ENV: 'production' },
     max_memory_restart: '600M',
   },
@@ -281,7 +320,7 @@ EOF
     interpreter: 'none',
     env: {
       ASPNETCORE_ENVIRONMENT: 'Production',
-      Kestrel__Endpoints__Http__Url: 'http://0.0.0.0:15567',
+      Kestrel__Endpoints__Http__Url: 'http://$BIND_HOST:15567',
       PdfDirectory: '$DATA_DIR/pdf',
       PuppeteerPath: '$DATA_DIR/puppeteer',
     },
@@ -291,9 +330,6 @@ EOF
   echo "] };"
 } > "$ECOSYSTEM"
 chown "$RUN_USER" "$ECOSYSTEM" 2>/dev/null || true
-
-# with nginx the web app only listens on localhost; without it, open it to the network
-if [[ $NGINX -eq 0 ]]; then sed -i.bak "s/-H 127.0.0.1/-H 0.0.0.0/" "$ECOSYSTEM" && rm -f "$ECOSYSTEM.bak"; fi
 
 if grep -q "name:" "$ECOSYSTEM"; then
   log "Starting apps with pm2"
@@ -312,12 +348,25 @@ if [[ $NGINX -eq 1 ]]; then
   need nginx "apt install nginx"
   APP_DOMAIN="$(url_host "$APP_URL")"
   API_DOMAIN="$(url_host "$API_URL")"
-  log "Writing nginx site for $APP_DOMAIN and $API_DOMAIN"
-  sed -e "s|@APP_DOMAIN@|$APP_DOMAIN|g" -e "s|@API_DOMAIN@|$API_DOMAIN|g" \
-      "$REPO_DIR/deploy/templates/nginx-vg-auto.conf" > /etc/nginx/sites-available/vg-auto
+  if [[ -f /etc/nginx/sites-available/vg-auto ]]; then
+    log "Keeping the existing nginx site /etc/nginx/sites-available/vg-auto"
+  else
+    log "Writing nginx site for $APP_DOMAIN and $API_DOMAIN"
+    sed -e "s|@APP_DOMAIN@|$APP_DOMAIN|g" -e "s|@API_DOMAIN@|$API_DOMAIN|g" \
+        "$REPO_DIR/deploy/templates/nginx-vg-auto.conf" > /etc/nginx/sites-available/vg-auto
+    echo "HTTPS: sudo certbot --nginx -d $APP_DOMAIN -d $API_DOMAIN"
+  fi
   ln -sfn /etc/nginx/sites-available/vg-auto /etc/nginx/sites-enabled/vg-auto
   nginx -t && systemctl reload nginx
-  echo "HTTPS: sudo certbot --nginx -d $APP_DOMAIN -d $API_DOMAIN"
+fi
+
+# ---- control command ------------------------------------------------------------------
+chmod +x "$REPO_DIR/deploy/vgauto.sh"
+if ln -sfn "$REPO_DIR/deploy/vgauto.sh" /usr/local/bin/vgauto 2>/dev/null; then
+  CONTROL="vgauto"
+else
+  CONTROL="$REPO_DIR/deploy/vgauto.sh"
+  echo "Could not create /usr/local/bin/vgauto (no permission), use $CONTROL instead."
 fi
 
 log "Done"
@@ -332,5 +381,6 @@ cat <<EOF
   API:            $API_URL   (health: /health)
   Configuration:  $SECRETS, $WEB_ENV
   Logs:           $( [[ "$SERVICE_MODE" == "systemd" ]] && echo "journalctl -u vg-auto-api -f" || echo "pm2 logs vg-auto-api" ),  pm2 logs vg-auto-web
-  Upgrade:        git pull && $0
+  Listening on:   $BIND_HOST (web :3000, API :15567)
+  Control:        $( [[ "$OS" == "Darwin" ]] && echo "$CONTROL" || echo "sudo $CONTROL" )   (start | stop | restart | status | logs | upgrade | backup | restore)
 EOF
