@@ -35,20 +35,21 @@ namespace Carmasters.Http.Api.Controllers
         [HttpGet("offers/{workId}")]
         public OkObjectResult GetAllOfferPricings(Guid workId) //todo better place?
         { 
-            var issuances =  repository.Connection.Query<OfferIssuanceDto>(
-                                  @"   select  
+            var issuances = repository.Connection.Query<OfferIssuanceDto>(SqlDialect.Current.Sql(
+                                  @"select  
                                         o.id,
                                         est.number, 
                                         e.senton,
-	                                    e.issuedon,
-	                                    e.email as receiveremail,
-	                                    i.firstname||' '||i.lastname as issuedby,
-	                                    acceptedon,
-	                                    (select firstname||' '||lastname from domain.employee where id = o.acceptorid)  as acceptedby 
-	                                    from   domain.offer o
-	                                    inner join domain.pricing e on e.id = o.estimateId
-                                        inner join domain.estimate est on est.id = o.estimateid
-	                                    inner join domain.employee i on i.id = e.issuerid where o.workid = @workId", new { workId = workId })
+                                        e.issuedon,
+                                        e.email as receiveremail,
+                                        concat_ws(' ', i.firstname, i.lastname) as issuedby,
+                                        o.acceptedon,
+                                        (select concat_ws(' ', firstname, lastname) from domain.employee where id = o.acceptorid) as acceptedby 
+                                    from domain.offer o
+                                    inner join domain.pricing e on e.id = o.estimateid
+                                    inner join domain.estimate est on est.id = o.estimateid
+                                    inner join domain.employee i on i.id = e.issuerid
+                                    where o.workid = @workId"), new { workId = workId })
                                   .ToList();
              
             return Ok(issuances);

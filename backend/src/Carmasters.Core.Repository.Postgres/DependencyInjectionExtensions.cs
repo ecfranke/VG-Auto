@@ -20,6 +20,7 @@ namespace Carmasters.Core.Repository.Postgres
         static object lockObj = new object();
         public static IServiceCollection AddPersistanceServices(this IServiceCollection services, IConfiguration configuration)
         {
+            Dapper.SqlMapper.AddTypeHandler(new Carmasters.Core.Application.Dapper.JsonNodeTypeHandler());
             var connectionBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
             var options = new DbOptions(); configuration.GetSection("DbOptions").Bind(options);
             connectionBuilder.Host = options.Host;
@@ -70,6 +71,7 @@ namespace Carmasters.Core.Repository.Postgres
 
 
             services.AddScoped<IRepository, GenericRepository>();
+            services.AddScoped<Carmasters.Core.Application.Authorization.AuthTokenService>();
           
             services.AddScoped<ISequnceNumberProviderFactory, SequenceNumberProviderFactory>();
             services.AddScoped<InvoiceSequenceNumberProvider>();

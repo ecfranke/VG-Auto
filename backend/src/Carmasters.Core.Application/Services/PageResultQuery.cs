@@ -1,131 +1,170 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Carmasters.Core.Application.Database;
 using Carmasters.Core.Domain;
 using Carmasters.Http.Api.Models;
 using Dapper;
 
-
-
 namespace Carmasters.Core.Application.Services
 {
+    /// <summary>
+    /// Builds paged list queries. Every user supplied value is sent as a query parameter;
+    /// ordering only accepts keys from a whitelist.
+    /// </summary>
     public class PageResultQuery<DTO>
     {
-        string searchText;
+        public const int MaxLimit = 200;
+
+        private string searchText;
         private int limit;
         private int offset;
         private bool desc;
-        private string searchFields;
+        private string[] searchFields = Array.Empty<string>();
         private string selectSql;
-        private string orderby;
-        private bool usePagingRestricion = true;
-        private bool useWhereRestricion = true;
-        private List<string> whereExpressions = new List<string>();
+        private string orderByKey;
+        private IReadOnlyDictionary<string, string> sortableColumns = new Dictionary<string, string>();
+        private string defaultOrderBy;
+        private bool usePagingRestriction = true;
+        private bool useWhereRestriction = true;
+        private readonly List<string> whereExpressions = new List<string>();
+        private readonly DynamicParameters parameters = new DynamicParameters();
         private readonly IDbConnection connection;
+        private readonly SqlDialect dialect;
 
-        public PageResultQuery(IDbConnection connection)
+        public PageResultQuery(IDbConnection connection, SqlDialect dialect = null)
         {
             this.connection = connection;
+            this.dialect = dialect ?? SqlDialect.Current;
         }
+
+        public SqlDialect Dialect => dialect;
+
+        public DynamicParameters Parameters => parameters;
 
         public PageResultQuery<DTO> FilterBy(string searchText)
         {
             this.searchText = searchText;
             return this;
         }
+
         public PageResultQuery<DTO> SelectSql(string selectSql)
         {
             this.selectSql = selectSql;
             return this;
         }
-        public PageResultQuery<DTO> SearchFields(string searchFields)
+
+        /// <summary>
+        /// Columns (trusted SQL expressions) searched with the free text. Each word must match at least one column.
+        /// </summary>
+        public PageResultQuery<DTO> SearchFields(params string[] fields)
         {
-            this.searchFields = searchFields;
+            this.searchFields = fields ?? Array.Empty<string>();
+            return this;
+        }
+
+        /// <summary>
+        /// Allowed sort keys mapped to trusted SQL expressions. Unknown keys fall back to <paramref name="defaultExpression"/>.
+        /// </summary>
+        public PageResultQuery<DTO> Sortable(IReadOnlyDictionary<string, string> columns, string defaultExpression)
+        {
+            this.sortableColumns = columns ?? new Dictionary<string, string>();
+            this.defaultOrderBy = defaultExpression;
             return this;
         }
 
         public PageResultQuery<DTO> UsePagingRestriction(bool use)
         {
-            this.usePagingRestricion = use;
+            this.usePagingRestriction = use;
             return this;
         }
 
         public PageResultQuery<DTO> UseWhereRestriction(bool use)
         {
-            this.useWhereRestricion = use;
+            this.useWhereRestriction = use;
             return this;
         }
 
         public PageResultQuery<DTO> PageIs(string orderby, int limit, int offset, bool desc)
         {
-            this.orderby = orderby;
-            this.limit = limit;
-            this.offset = offset;
+            this.orderByKey = orderby;
+            this.limit = Math.Clamp(limit <= 0 ? 30 : limit, 1, MaxLimit);
+            this.offset = Math.Max(0, offset);
             this.desc = desc;
             return this;
         }
-        //to_tsvector(concat_ws(' ',firstname,lastname,address,phone)) @@ to_tsquery('veiko & Sindi')
+
+        /// <summary>Adds a trusted SQL condition. Use <see cref="Parameter"/> for values.</summary>
+        public PageResultQuery<DTO> Where(string expression)
+        {
+            whereExpressions.Add(expression);
+            return this;
+        }
+
+        /// <summary>Registers a parameter value and returns its placeholder (e.g. @p0).</summary>
+        public string Parameter(object value)
+        {
+            var name = "p" + parameters.ParameterNames.Count();
+            parameters.Add(name, value);
+            return "@" + name;
+        }
+
+        public string GetOrderBy()
+        {
+            string expression = null;
+            if (!string.IsNullOrWhiteSpace(orderByKey) && sortableColumns.TryGetValue(orderByKey.Trim().ToLowerInvariant(), out var column))
+            {
+                expression = column;
+            }
+            expression ??= defaultOrderBy;
+            if (string.IsNullOrWhiteSpace(expression)) return string.Empty;
+            return $"ORDER BY {expression} {(desc ? "DESC" : "ASC")}";
+        }
 
         public string GetPagingRestriction()
         {
-            var orderBySql = string.Empty;
-            if (orderby != null)
-            {
-                var order = (desc ? "desc" : "asc");
-                orderBySql = orderby.Contains("{0}") ? $"order by {string.Format(orderby,order)}":  $"order by {orderby} {order}";
-            }
-             
-            var sql = $"{orderBySql} OFFSET @offset ROWS FETCH FIRST @limit ROW ONLY ";
-            return sql;
+            parameters.Add("page_offset", offset);
+            parameters.Add("page_limit", limit + 1); // one extra row tells whether there are more
+            return $"{GetOrderBy()} {dialect.Paging("@page_limit", "@page_offset")}";
         }
 
-        public string GetWhereRestriction() 
+        public string GetWhereRestriction()
         {
-            var where = string.Empty;
-            if (!string.IsNullOrWhiteSpace(searchText))
+            var expressions = new List<string>(whereExpressions);
+            if (!string.IsNullOrWhiteSpace(searchText) && searchFields.Length > 0)
             {
-                var tokens = new WildcardTokens(searchText).AllTokens();
-
-                var restriction = string.Join(" and ", tokens.Select(word => $"{searchFields} ilike '%{word}%'"));
-               
-                whereExpressions.Add(restriction);
+                foreach (var word in new WildcardTokens(searchText).AllTokens())
+                {
+                    var p = Parameter(SqlDialect.ContainsPattern(word));
+                    var anyField = string.Join(" OR ", searchFields.Select(f => dialect.ILike($"COALESCE({dialect.CastToText(f)}, '')", p)));
+                    expressions.Add($"({anyField})");
+                }
             }
-            if (whereExpressions.Any())
-            {
-                where = " where " + string.Join($"{Environment.NewLine} and ", whereExpressions);
-            }
-            return where;
+            return expressions.Any() ? " WHERE " + string.Join(Environment.NewLine + " AND ", expressions) : string.Empty;
         }
+
+        public string BuildSql()
+        {
+            return dialect.Sql($@"{selectSql}
+                {(useWhereRestriction ? GetWhereRestriction() : string.Empty)}
+                {(usePagingRestriction ? GetPagingRestriction() : string.Empty)}");
+        }
+
         public PagedResult<DTO> ToResult()
-        { 
-            var sql = $@"{selectSql}
-	                           {(useWhereRestricion?GetWhereRestriction():string.Empty)} 
-	                           {(usePagingRestricion?GetPagingRestriction():string.Empty)}";
-             
-            var results = connection.
-                Query<DTO>(sql, new { searchText, offset, limit = limit + 1 }).
-                ToList();
+        {
+            var sql = BuildSql();
+            var results = connection.Query<DTO>(sql, parameters).ToList();
             bool hasMore = false;
             if (results.Count > limit)
             {
                 hasMore = true;
-                //remove extra which is used to check if more results exists
                 results.RemoveAt(results.Count - 1);
             }
-
             return new PagedResult<DTO> { Items = results.ToArray(), HasMore = hasMore };
         }
-         
-        public void Where(string expression)
-        {
-            whereExpressions.Add(expression);
-        }
-
-        
     }
+
     public static class PageResultQueryExtensions
     {
         public static PageResultQuery<DTO> PageQuery<DTO>(this IRepository repository, string orderby, int limit, int offset, bool desc)

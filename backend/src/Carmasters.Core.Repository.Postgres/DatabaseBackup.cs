@@ -1,44 +1,45 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using Carmasters.Core.Application;
 using Carmasters.Core.Application.Configuration;
+using Carmasters.Core.Application.Database;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Carmasters.Core.Persistence.Postgres
 {
-
-   
+    /// <summary>
+    /// Creates an SQL dump with the database vendor's own tool (pg_dump / mysqldump) installed on the API host.
+    /// The password is passed through the environment, never on the command line.
+    /// </summary>
     public class DatabaseBackup
     {
         private readonly ILogger<DatabaseBackup> logger;
         private readonly DbOptions options;
-        private readonly string dumpCommand;
-        private readonly string dumpProgram;
-        public DatabaseBackup(ILogger<DatabaseBackup> logger,IConfiguration configuration)
+        private readonly string program;
+
+        public DatabaseBackup(ILogger<DatabaseBackup> logger, IConfiguration configuration)
         {
             options = new DbOptions(); configuration.GetSection("DbOptions").Bind(options);
-            dumpCommand =configuration.GetSection("DatabaseBackup:DumpCommand").Value;
-            dumpProgram = configuration.GetSection("DatabaseBackup:Program").Value;
+            program = configuration.GetSection("DatabaseBackup:Program").Value;
             this.logger = logger;
         }
 
-        
-        public async Task<string> Dump()
+        public async Task<string> Dump(string databaseName)
         {
-            if (string.IsNullOrWhiteSpace(dumpCommand)) throw new Exception("DumpCommand missing.");
-             
-            var commandText = string.Format(dumpCommand, options.Host,options.Password,options.UserId,options.Name);
-            var program = dumpProgram;
+            var shell = new ShellCommand();
+            logger.LogInformation("Creating database dump of {Database}", databaseName);
+            if (SqlDialect.Current.Provider == DatabaseProvider.MySql)
+            {
+                return await shell.Run(string.IsNullOrWhiteSpace(program) ? "mysqldump" : program,
+                    new[] { "--host", options.Host, "--port", options.Port.ToString(), "--user", options.UserId,
+                            "--single-transaction", "--routines", "--no-tablespaces", databaseName },
+                    new Dictionary<string, string> { ["MYSQL_PWD"] = options.Password });
+            }
 
-            return await new ShellCommand().Run(program, commandText); 
-        } 
-
+            return await shell.Run(string.IsNullOrWhiteSpace(program) ? "pg_dump" : program,
+                new[] { "--host", options.Host, "--port", options.Port.ToString(), "--username", options.UserId, "--no-password", "--dbname", databaseName },
+                new Dictionary<string, string> { ["PGPASSWORD"] = options.Password });
+        }
     }
 }

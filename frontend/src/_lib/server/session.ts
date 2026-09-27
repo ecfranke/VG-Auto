@@ -32,6 +32,11 @@ interface SessionPayload extends JWTPayload{
     console.log(error)
   }
 }
+// Secure cookies unless explicitly disabled (plain HTTP deployments), always off in `next dev`.
+const secureCookies = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : process.env.NODE_ENV === 'production';
+
 export async function createSession(rootJwt: string,publicJwt: string) {
     
   if(!sessionTimeoutInSecondsString) throw new Error('NEXT_PUBLIC_SESSION_TIMEOUT env not set');
@@ -42,7 +47,7 @@ export async function createSession(rootJwt: string,publicJwt: string) {
   const cookieStore = await cookies() 
   cookieStore.set('session', session, {
     httpOnly: true, //jwt not accessible by browser
-    secure: false,
+    secure: secureCookies,
     expires: expiresAt,
     sameSite: 'lax',
     path: '/',
@@ -50,7 +55,7 @@ export async function createSession(rootJwt: string,publicJwt: string) {
   //jwt for public side resources
   cookieStore.set('jwt',  publicJwt, {
     httpOnly: false,
-    secure: false,
+    secure: secureCookies,
     expires: expiresAt,
     sameSite: 'lax',
     path: '/',
@@ -58,7 +63,7 @@ export async function createSession(rootJwt: string,publicJwt: string) {
    //browser app has to know when session started so it can call extend session before api jwt times out
   cookieStore.set('session_timestamp',  Date.now().toString(), {
     httpOnly: false,
-    secure: false,
+    secure: secureCookies,
     expires: expiresAt,
     sameSite: 'lax',
     path: '/',

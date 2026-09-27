@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AutoMapper;
 using Carmasters.Core;
 using Carmasters.Core.Application;
 using Carmasters.Core.Domain;
@@ -24,12 +23,10 @@ namespace Carmasters.Http.Api.Controllers
     {
 
         protected readonly IRepository repository;
-        protected readonly IMapper mapper;
 
-        protected BaseController(IRepository repository, IMapper mapper)
+        protected BaseController(IRepository repository)
         {
             this.repository = repository;
-            this.mapper = mapper;
         }
         [Authorize(Policy = "ServerSidePolicy")]
         [HttpGet("{id}")]
@@ -43,9 +40,10 @@ namespace Carmasters.Http.Api.Controllers
 
         protected virtual MODEL Map(DOMAINOBJECT entity)
         {
-            return mapper.Map<MODEL>(entity);
+            throw new NotSupportedException();
         }
 
+        [Authorize(Policy = "ServerSidePolicy")]
         [HttpPost]
         public virtual ActionResult Post(MODEL model)
         {

@@ -23,7 +23,7 @@ namespace Carmasters.Core.Repository.Postgres
     {
         private readonly DbOptions dbOptions;
         private const string UserSelectQuery =
-            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId FROM public.user";
+            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil FROM public.user";
 
         public UserRepository(Microsoft.Extensions.Options.IOptions<DbOptions> dbOptions)
         {
@@ -101,7 +101,10 @@ namespace Carmasters.Core.Repository.Postgres
                 user.Email,
                 user.Validated,
                 user.ProfileImage,
-                new UserIdentifier(user.TenantName, user.EmployeeId));
+                new UserIdentifier(user.TenantName, user.EmployeeId),
+                user.MustChangePassword,
+                user.FailedLoginCount,
+                user.LockedUntil);
         }
 
         public void Update(User user)
@@ -126,7 +129,10 @@ namespace Carmasters.Core.Repository.Postgres
                                   Password = @Password, 
                                   Email = @Email, 
                                   Validated = @Validated, 
-                                  Profile_Image = @ProfileImage
+                                  Profile_Image = @ProfileImage,
+                                  must_change_password = @MustChangePassword,
+                                  failed_login_count = @FailedLoginCount,
+                                  locked_until = @LockedUntil
                               WHERE TenantName = @TenantName AND EmployeeId = @EmployeeId",
                             new
                             {
@@ -135,6 +141,9 @@ namespace Carmasters.Core.Repository.Postgres
                                 Email = user.Email,
                                 Validated = user.Validated,
                                 ProfileImage = user.ProfileImage,
+                                MustChangePassword = user.MustChangePassword,
+                                FailedLoginCount = user.FailedLoginCount,
+                                LockedUntil = user.LockedUntil,
                                 TenantName = user.Id.TenantName,
                                 EmployeeId = user.Id.EmployeeId
                             });
@@ -155,6 +164,28 @@ namespace Carmasters.Core.Repository.Postgres
             }
         }
 
+        public void Add(User user)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (user.Id == null) throw new ArgumentException("Cannot add user without a valid identifier");
+
+            using var connection = CreateConnection(GetUserListDatabase());
+            connection.Execute(
+                @"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password)
+                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword)",
+                new
+                {
+                    user.UserName,
+                    user.Password,
+                    TenantName = user.Id.TenantName,
+                    user.Email,
+                    user.Validated,
+                    user.ProfileImage,
+                    EmployeeId = user.Id.EmployeeId,
+                    user.MustChangePassword
+                });
+        }
+
         public IEnumerable<User> GetAllByTenant(string tenantName)
         {
             using (var connection = CreateConnection(GetUserListDatabase()))
@@ -171,7 +202,10 @@ namespace Carmasters.Core.Repository.Postgres
                         user.Email,
                         user.Validated,
                         user.ProfileImage,
-                        new UserIdentifier(user.TenantName, user.EmployeeId));
+                        new UserIdentifier(user.TenantName, user.EmployeeId),
+                        user.MustChangePassword,
+                        user.FailedLoginCount,
+                        user.LockedUntil);
                 }
             }
         }

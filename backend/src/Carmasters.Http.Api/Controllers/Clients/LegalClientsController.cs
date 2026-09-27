@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Application.RateLimiting;
+﻿using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Domain;
 using Carmasters.Http.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -17,9 +16,11 @@ namespace Carmasters.Http.Api.Controllers.Clients
     [ApiController]
     public class LegalClientsController : BaseController<LegalClientDto, LegalClient>
     {
-        public LegalClientsController(IRepository repository, IMapper mapper) : base(repository, mapper)
+        public LegalClientsController(IRepository repository) : base(repository)
         {
         }
+
+        protected override LegalClientDto Map(LegalClient entity) => Carmasters.Http.Api.Model.DtoMapper.ToDto(entity);
 
         protected override LegalClient CreateFrom(LegalClientDto model)
         {

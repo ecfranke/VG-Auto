@@ -3,6 +3,7 @@
 import { httpPut } from "@/_lib/server/query-api";
 import {  pushToast } from "@/_lib/server/pushToast";
 import { redirect } from "next/navigation";  
+import { createSession } from "@/_lib/server/session";
 
 
 export async function createOrUpdate(
@@ -34,7 +35,11 @@ export async function changePassword(
  
   const response = await httpPut({ url: 'profile/changepassword', body })
 
-  await response.text();
+  // the API returns fresh tokens after a password change
+  const tokens = await response.json();
+  if (tokens?.jwt && tokens?.publicJwt) {
+    await createSession(tokens.jwt, tokens.publicJwt);
+  }
 
   pushToast(`Password updated successfully!`)
 

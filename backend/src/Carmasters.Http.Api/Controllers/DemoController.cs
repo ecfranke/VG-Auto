@@ -39,13 +39,19 @@ namespace Carmasters.Http.Api.Controllers
             _jwtOptions = jwtOptions;
             _dbOptions = dbOptions.Value;
             _demoSetupService = demoSetupService;
+            _demoEnabled = configuration.GetValue("Demo:Enabled", false);
         }
+        private readonly bool _demoEnabled;
 
         [AllowAnonymous]
         [DemoRateLimit]
         [HttpPost("setup")]
         public async Task<ActionResult<DemoSetupResponse>> SetupDemo([FromBody] DemoSetupRequest request)
         {
+            if (!_demoEnabled)
+            {
+                return NotFound();
+            }
             if (_dbOptions.MultiTenancy?.Enabled != true)
             {
                 return BadRequest("Demo setup requires multi-tenancy to be enabled");

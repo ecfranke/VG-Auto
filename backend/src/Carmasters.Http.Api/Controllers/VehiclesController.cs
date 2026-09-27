@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Domain;
+﻿using Carmasters.Core.Domain;
 using Carmasters.Http.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Carmasters.Core.Application.Services;
@@ -26,7 +25,7 @@ namespace Carmasters.Http.Api.Controllers
     {
         private readonly ISession session;
 
-        public VehiclesController(IRepository repository,ISession session, IMapper mapper) : base(repository, mapper)
+        public VehiclesController(IRepository repository,ISession session) : base(repository)
         {
             this.session = session;
         }
@@ -35,10 +34,10 @@ namespace Carmasters.Http.Api.Controllers
         public ClientVehicleDto[] ClientVehicles(Guid clientId)
         {
             var vehicles = repository.GetConnection()
-               .Query<ClientVehicleDto>(@" select v.producer,v.model,v.regnr,v.vin,v.id,r.ownerid from domain.vehicleregistration r
+               .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer,v.model,v.regnr,v.vin,v.id,r.ownerid from domain.vehicleregistration r
 										    inner join domain.vehicle v on v.id = r.vehicleid
 											  where r.ownerid = @ownerid  
-												  and r.datetimeto is null", new { ownerid = clientId })
+												  and r.datetimeto is null"), new { ownerid = clientId })
                .ToArray();
 
 
@@ -119,6 +118,16 @@ namespace Carmasters.Http.Api.Controllers
             else entity.EndRegistration();
         }
 
+        private static readonly Dictionary<string, string> SortColumns = new()
+        {
+            ["id"] = "v.id",
+            ["regnr"] = "v.regnr",
+            ["vin"] = "v.vin",
+            ["producer"] = "v.producer",
+            ["model"] = "v.model",
+            ["ownername"] = "ownername",
+        };
+
         [HttpGet("page")]
         public PagedResult<VehiclePageDto> GetPage(string searchText, string orderby, int limit, int offset, bool desc)
         {
@@ -126,11 +135,12 @@ namespace Carmasters.Http.Api.Controllers
                 repository
                   .PageQuery<VehiclePageDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
-                  .SearchFields("concat_ws(' ',v.regnr,vin,firstname,lastname,l.name,producer,model)") //,body,drivingside,engine,TO_CHAR(productiondate,'MM-YYYY'),region,series,transmission
-                  .SelectSql(@"SELECT 
+                  .SearchFields("v.regnr", "v.vin", "p.firstname", "p.lastname", "l.name", "v.producer", "v.model")
+                  .Sortable(SortColumns, "v.id")
+                  .SelectSql($@"SELECT 
                         v.id, 
-                        v.regnr,vin, producer,model,body,drivingside,engine,TO_CHAR(productiondate,'MM-YYYY') as productiondate,region,series,transmission,
-                        concat_ws(' ',firstname,lastname,l.name)  as ownername,
+                        v.regnr,vin, producer,model,body,drivingside,engine,{SqlDialect.Current.FormatMonthYear("productiondate")} as productiondate,region,series,transmission,
+                        concat_ws(' ',p.firstname,p.lastname,l.name)  as ownername,
                         v0.ownerid as ownerid
                         FROM domain.vehicle AS v
                                left join domain.vehicleregistration v0 on v.id = v0.vehicleid AND v0.datetimeto IS NULL

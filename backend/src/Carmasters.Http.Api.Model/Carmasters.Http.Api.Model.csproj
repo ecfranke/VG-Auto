@@ -7,7 +7,6 @@
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
   </ItemGroup>
 <ItemGroup>
   <ProjectReference Include="..\Carmasters.Domain\Carmasters.Core.Domain.csproj" />

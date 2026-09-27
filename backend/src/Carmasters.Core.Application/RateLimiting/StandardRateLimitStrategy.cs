@@ -95,21 +95,13 @@ namespace Carmasters.Core.Application.RateLimiting
             context.Response.Headers["X-RateLimit-Reset"] = ((long)(resetTime - new DateTime(1970, 1, 1)).TotalSeconds).ToString();
         }
 
+        /// <summary>
+        /// Client address as resolved by the forwarded headers middleware. Raw X-Forwarded-For headers are
+        /// NOT trusted here, otherwise any client could bypass the limit by sending a random header.
+        /// </summary>
         protected string GetClientIpAddress(HttpContext context)
         {
-            string ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(ipAddress))
-            {
-                ipAddress = context.Connection.RemoteIpAddress?.ToString();
-            }
-
-            if (string.IsNullOrEmpty(ipAddress))
-            {
-                ipAddress = "unknown";
-            }
-
-            return ipAddress;
+            return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         }
     }
 }

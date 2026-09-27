@@ -1,0 +1,7 @@
+<Project>
+  <!-- Pins patched versions of legacy transitive packages pulled in by NHibernate (NETStandard.Library 1.6.1). -->
+  <ItemGroup>
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+</Project>

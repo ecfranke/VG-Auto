@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using AutoMapper;
 using Carmasters.Core.Application;
 using Carmasters.Core.Application.Authorization;
 using Carmasters.Core.Application.Database;
@@ -33,7 +32,7 @@ namespace Carmasters.Http.Api.Controllers
         private readonly IUserRepository userRepository;
         private readonly ISession session;
 
-        public EmployeesController(IUserRepository userRepository, IRepository repository, IMapper mapper, ISession session) : base(repository, mapper)
+        public EmployeesController(IUserRepository userRepository, IRepository repository, ISession session) : base(repository)
         {
             this.userRepository = userRepository;
             this.session = session;
@@ -48,6 +47,14 @@ namespace Carmasters.Http.Api.Controllers
             }).ToList();
         }
 
+        private static readonly System.Collections.Generic.Dictionary<string, string> SortColumns = new()
+        {
+            ["id"] = "id",
+            ["firstname"] = "firstname",
+            ["lastname"] = "lastname",
+            ["email"] = "email",
+        };
+
         [HttpGet("page")]
         public PagedResult<EmployeeDto> GetPage(string searchText, string orderby, int limit, int offset, bool desc)
         {
@@ -55,7 +62,8 @@ namespace Carmasters.Http.Api.Controllers
                 repository
                   .PageQuery<EmployeeDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
-                  .SearchFields("concat_ws(' ',firstname,lastname,email,phone)") //u.username
+                  .SearchFields("firstname", "lastname", "email", "phone")
+                  .Sortable(SortColumns, "id")
                   .SelectSql(@"select employee.*,'' as username  from domain.employee ") //left join public.user u on u.employeeid = employee.id
                   .ToResult();
 
@@ -74,6 +82,8 @@ namespace Carmasters.Http.Api.Controllers
             return page;
         }
 
+        protected override EmployeeDto Map(Employee entity) => Carmasters.Http.Api.Model.DtoMapper.ToDto(entity);
+
         protected override void AfterGet(EmployeeDto model, Employee domainObj)
         {
             base.AfterGet(model, domainObj);
@@ -89,13 +99,13 @@ namespace Carmasters.Http.Api.Controllers
             {
                 if (string.IsNullOrWhiteSpace(model.Password))
                 {
-                    throw new ArgumentException("Parool sisestamata.");
+                    throw new UserException("Password is required when a username is set.");
                 }
                 var user = userRepository.GetBy(model.UserName);
-                if (user != null) throw new ArgumentException("Seda kasutajanime ei saa kasutada.");
+                if (user != null) throw new UserException("This username is already taken.");
 
                 var newUser = NewUser(model, domainObj);
-                userRepository.Update(newUser);
+                userRepository.Add(newUser);
             }
         }
          

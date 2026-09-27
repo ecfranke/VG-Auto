@@ -16,21 +16,24 @@ export async function authenticate(prevState: { error: string }, formData: FormD
         serverSecret: process.env.SERVER_SECRET
       },
       authorize: false,
+      raw: true,
     }
   )
 
   if (!res.ok) {
-    const responseText = await res.text();
-    console.log(responseText);
-    return { error: "Login failed", }
+    if (res.status === 429) return { error: "Too many attempts, please wait a minute." };
+    try {
+      const json = await res.json();
+      if (json?.locked) return { error: "Account temporarily locked after too many failed attempts." };
+    } catch { /* no body */ }
+    return { error: "Wrong username or password" }
   }
 
   const jsonResponse = await res.json();
 
   if (jsonResponse.jwt && jsonResponse.publicJwt) {
     await createSession(jsonResponse.jwt,jsonResponse.publicJwt);
-    // 5. Redirect user
-    redirect('/home/work');
+    redirect(jsonResponse.mustChangePassword ? '/auth/change-password' : '/home/work');
   }
   console.log("jwt missing");
   return { error: "Login failed", }

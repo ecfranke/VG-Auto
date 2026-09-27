@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using Microsoft.Extensions.DependencyInjection;
+using Carmasters.Core.Application.Extensions;
+
 namespace Carmasters.Http.Api.Controllers
 {
     [TenantRateLimit]
@@ -64,8 +67,12 @@ namespace Carmasters.Http.Api.Controllers
         [HttpGet("dbdump")]
         public async Task<IActionResult> DumpDb()
         {
-            var script = await backup.Dump();
-            Response.Headers.Append("content-disposition", $"inline;filename=dbdump{DateTime.Now.ToString("yyyyMMddmmss")}.sql");
+            var dbOptions = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<DbOptions>>().Value;
+            var databaseName = dbOptions.MultiTenancy?.Enabled == true
+                ? new MultiTenancyDbName(dbOptions, this.TenantName()).Value
+                : dbOptions.Name;
+            var script = await backup.Dump(databaseName);
+            Response.Headers.Append("content-disposition", $"attachment;filename=dbdump{DateTime.Now:yyyyMMddHHmmss}.sql");
 
             return File(Encoding.UTF8.GetBytes(script), "application/octet-stream");
         }

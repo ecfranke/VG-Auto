@@ -49,6 +49,10 @@ namespace Carmasters.Http.Api.Models
         /// Profile image stored as a byte array
         /// </summary>
         public byte[] ProfileImage { get; set; }
+
+        public bool MustChangePassword { get; set; }
+        public int FailedLoginCount { get; set; }
+        public DateTime? LockedUntil { get; set; }
     }
 
 }

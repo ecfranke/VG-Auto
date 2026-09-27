@@ -1,25 +1,43 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# Generates backend/src/Carmasters.Http.Api/appsettings.Secrets.json and frontend/.env
+# with random secrets. Existing files are kept unless --force is given.
+set -euo pipefail
 
-# Paths
+cd "$(dirname "$0")/.."
+
 APPSETTINGS=backend/src/Carmasters.Http.Api/appsettings.Secrets.json
 ENVFILE=frontend/.env
+FORCE=${1:-}
 
-# Secrets
+if [[ -f $APPSETTINGS || -f $ENVFILE ]] && [[ "$FORCE" != "--force" ]]; then
+  echo "Secrets already exist ($APPSETTINGS / $ENVFILE). Use --force to regenerate." >&2
+  exit 1
+fi
+
 JWT_SECRET=$(openssl rand -hex 64)
-CONSUMER_SECRET=$(openssl rand -base64 32)
-SESSION_SECRET=$(openssl rand -base64 32)
+CONSUMER_SECRET=$(openssl rand -hex 32)
+SESSION_SECRET=$(openssl rand -hex 32)
+DB_PASSWORD=${DB_PASSWORD:-$(openssl rand -hex 16)}
 
-# appsettings.Secrets.json
+replace() { # file placeholder value
+  python3 - "$1" "$2" "$3" <<'PY'
+import sys
+path, placeholder, value = sys.argv[1:4]
+text = open(path, encoding='utf-8').read().replace(placeholder, value)
+open(path, 'w', encoding='utf-8').write(text)
+PY
+}
+
 cp ${APPSETTINGS}.example $APPSETTINGS
-sed -i.bak "s|\"Secret\": \".*\"|\"Secret\": \"$JWT_SECRET\"|" $APPSETTINGS
-sed -i.bak "s|\"ConsumerSecret\": \".*\"|\"ConsumerSecret\": \"$CONSUMER_SECRET\"|" $APPSETTINGS
-rm $APPSETTINGS.bak
+replace $APPSETTINGS "[your-jwt-secret]" "$JWT_SECRET"
+replace $APPSETTINGS "[your-server-secret]" "$CONSUMER_SECRET"
+replace $APPSETTINGS "[your-db-password]" "$DB_PASSWORD"
+chmod 600 $APPSETTINGS
 
-# .env
 cp ${ENVFILE}.example $ENVFILE
-sed -i.bak "s|SERVER_SECRET=.*|SERVER_SECRET=$CONSUMER_SECRET|" $ENVFILE
-sed -i.bak "s|SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" $ENVFILE
-rm $ENVFILE.bak
+replace $ENVFILE "[your-server-secret]" "$CONSUMER_SECRET"
+replace $ENVFILE "[random-32-byte-base64]" "$SESSION_SECRET"
+chmod 600 $ENVFILE
 
-echo "✅ Secrets initialized"
+echo "Secrets initialized."
+echo "Database password: $DB_PASSWORD  (create the database user with this password, or edit $APPSETTINGS)"

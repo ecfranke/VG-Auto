@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Application;
+﻿using Carmasters.Core.Application;
 using Carmasters.Core.Application.Configuration;
 using Carmasters.Core.Application.Extensions;
 using Carmasters.Core.Application.RateLimiting;
@@ -31,17 +30,15 @@ namespace Carmasters.Http.Api.Controllers
     public class WorkController : ControllerBase
     { 
         private readonly IRepository repository;
-        protected readonly IMapper mapper;
         private readonly ISequnceNumberProviderFactory numberProviderFactory;
         private readonly ISession session;
         private readonly IConfiguration configuration;
         private readonly IPricingSender pricingSender;
         private readonly ITenantConfigService tenantConfigService;
         static CultureInfo cultureUS = new CultureInfo("en-US");
-        public WorkController(IRepository repository, IMapper mapper, ISequnceNumberProviderFactory numberProviderFactory, ISession session, IConfiguration configuration,IPricingSender pricingSender, ITenantConfigService tenantConfigService)
+        public WorkController(IRepository repository, ISequnceNumberProviderFactory numberProviderFactory, ISession session, IConfiguration configuration,IPricingSender pricingSender, ITenantConfigService tenantConfigService)
         { 
             this.repository = repository;
-            this.mapper = mapper;
             this.numberProviderFactory = numberProviderFactory;
             this.session = session;
             this.configuration = configuration;
@@ -90,8 +87,9 @@ namespace Carmasters.Http.Api.Controllers
         public async Task<dynamic> Activities(Guid id,Guid? currentId) 
             
         {
-            var activities  = session.Connection.Query<ActivityDto>(
-                                @"select a.id,ordernr||'' as number,startedon,name,firstname||' '||lastname as startedby,notes,isvehiclelinesonpricing,isempty from ( 
+            var d = SqlDialect.Current;
+            var activities  = session.Connection.Query<ActivityDto>(d.Sql(
+                                $@"select a.id,{d.CastToText("ordernr")} as number,startedon,name,concat_ws(' ',firstname,lastname) as startedby,notes,isvehiclelinesonpricing,isempty from ( 
                                        select 
 									       id,
 										   ordernr,
@@ -118,7 +116,7 @@ namespace Carmasters.Http.Api.Controllers
 											and not exists(select * from domain.serviceperformed where repairjobid = repairjob.id) AS isempty 
 										 from domain.repairjob   where workid = @workid
                                    ) a
-                                   inner join domain.employee e on e.id = a.starterid order by startedon desc", new { workid = id }).ToList();
+                                   inner join domain.employee e on e.id = a.starterid order by startedon desc"), new { workid = id }).ToList();
             if(!activities.Any()) 
             {
                 return new { };
@@ -243,127 +241,94 @@ namespace Carmasters.Http.Api.Controllers
             }
             return Ok();
         }
-        //todo move queries out refract
         [HttpGet("page")]
         public PagedResult<WorkPage> GetPage(
-            string searchText, 
-            string orderby, 
-            int limit, int offset, bool desc, 
+            string searchText,
+            string orderby,
+            int limit, int offset, bool desc,
             string status,
             string issued,
             string saleable,
-             DateTime? workForm,
+            DateTime? workForm,
             DateTime? workTo,
-            DateTime? invoiceFrom, 
-            DateTime? invoiceTo )
+            DateTime? invoiceFrom,
+            DateTime? invoiceTo)
         {
-            var onlyIssued = issued == "on" ;
-            var clientId  = Request.Query["clientiId[value]"].FirstOrDefault();
-            var vehicleId = Request.Query["vehicleId[value]"].FirstOrDefault();
-            orderby = onlyIssued? "i.number": "w.changedon";
+            var d = SqlDialect.Current;
+            var onlyIssued = issued == "on";
+            Guid? clientId = Guid.TryParse(Request.Query["clientiId[value]"].FirstOrDefault(), out var cid) ? cid : null;
+            Guid? vehicleId = Guid.TryParse(Request.Query["vehicleId[value]"].FirstOrDefault(), out var vid) ? vid : null;
 
-             
-
-            string pgDate(DateTime? date) { return date.Value.ToString("s", cultureUS); }
-            desc = true;
+            var sortExpression = onlyIssued ? "i.number" : "w.changedon";
             var query = repository
-                 .PageQuery<WorkPage>(orderby, limit, offset, desc);
+                 .PageQuery<WorkPage>(null, limit, offset, true)
+                 .Sortable(new Dictionary<string, string>(), sortExpression);
 
-           
             if (!onlyIssued)
             {
                 query.Where("w.invoiceid is null");
-            } 
+            }
 
             if (!string.IsNullOrWhiteSpace(status))
             {
-                 
-                if (status == "inprogress") query.Where($" w.userstatus = '{WorkStatus.InProgress}'");
-                else if (status == "closed") query.Where($" w.userstatus = '{WorkStatus.Closed}'");
-
-                else if (status == "overdue") 
-                    query.Where(@"i.ispaid = false and (ip.issuedon + i.duedays * interval '1 day' <=  current_timestamp)");
-
+                if (status == "inprogress") query.Where($"w.userstatus = {query.Parameter(WorkStatus.InProgress.ToString())}");
+                else if (status == "closed") query.Where($"w.userstatus = {query.Parameter(WorkStatus.Closed.ToString())}");
+                else if (status == "overdue" && onlyIssued)
+                    query.Where($"i.ispaid = false and {d.AddDays("ip.issuedon", "i.duedays")} <= {d.CurrentTimestamp}");
             }
-          
-            if (clientId  != null) query.Where($"w.clientid = '{clientId }'");
-            if (vehicleId != null ) query.Where($"w.vehicleid = '{vehicleId}' ");
-            if (workForm is not null || workForm is not null)
-            { 
-                var dateRestriction = @" work.startedon {0})";
-                if (invoiceTo is null)
-                {
-                    dateRestriction = string.Format(dateRestriction, $" >= '{pgDate(invoiceFrom)}'");
-                }
-                else if (invoiceFrom is null)
-                {
-                    dateRestriction = string.Format(dateRestriction, $" < '{pgDate(invoiceTo)}'");
-                }
-                else
-                {
-                    dateRestriction = string.Format(dateRestriction, $" between '{pgDate(invoiceFrom)}' and '{pgDate(invoiceTo)}' ");
-                }
-                query.Where(dateRestriction);
-            }
-            if (invoiceFrom is not null || invoiceTo is not null)
+
+            if (clientId is not null) query.Where($"w.clientid = {query.Parameter(clientId.Value)}");
+            if (vehicleId is not null) query.Where($"w.vehicleid = {query.Parameter(vehicleId.Value)}");
+
+            if (workForm is not null) query.Where($"w.startedon >= {query.Parameter(workForm.Value)}");
+            if (workTo is not null) query.Where($"w.startedon < {query.Parameter(workTo.Value)}");
+
+            if (onlyIssued)
             {
-               
-                var dateRestriction = @"ip.issuedon {0}";
-                if (invoiceTo is null)
-                {
-                    dateRestriction = string.Format(dateRestriction, $" >= '{pgDate(invoiceFrom)}'");
-                }
-                else if (invoiceFrom is null)
-                {
-                    dateRestriction = string.Format(dateRestriction, $" < '{pgDate(invoiceTo)}'");
-                }
-                else
-                {
-                    dateRestriction = string.Format(dateRestriction, $" between '{pgDate(invoiceFrom)}' and '{pgDate(invoiceTo)}' ");
-                }
-                query.Where(dateRestriction);
+                if (invoiceFrom is not null) query.Where($"ip.issuedon >= {query.Parameter(invoiceFrom.Value)}");
+                if (invoiceTo is not null) query.Where($"ip.issuedon < {query.Parameter(invoiceTo.Value)}");
             }
+
             if (!string.IsNullOrWhiteSpace(saleable))
             {
-                var tokens = new WildcardTokens(saleable).AllTokens();
-                
-                var productTokens = string.Join(" and ", tokens.Select(word => $"concat_ws(' ',p.code,s.name) ilike '%{word}%'"));
+                var productTokens = string.Join(" and ", new WildcardTokens(saleable).AllTokens()
+                    .Select(word =>
+                    {
+                        var p = query.Parameter(SqlDialect.ContainsPattern(word));
+                        return $"({d.ILike("p.code", p)} or {d.ILike("s.name", p)})";
+                    }));
                 var restriction = onlyIssued ?
-$@" exists (select * from domain.productinstalled p 
+$@" exists (select 1 from domain.productinstalled p 
                         inner join domain.saleable s on s.id = p.id 
                         inner join domain.repairjob rj on rj.id = p.repairjobid
-                        where rj.workid = w.id and {productTokens}) ": 
-$@" exists (select * from domain.productoffered p 
+                        where rj.workid = w.id and {productTokens}) " :
+$@" exists (select 1 from domain.productoffered p 
                         inner join domain.saleable s on s.id = p.id 
                         inner join domain.offer offer on offer.id= p.offerid
                         where offer.workid = w.id and {productTokens}) ";
-                 
+
                 query.Where(restriction);
             }
 
+            var issuanceSql = d.JsonObject(
+                ("invoiceNumber", "i.number"),
+                ("isPaid", "i.ispaid"),
+                ("dueDays", "i.duedays"),
+                ("issuedOn", "ip.issuedon"),
+                ("issuedBy", "concat_ws(' ',ii.firstname,ii.lastname)"),
+                ("sentOn", "ip.senton"),
+                ("receiverEmail", "ip.email")) + " as issuance";
 
-            var issuanceSql =
-$@"json_build_object(
-	'invoiceNumber',i.number, 
-	'isPaid',i.ispaid, 
-	'dueDays',i.duedays,
-	'issuedOn',ip.issuedon,
-    'issuedBy',concat_ws(' ',ii.firstname,ii.lastname) ,
-	'sentOn', ip.senton,
-	'receiverEmail',ip.email
-	) as issuance";
-var offerIssuanceSql =
-            $@"(select  
-	   json_build_object(
-	'id',o.id,
-	'number',e.number,
-	'acceptedOn',o.acceptedOn,
-	'acceptedBy',concat_ws(' ',acp.firstname,acp.lastname),
-	'sentOn', p.senton,
-	'issuedOn',p.issuedon,
-	'issuedBy',concat_ws(' ',emp.firstname,emp.lastname) ,  
-	'receiverEmail',p.email
-	)   from domain.offer o 
+            var offerIssuanceSql = $@"(select {d.JsonObject(
+                ("id", "o.id"),
+                ("number", "e.number"),
+                ("acceptedOn", "o.acceptedon"),
+                ("acceptedBy", "concat_ws(' ',acp.firstname,acp.lastname)"),
+                ("sentOn", "p.senton"),
+                ("issuedOn", "p.issuedon"),
+                ("issuedBy", "concat_ws(' ',emp.firstname,emp.lastname)"),
+                ("receiverEmail", "p.email"))}
+	from domain.offer o 
 	inner join domain.pricing p on p.id = o.estimateid
 	inner join domain.estimate e on e.id = o.estimateid
 	inner join domain.employee emp on emp.id = p.issuerid
@@ -379,53 +344,54 @@ inner join domain.pricing ip on ip.id = i.id
 inner join domain.employee ii on ii.id = ip.issuerid";
             }
 
-           
-            return
-               query
-                 .FilterBy(searchText)
-                 .SearchFields(
-@"concat_ws(' ', w.number::text,p.firstname,p.lastname,l.name, v.regnr, v.vin,
-	array_to_string((select array_agg(e.number)   from domain.offer o
-	inner join domain.estimate e on e.id = o.estimateid
-	where workid = w.id ),'/ '),
-	(select number from domain.invoice where id = w.invoiceid))")
+            query
+                .FilterBy(searchText)
+                .SearchFields(
+                    d.CastToText("w.number"),
+                    "p.firstname", "p.lastname", "l.name", "v.regnr", "v.vin",
+                    $"(select {d.StringAgg("e.number", "/ ")} from domain.offer o inner join domain.estimate e on e.id = o.estimateid where o.workid = w.id)",
+                    $"(select {d.CastToText("inv.number")} from domain.invoice inv where inv.id = w.invoiceid)");
 
-                 .SelectSql(
-$@"select *, 
+            var whereSql = query.UseWhereRestriction(false).GetWhereRestriction();
+            var pagingSql = query.UsePagingRestriction(false).GetPagingRestriction();
+
+            return query.SelectSql(
+$@"select page.*, 
   case 
-    when invoiceid is not null then 'completed'
-    else LOWER(userstatus)
+    when page.invoiceid is not null then 'completed'
+    else LOWER(page.userstatus)
   end as status
-   {(!onlyIssued? ","+offerIssuanceSql:string.Empty)}
+   {(!onlyIssued ? "," + offerIssuanceSql : string.Empty)}
 from (
  select
    w.invoiceid, 
    w.id,
    w.userstatus,
    w.number as worknr,   
-   w.startedon ,  
-	{(onlyIssued?issuanceSql: "(select count(*) from domain.offer o where o.workid = w.id)  as numberOfOffers")}, 
-    {(onlyIssued ? string.Empty: "exists (select * from domain.repairjob r where r.workid = w.id)  as hasRepairs,")} 
+   w.startedon,  
+   {sortExpression} as sortkey,
+	{(onlyIssued ? issuanceSql : "(select count(*) from domain.offer o where o.workid = w.id) as numberOfOffers")}, 
+    {(onlyIssued ? string.Empty : "exists (select 1 from domain.repairjob r where r.workid = w.id) as hasRepairs,")} 
     w.clientid,
     concat_ws(' ',p.firstname,p.lastname,l.name) as clientname,
     w.vehicleid,
     v.regnr, 
-	(select string_agg(concat_ws(' ',m.firstname, m.lastname ),'/ ') 
+	(select {d.StringAgg("concat_ws(' ',m.firstname, m.lastname)", "/ ")}
 	   from domain.assignment a 
-		inner join domain.employee m on  a.mechanicid = m.id and a.workid = w.id
+		inner join domain.employee m on a.mechanicid = m.id and a.workid = w.id
 		) as mechanicnames,
 	w.notes  
      from domain.work w
          {extraJoins}
-	  left join domain.legalclient l on l.id =  w.clientid
+	  left join domain.legalclient l on l.id = w.clientid
       left join domain.privateclient p on p.id = w.clientid 
 	  left join domain.vehicle v on v.id = w.vehicleid
-         {query.UseWhereRestriction(false).GetWhereRestriction()}
-	     {query.UsePagingRestriction(false).GetPagingRestriction()} 
-) page").ToResult();
+         {whereSql}
+	     {pagingSql} 
+) page
+order by page.sortkey desc").ToResult();
         }
-        
-          
+
         [HttpGet("offer/{offerId}/productsorservices")]
         public  OkObjectResult  GetProductsAndServicesOfAnOffer(Guid offerId) 
         {

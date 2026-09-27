@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Application.Extensions;
+﻿using Carmasters.Core.Application.Extensions;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
 using Carmasters.Core.Domain;
@@ -21,10 +20,19 @@ namespace Carmasters.Http.Api.Controllers.Clients
     [ApiController]
     public class ClientsController : BaseController<ClientPageDto, Client>
     {
-        public ClientsController(IRepository repository, IMapper mapper) : base(repository, mapper)
+        public ClientsController(IRepository repository) : base(repository)
         {
         }
 
+
+        private static readonly System.Collections.Generic.Dictionary<string, string> SortColumns = new()
+        {
+            ["id"] = "c.id",
+            ["name"] = "name",
+            ["introducedat"] = "c.introducedat",
+            ["phone"] = "c.phone",
+            ["email"] = "email",
+        };
 
         [HttpGet("page")]
         public PagedResult<ClientPageDto> GetPage(string searchText, string orderby, int limit, int offset, bool desc)
@@ -34,17 +42,18 @@ namespace Carmasters.Http.Api.Controllers.Clients
                 repository
                   .PageQuery<ClientPageDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
-                  .SearchFields("concat_ws(' ',firstname,lastname,l.name,ce.address,c.phone,c.address)")
-                  .SelectSql(@"SELECT 
+                  .SearchFields("p.firstname", "p.lastname", "l.name", "ce.address", "c.phone", "c.address")
+                  .Sortable(SortColumns, "c.id")
+                  .SelectSql(@"SELECT
                                     c.id, 
                                     concat_ws(' ',c.country,c.region,c.city,c.address,c.postalcode)  as address,
                                     ce.address AS email,  
                                     c.introducedat,
                                     (l.id IS NOT NULL) AS iscompany,
-                                    concat_ws(' ',firstname,lastname,l.name)  as name, 
+                                    concat_ws(' ',p.firstname,p.lastname,l.name)  as name,
                                     c.phone
                                 FROM domain.client AS c
-                                    left join domain.clientemail ce on ce.clientid = c.id and ce.isactive
+                                    left join domain.clientemail ce on ce.clientid = c.id and ce.isactive = true
                                     LEFT JOIN domain.legalclient AS l ON c.id = l.id
                                     LEFT JOIN domain.privateclient AS p ON c.id = p.id")
                   .ToResult();

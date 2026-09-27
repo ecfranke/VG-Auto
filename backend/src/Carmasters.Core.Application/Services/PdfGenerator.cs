@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Application;
+﻿using Carmasters.Core.Application;
 using Carmasters.Core.Application.Configuration;
 using Carmasters.Core.Application.Model;
 using Carmasters.Core.Application.Printing;
@@ -105,7 +104,6 @@ namespace Carmasters.Core.Application.Services
     public class PdfGenerator : IPdfGenerator
     {
         private readonly IWebHostEnvironment env;
-        private readonly IMapper mapper;
        
         private readonly IConfiguration configuration;
         private readonly PricingBodyHtmlGenerator bodyHtmlGenerator;
@@ -113,14 +111,13 @@ namespace Carmasters.Core.Application.Services
         private readonly ILogger<PdfGenerator> logger;
         private readonly Uri serverUri;
 
-        public PdfGenerator(IWebHostEnvironment env,IMapper mapper,  IConfiguration configuration,
+        public PdfGenerator(IWebHostEnvironment env, IConfiguration configuration,
              PricingBodyHtmlGenerator bodyHtmlGenerator,
              PricingFooterHtmlGenerator footerHtmlGenerator,
              IServer server,
              ILogger<PdfGenerator> logger)
         {
             this.env = env;
-            this.mapper = mapper;
            
             this.configuration = configuration;
             this.bodyHtmlGenerator = bodyHtmlGenerator;

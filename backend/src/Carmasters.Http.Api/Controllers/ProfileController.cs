@@ -20,10 +20,13 @@ namespace Carmasters.Http.Api.Controllers
         private readonly IUserRepository repository;
         private readonly NHibernate.ISession session;
 
-        public ProfileController(IUserRepository repository,NHibernate.ISession session)
+        private readonly AuthTokenService tokens;
+
+        public ProfileController(IUserRepository repository, NHibernate.ISession session, AuthTokenService tokens)
         {
             this.repository = repository;
             this.session = session;
+            this.tokens = tokens;
         }
          
         [HttpGet()]
@@ -60,7 +63,7 @@ namespace Carmasters.Http.Api.Controllers
 
             user.ChangeEmail(profile.Email);
              
-            var profileImage  = Convert.FromBase64String(profile.ProfileImageBase64);
+            var profileImage = string.IsNullOrEmpty(profile.ProfileImageBase64) ? user.ProfileImage : Convert.FromBase64String(profile.ProfileImageBase64);
             user.ChangeProfileImage(profileImage);
             repository.Update(user);
 
@@ -73,30 +76,33 @@ namespace Carmasters.Http.Api.Controllers
         [HttpPut("changepassword")]
         public IActionResult ChangePassword([FromBody] PasswordChangeDto model)
         {
-            if (this.EmployeeId() == null) return NotFound(); 
+            if (this.EmployeeId() == null) return NotFound();
             var user = repository.GetBy(new UserIdentifier(this.TenantName(), this.EmployeeId().GetValueOrDefault()));
-
-            if (string.IsNullOrWhiteSpace(model.NewPassword))
-            {
-                throw new UserException("New password cannot be empty.");
-            }
+            if (user == null) return NotFound();
 
             if (model.NewPassword != model.ConfirmPassword)
             {
                 throw new UserException("New password does not match with confirmed password");
             }
 
-            if (user == null || !PasswordHasher.verifyHash(
-               model.CurrentPassword, user.Password))
+            var policyError = PasswordPolicy.Validate(model.NewPassword, user.UserName);
+            if (policyError != null) throw new UserException(policyError);
+
+            if (!PasswordHasher.verifyHash(model.CurrentPassword ?? string.Empty, user.Password))
             {
-                    throw new UserException("Current password does not match.");
+                throw new UserException("Current password does not match.");
+            }
+
+            if (PasswordHasher.verifyHash(model.NewPassword, user.Password))
+            {
+                throw new UserException("New password must be different from the current one.");
             }
 
             user.ChangePassword(PasswordHasher.getHash(model.NewPassword));
             repository.Update(user);
-             
-            return Ok();
 
+            // fresh tokens without the "password change required" restriction
+            return Ok(tokens.Issue(user, "pwd"));
         }
 
         [HttpDelete()]

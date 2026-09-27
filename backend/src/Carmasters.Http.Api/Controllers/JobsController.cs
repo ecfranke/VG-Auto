@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Carmasters.Core.Application.Extensions;
+﻿using Carmasters.Core.Application.Extensions;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
 using Carmasters.Core.Domain;
@@ -23,7 +22,7 @@ namespace Carmasters.Http.Api.Controllers
     [ApiController]
     public class JobsController : BaseController<RepairJobDto, RepairJob>
     {
-        public JobsController(IRepository repository, IMapper mapper) : base(repository, mapper)
+        public JobsController(IRepository repository) : base(repository)
         {
         }
     }

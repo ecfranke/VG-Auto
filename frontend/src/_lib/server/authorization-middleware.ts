@@ -15,14 +15,17 @@ export default async function authorizationMiddleware(request: NextRequest,respo
   }
 
   const jwt =await getJwt();
+  if (path.startsWith('/auth/change-password') && !jwt) {
+    return NextResponse.redirect(new URL('/auth/login', request.nextUrl))
+  }
   // 4. Redirect to /login if the user is not authenticated
   if (isProtectedRoute && !jwt) {
     return NextResponse.redirect(new URL('/auth/login', request.nextUrl))
   }
  
-  // 5. Redirect to /home if the user is authenticated
+  // 5. Redirect to /home if the user is authenticated (the forced password change page stays reachable)
   if (
-    !isProtectedRoute && jwt
+    !isProtectedRoute && jwt && !path.startsWith('/auth/change-password')
   ) {
     return NextResponse.redirect(new URL('/home/work', request.nextUrl))
   }

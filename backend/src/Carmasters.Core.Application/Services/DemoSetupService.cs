@@ -41,7 +41,7 @@ namespace Carmasters.Core.Application.Services
 
             string tenantName = ShortGuid.NewGuid();
             string username = $"demo{tenantName}";
-            string password = "carcare";
+            string password = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12)).Replace("+", "x").Replace("/", "y");
             string hashedPassword = Authorization.PasswordHasher.getHash(password);
 
             // Create tenant database from template

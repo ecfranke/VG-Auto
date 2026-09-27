@@ -13,6 +13,7 @@ namespace Carmasters.Core.Application.Database
         public User GetByEmail(string email);
         public User GetBy(UserIdentifier id); 
         void Update(User user);
+        void Add(User user);
         string GetFullName(string userName);
         IEnumerable<User> GetAllByTenant(string tenantName);
     }

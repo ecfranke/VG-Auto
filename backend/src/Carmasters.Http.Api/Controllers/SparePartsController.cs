@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using AutoMapper;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
 using Carmasters.Core.Domain;
@@ -19,12 +18,22 @@ namespace Carmasters.Http.Api.Controllers
     public class SparePartsController : BaseController<SparePartDto, SparePart>
     {
 
-        public SparePartsController(IRepository repository, IMapper mapper) : base(repository, mapper)
+        public SparePartsController(IRepository repository) : base(repository)
         {
 
         }
 
 
+
+        private static readonly System.Collections.Generic.Dictionary<string, string> SortColumns = new()
+        {
+            ["id"] = "sparepart.id",
+            ["code"] = "sparepart.code",
+            ["name"] = "sparepart.name",
+            ["price"] = "sparepart.price",
+            ["quantity"] = "sparepart.quantity",
+            ["storagename"] = "storagename",
+        };
 
         [HttpGet("page")]
         public PagedResult<SparePartDto> GetPage(string searchText, string orderby, int limit, int offset, bool desc)
@@ -33,7 +42,8 @@ namespace Carmasters.Http.Api.Controllers
                repository
                  .PageQuery<SparePartDto>(orderby, limit, offset, desc)
                  .FilterBy(searchText)
-                 .SearchFields("concat_ws(' ',code,sparepart.name,s.name)")
+                 .SearchFields("sparepart.code", "sparepart.name", "s.name")
+                 .Sortable(SortColumns, "sparepart.id")
                  .SelectSql(@"select sparepart.*,s.name as storagename
                                     from domain.sparepart left join domain.storage s on s.id = storageid  ")
                  .ToResult();
@@ -51,6 +61,8 @@ namespace Carmasters.Http.Api.Controllers
 
         }
         //TODO move custom method without out that are not api methods
+        protected override SparePartDto Map(SparePart entity) => Carmasters.Http.Api.Model.DtoMapper.ToDto(entity);
+
         protected override SparePart CreateFrom(SparePartDto model)
         {
 

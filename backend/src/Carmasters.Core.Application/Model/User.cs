@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+﻿
 using Carmasters.Core.Application.Model;
 using Carmasters.Core.Domain;
 using NHibernate.Bytecode;
@@ -15,7 +15,8 @@ namespace Carmasters.Core.Application
     public class User
     { 
         protected User() { }
-        public User(string userName, string password, string email, bool validated, byte[] profileImage,  UserIdentifier id = null)
+        public User(string userName, string password, string email, bool validated, byte[] profileImage,  UserIdentifier id = null,
+            bool mustChangePassword = false, int failedLoginCount = 0, DateTime? lockedUntil = null)
         {
             if (string.IsNullOrWhiteSpace(userName))
             {
@@ -32,6 +33,44 @@ namespace Carmasters.Core.Application
             Validated = validated;
             ProfileImage = profileImage;
             Id = id;
+            MustChangePassword = mustChangePassword;
+            FailedLoginCount = failedLoginCount;
+            LockedUntil = lockedUntil;
+        }
+
+        public const int MaxFailedLogins = 10;
+        public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+        public virtual bool MustChangePassword { get; protected set; }
+        public virtual int FailedLoginCount { get; protected set; }
+        public virtual DateTime? LockedUntil { get; protected set; }
+
+        public virtual bool IsLockedOut(DateTime utcNow) => LockedUntil.HasValue && LockedUntil.Value.ToUniversalTime() > utcNow;
+
+        public virtual void LoginFailed(DateTime utcNow)
+        {
+            FailedLoginCount++;
+            if (FailedLoginCount >= MaxFailedLogins)
+            {
+                LockedUntil = utcNow.Add(LockoutDuration);
+                FailedLoginCount = 0;
+            }
+        }
+
+        public virtual void LoginSucceeded()
+        {
+            FailedLoginCount = 0;
+            LockedUntil = null;
+        }
+
+        public virtual void RequirePasswordChange()
+        {
+            MustChangePassword = true;
+        }
+
+        public virtual void MarkEmailValidated()
+        {
+            Validated = true;
         }
 
         public virtual byte[] ProfileImage { get; protected set; }
@@ -55,7 +94,11 @@ namespace Carmasters.Core.Application
 
         public virtual void ChangeEmail(string email)
         {
-            //get validation email?
+            if (!string.Equals(Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                // a new address has to be confirmed again (by a login code)
+                Validated = false;
+            }
             this.Email = email;
         }
 
@@ -72,9 +115,11 @@ namespace Carmasters.Core.Application
             this.ProfileImage = profileImage;
         }
 
-        public virtual void ChangePassword(string v)
+        public virtual void ChangePassword(string passwordHash)
         {
-            this.Password = v;
+            this.Password = passwordHash;
+            this.MustChangePassword = false;
+            LoginSucceeded();
         }
 
         public virtual void ChangeUserName(string userName)

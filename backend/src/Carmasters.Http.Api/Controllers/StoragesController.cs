@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using AutoMapper;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
 using Carmasters.Core.Repository.Postgres;
@@ -21,14 +20,14 @@ namespace Carmasters.Http.Api.Controllers
     public class StoragesController : BaseController<StorageDto, Core.Domain.Storage>
     {
 
-        public StoragesController(Core.Domain.IRepository repository, IMapper mapper) : base(repository, mapper)
+        public StoragesController(Core.Domain.IRepository repository) : base(repository)
         {
         }
         [HttpGet()]
         public virtual ActionResult Get()
         {
             var locations = repository.GetConnection()
-               .Query(@"select id,name from domain.storage").Select(x =>
+               .Query(SqlDialect.Current.Sql(@"select id,name from domain.storage")).Select(x =>
                 new
                 {
                     Id = x.id,
@@ -38,6 +37,13 @@ namespace Carmasters.Http.Api.Controllers
             return new JsonResult(locations);
         }
 
+        private static readonly System.Collections.Generic.Dictionary<string, string> SortColumns = new()
+        {
+            ["id"] = "id",
+            ["name"] = "name",
+            ["address"] = "address",
+        };
+
         [HttpGet("page")]
         public PagedResult<StorageDto> GetPage(string searchText, string orderby, int limit, int offset, bool desc)
         {
@@ -45,10 +51,13 @@ namespace Carmasters.Http.Api.Controllers
               repository
                 .PageQuery<StorageDto>(orderby, limit, offset, desc)
                 .FilterBy(searchText)
-                .SearchFields("concat_ws(' ',name,address,description)")
+                .SearchFields("name", "address", "description")
+                .Sortable(SortColumns, "id")
                 .SelectSql(@"select * from domain.storage")
                 .ToResult();
         }
+
+        protected override StorageDto Map(Core.Domain.Storage entity) => Carmasters.Http.Api.Model.DtoMapper.ToDto(entity);
 
         protected override Core.Domain.Storage CreateFrom(StorageDto model)
         {

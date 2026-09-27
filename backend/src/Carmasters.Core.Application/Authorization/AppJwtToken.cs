@@ -1,50 +1,49 @@
-﻿using System;
+using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Carmasters.Core.Application.Configuration;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Carmasters.Core.Application.Authorization
 {
     public class AppJwtToken
     {
+        public const int MinimumSecretBytes = 32;
+
+        public static TokenValidationParameters ValidationParameters(string secret)
+        {
+            EnsureJwtSecret(secret);
+            return new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
+                // tokens expire exactly at token expiration time (instead of 5 minutes later)
+                ClockSkew = TimeSpan.Zero
+            };
+        }
 
         public static JwtSecurityToken LoadJwt(JwtOptions options, string token)
         {
-            EnsureJwtSecret(options);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(options.Secret);
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                // set clockskew to zero so tokens expire exactly at token expiration time (instead of 5 minutes later)
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
-
-            var jwtToken = (JwtSecurityToken)validatedToken;
-
-            return jwtToken;
+            tokenHandler.ValidateToken(token, ValidationParameters(options.Secret), out SecurityToken validatedToken);
+            return (JwtSecurityToken)validatedToken;
         }
 
         public static string Generate(JwtOptions options, ClaimsPrincipal principal)
         {
-            EnsureJwtSecret(options);
-            // generate token that is valid for 7 days
+            EnsureJwtSecret(options.Secret);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(options.Secret);
-
-            var subject = ((ClaimsIdentity)principal.Identity);
+            var key = Encoding.UTF8.GetBytes(options.Secret);
 
             var tokenDescriptor = new SecurityTokenDescriptor
-            { 
-                Subject = subject,
+            {
+                Subject = (ClaimsIdentity)principal.Identity,
                 IssuedAt = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.Add(options.SessionTimeout),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -52,10 +51,21 @@ namespace Carmasters.Core.Application.Authorization
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
-        private static void EnsureJwtSecret(JwtOptions options)
+
+        /// <summary>Constant time comparison for shared secrets.</summary>
+        public static bool SecretsEqual(string expected, string provided)
         {
-            if (string.IsNullOrWhiteSpace(options.Secret)) throw new ArgumentException("Jwt secret not configured");
+            if (string.IsNullOrEmpty(expected) || provided == null) return false;
+            var a = Encoding.UTF8.GetBytes(expected);
+            var b = Encoding.UTF8.GetBytes(provided);
+            return CryptographicOperations.FixedTimeEquals(a, b);
         }
 
+        public static void EnsureJwtSecret(string secret)
+        {
+            if (string.IsNullOrWhiteSpace(secret)) throw new ArgumentException("JwtOptions:Secret is not configured.");
+            if (Encoding.UTF8.GetByteCount(secret) < MinimumSecretBytes)
+                throw new ArgumentException($"JwtOptions:Secret must be at least {MinimumSecretBytes} bytes long.");
+        }
     }
 }
