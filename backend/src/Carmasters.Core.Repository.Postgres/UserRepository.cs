@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using NHibernate;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Data.Common;
 using System.Net.Mail;
 using System.Reflection;
@@ -21,13 +22,13 @@ namespace Carmasters.Core.Repository.Postgres
     /// </summary>
     public class UserRepository :  IUserRepository
     {
-        private readonly DbOptions dbOptions;
+        private readonly IDbConnectionFactory connections;
         private const string UserSelectQuery =
             "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil FROM public.user";
 
-        public UserRepository(Microsoft.Extensions.Options.IOptions<DbOptions> dbOptions)
+        public UserRepository(IDbConnectionFactory connections)
         {
-            this.dbOptions = dbOptions.Value;
+            this.connections = connections;
         }
 
         public User GetBy(string userName)
@@ -38,6 +39,15 @@ namespace Carmasters.Core.Repository.Postgres
         public User GetByEmail(string email)
         {
             return QuerySingleUser($"{UserSelectQuery} WHERE Email = @Email", new { Email = email });
+        }
+
+        public IReadOnlyList<User> GetAllByEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return Array.Empty<User>();
+            using var connection = CreateConnection(GetUserListDatabase());
+            return connection.Query<UserDto>(Sql($"{UserSelectQuery} WHERE LOWER(Email) = LOWER(@Email)"), new { Email = email.Trim() })
+                .Select(ToUser)
+                .ToList();
         }
 
         public User GetBy(UserIdentifier id)
@@ -76,7 +86,7 @@ namespace Carmasters.Core.Repository.Postgres
             {
                 // Query the employee record to get the name
                 var fullName = connection.QuerySingleOrDefault<string>(
-                    "SELECT CONCAT(FirstName, ' ', LastName) FROM domain.employee WHERE Id = @EmployeeId",
+                    Sql("SELECT CONCAT(FirstName, ' ', LastName) FROM domain.employee WHERE Id = @EmployeeId"),
                     new { EmployeeId = id.EmployeeId });
 
                 return fullName;
@@ -90,7 +100,7 @@ namespace Carmasters.Core.Repository.Postgres
         {
             using var connection = CreateConnection(GetUserListDatabase());
 
-            var user = connection.QuerySingleOrDefault<UserDto>(query, parameters);
+            var user = connection.QuerySingleOrDefault<UserDto>(Sql(query), parameters);
 
             if (user == null)
                 return null;
@@ -124,7 +134,7 @@ namespace Carmasters.Core.Repository.Postgres
                     {
                         // Update the user record
                         int rowsAffected = connection.Execute(
-                            @"UPDATE public.user 
+                            Sql(@"UPDATE public.user 
                               SET UserName = @UserName, 
                                   Password = @Password, 
                                   Email = @Email, 
@@ -133,7 +143,7 @@ namespace Carmasters.Core.Repository.Postgres
                                   must_change_password = @MustChangePassword,
                                   failed_login_count = @FailedLoginCount,
                                   locked_until = @LockedUntil
-                              WHERE TenantName = @TenantName AND EmployeeId = @EmployeeId",
+                              WHERE TenantName = @TenantName AND EmployeeId = @EmployeeId"),
                             new
                             {
                                 UserName = user.UserName,
@@ -171,8 +181,8 @@ namespace Carmasters.Core.Repository.Postgres
 
             using var connection = CreateConnection(GetUserListDatabase());
             connection.Execute(
-                @"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password)
-                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword)",
+                Sql(@"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password)
+                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword)"),
                 new
                 {
                     user.UserName,
@@ -191,7 +201,7 @@ namespace Carmasters.Core.Repository.Postgres
             using (var connection = CreateConnection(GetUserListDatabase()))
             {
                 var users = connection.Query<UserDto>(
-                    $"{UserSelectQuery} WHERE TenantName = @TenantName",
+                    Sql($"{UserSelectQuery} WHERE TenantName = @TenantName"),
                     new { TenantName = tenantName });
 
                 foreach (var user in users)
@@ -210,51 +220,23 @@ namespace Carmasters.Core.Repository.Postgres
             }
         }
 
-        /// <summary>
-        /// Gets the database where user accounts are stored
-        /// </summary>
-        private string GetUserListDatabase()
-        {
-            string databaseName = dbOptions.MultiTenancy?.Enabled == true
-                ? new MultiTenancyDbName(dbOptions, DbKind.Tenancy)
-                : dbOptions.Name;
+        private string GetUserListDatabase() => connections.UserListDatabase;
 
-            return databaseName;
-        }
+        private string GetUserDatabase(string tenantName) => connections.TenantDatabase(tenantName);
 
-        /// <summary>
-        /// Gets the database name for a specific tenant when multitenancy is enabled
-        /// </summary>
-        private string GetUserDatabase(string tenantName)
-        {
-            // If multitenancy is enabled, we need to get the tenant-specific database
-            if (dbOptions.MultiTenancy?.Enabled == true)
-            {
-                // This creates the tenant-specific database name
-                return new MultiTenancyDbName(dbOptions, tenantName);
-            }
+        private DbConnection CreateConnection(string databaseName) => connections.Open(databaseName);
 
-            // If multitenancy is not enabled, use the default database name
-            return dbOptions.Name;
-        }
+        private static string Sql(string sql) => SqlDialect.Current.Sql(sql);
 
-        /// <summary>
-        /// Creates a database connection with the specified database name
-        /// </summary>
-        private DbConnection CreateConnection(string databaseName)
-        {
-            var connectionBuilder = new Npgsql.NpgsqlConnectionStringBuilder
-            {
-                Host = dbOptions.Host,
-                Port = dbOptions.Port,
-                Username = dbOptions.UserId,
-                Password = dbOptions.Password,
-                Database = databaseName
-            };
-
-            var connection = new Npgsql.NpgsqlConnection(connectionBuilder.ToString());
-            connection.Open();
-            return connection;
-        }
+        private static User ToUser(UserDto user) => new User(
+            user.UserName,
+            user.Password,
+            user.Email,
+            user.Validated,
+            user.ProfileImage,
+            new UserIdentifier(user.TenantName, user.EmployeeId),
+            user.MustChangePassword,
+            user.FailedLoginCount,
+            user.LockedUntil);
     }
 }

@@ -28,5 +28,14 @@ namespace Carmasters.Tests.Integration
         }
 
         public EmailMessage LastTo(string address) => Messages.Where(m => m.To == address).LastOrDefault();
+
+        /// <summary>Six digit code of the most recent code email (optionally for one recipient).</summary>
+        public string LastCode(string to = null)
+        {
+            var mail = Messages.Where(m => to == null || m.To == to).LastOrDefault(m => m.Subject.Contains("code") || m.Subject.Contains("Confirm"));
+            if (mail == null) return null;
+            var match = System.Text.RegularExpressions.Regex.Match(mail.TextBody, @"\b(\d{6})\b");
+            return match.Success ? match.Groups[1].Value : null;
+        }
     }
 }

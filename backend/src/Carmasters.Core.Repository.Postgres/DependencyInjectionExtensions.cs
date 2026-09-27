@@ -44,9 +44,12 @@ namespace Carmasters.Core.Repository.Postgres
 
             var appFactory = default(ISessionFactory);
             
-            services.AddScoped<IUserRepository>(x => {
-                return new UserRepository(x.GetRequiredService<IOptions<DbOptions>>());
-            });
+            SqlDialect.Use(options.Provider);
+            var connectionFactory = new Carmasters.Core.Persistence.DbConnectionFactory(options);
+            services.AddSingleton<IDbConnectionFactory>(connectionFactory);
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<Carmasters.Core.Application.Authentication.IAuthChallengeRepository, Carmasters.Core.Persistence.AuthChallengeRepository>();
+            services.AddScoped<Carmasters.Core.Application.Authentication.IExternalLoginRepository, Carmasters.Core.Persistence.ExternalLoginRepository>();
             services.AddScoped<ISession>(x =>{
 
                 if (!multitenancyEnabled) return defaultFactory.OpenSession();

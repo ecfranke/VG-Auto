@@ -46,7 +46,15 @@ namespace Carmasters.Core.Application
         public virtual int FailedLoginCount { get; protected set; }
         public virtual DateTime? LockedUntil { get; protected set; }
 
-        public virtual bool IsLockedOut(DateTime utcNow) => LockedUntil.HasValue && LockedUntil.Value.ToUniversalTime() > utcNow;
+        public virtual bool IsLockedOut(DateTime utcNow)
+        {
+            if (!LockedUntil.HasValue) return false;
+            // values without a kind (e.g. MySQL DATETIME) are stored as UTC
+            var until = LockedUntil.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(LockedUntil.Value, DateTimeKind.Utc)
+                : LockedUntil.Value.ToUniversalTime();
+            return until > utcNow;
+        }
 
         public virtual void LoginFailed(DateTime utcNow)
         {

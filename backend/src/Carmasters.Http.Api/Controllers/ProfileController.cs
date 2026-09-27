@@ -9,6 +9,8 @@ using Carmasters.Http.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using System.Linq;
+using System.Threading.Tasks;
 namespace Carmasters.Http.Api.Controllers
 {
     [TenantRateLimit]
@@ -103,6 +105,23 @@ namespace Carmasters.Http.Api.Controllers
 
             // fresh tokens without the "password change required" restriction
             return Ok(tokens.Issue(user, "pwd"));
+        }
+
+        /// <summary>External accounts (Microsoft) linked to the current user.</summary>
+        [HttpGet("externallogins")]
+        public async Task<IActionResult> ExternalLogins([FromServices] Carmasters.Core.Application.Authentication.IExternalLoginRepository externalLogins)
+        {
+            if (this.EmployeeId() == null) return NotFound();
+            var logins = await externalLogins.GetForUserAsync(new UserIdentifier(this.TenantName(), this.EmployeeId().Value));
+            return Ok(logins.Select(l => new { l.Provider, l.Email, l.CreatedAt }));
+        }
+
+        [HttpDelete("externallogins/{provider}")]
+        public async Task<IActionResult> RemoveExternalLogin(string provider, [FromServices] Carmasters.Core.Application.Authentication.IExternalLoginRepository externalLogins)
+        {
+            if (this.EmployeeId() == null) return NotFound();
+            await externalLogins.RemoveAsync(new UserIdentifier(this.TenantName(), this.EmployeeId().Value), provider);
+            return Ok();
         }
 
         [HttpDelete()]

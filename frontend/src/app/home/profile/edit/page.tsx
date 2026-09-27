@@ -5,7 +5,7 @@ import SettingsTabs from '@/_components/SettingsTabs'
 import Main from '../../_components/Main'
 import { httpGet } from '@/_lib/server/query-api';
 import FormInput from '@/_components/FormInput';
-import { changePassword, createOrUpdate } from '../createOrUpdate';
+import { changePassword, createOrUpdate, unlinkExternalLogin } from '../createOrUpdate';
 import { IUserProfile } from '../model'; 
 import ProfileImage from './ProfileImage';
 
@@ -15,6 +15,7 @@ export default async function Page() {
 
   const data = await httpGet('profile');
   const options = await data.json() as IUserProfile;
+  const linked = await (await httpGet('profile/externallogins')).json() as { provider: string, email: string, createdAt: string }[];
   
    
   return (
@@ -80,6 +81,18 @@ export default async function Page() {
             </div>
           </div>
           </form>
+        </div>
+        <div className="border-b border-gray-900/10 pb-12">
+          <h2 className="text-base/7 font-semibold text-gray-900">Microsoft account</h2>
+          {linked.length === 0 ? (
+            <p className="mt-1 text-sm/6 text-gray-500">No Microsoft account is linked. Use &quot;Sign in with Microsoft&quot; on the login page; the first time you confirm it with a code sent to your email address.</p>
+          ) : linked.map((l) => (
+            <form key={l.provider} action={unlinkExternalLogin} className="mt-4 flex items-center justify-between gap-x-6">
+              <input type="hidden" name="provider" value={l.provider} />
+              <p className="text-sm/6 text-gray-700">Linked: <span className="font-semibold">{l.email}</span></p>
+              <button type="submit" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">Unlink</button>
+            </form>
+          ))}
         </div>
         <div className="border-b border-gray-900/10 pb-12">
           <h2 className="text-base/7 font-semibold text-gray-900">Delete account</h2>

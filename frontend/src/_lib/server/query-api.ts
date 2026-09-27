@@ -41,7 +41,7 @@ async function apiCall({
   };
   if(authorize) { 
     const jwt = await getJwt(); 
-    requestHeaders["Authorization"] =  'Bearer ' + jwt;
+    if (jwt) requestHeaders["Authorization"] =  'Bearer ' + jwt;
   } 
   const ip = await clientAddress();
   if (ip) requestHeaders["X-Forwarded-For"] = ip;

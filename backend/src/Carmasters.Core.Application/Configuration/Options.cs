@@ -28,6 +28,8 @@ namespace Carmasters.Core.Application.Configuration
         public string UserId { get; set; }
         public string Password { get; set; }
         public string Name { get; set; } 
+        /// <summary>PostgreSql (default) or MySql.</summary>
+        public Carmasters.Core.Application.Database.DatabaseProvider Provider { get; set; } = Carmasters.Core.Application.Database.DatabaseProvider.PostgreSql;
         public MultiTenancyOptions MultiTenancy { get; set; }
         public class MultiTenancyOptions
         {

@@ -43,6 +43,7 @@ namespace Carmasters.Tests.Integration
             {
                 firstName = "Temp",
                 lastName = "User",
+                email = "temp@example.com",
                 userName = "tempuser",
                 password = "Temp-Pass-2026-x",
             })).EnsureSuccessStatusCode();
@@ -82,6 +83,7 @@ namespace Carmasters.Tests.Integration
             {
                 firstName = "Lock",
                 lastName = "Me",
+                email = "lockme@example.com",
                 userName = "lockme",
                 password = "Lock-Me-Pass-2026",
             })).EnsureSuccessStatusCode();
@@ -89,10 +91,10 @@ namespace Carmasters.Tests.Integration
             // attempts from different addresses, so the per-IP rate limit is not what stops them
             for (int i = 0; i < 10; i++)
             {
-                var bad = await api.Anonymous().PostAsJsonAsync("/api/users/authenticate", new { userName = "lockme", password = "wrong", serverSecret = ApiFixture.ServerSecret });
+                var bad = await api.Anonymous().PostAsJsonAsync("/api/auth/login", new { userName = "lockme", password = "wrong", serverSecret = ApiFixture.ServerSecret });
                 Assert.Equal(HttpStatusCode.Unauthorized, bad.StatusCode);
             }
-            var good = await api.Anonymous().PostAsJsonAsync("/api/users/authenticate", new { userName = "lockme", password = "Lock-Me-Pass-2026", serverSecret = ApiFixture.ServerSecret });
+            var good = await api.Anonymous().PostAsJsonAsync("/api/auth/login", new { userName = "lockme", password = "Lock-Me-Pass-2026", serverSecret = ApiFixture.ServerSecret });
             Assert.Equal(HttpStatusCode.Unauthorized, good.StatusCode);
         }
 

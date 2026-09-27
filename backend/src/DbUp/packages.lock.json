@@ -326,19 +326,19 @@
       },
       "Microsoft.IdentityModel.Protocols": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "uA2vpKqU3I2mBBEaeJAWPTjT9v1TZrGWKdgK6G5qJd03CLx83kdiqO9cmiK8/n1erkHzFBwU/RphP83aAe3i3g==",
+        "resolved": "8.4.0",
+        "contentHash": "cDvZZ8JYto6L1I64sWW17JGwYGuFZ5Qm+WZG+wLk0QHjtuSosujDVAc4nr/sx6+n88q1mdW93rGEl7TCniNp5Q==",
         "dependencies": {
-          "Microsoft.IdentityModel.Tokens": "8.0.1"
+          "Microsoft.IdentityModel.Tokens": "8.4.0"
         }
       },
       "Microsoft.IdentityModel.Protocols.OpenIdConnect": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "AQDbfpL+yzuuGhO/mQhKNsp44pm5Jv8/BI4KiFXR7beVGZoSH35zMV3PrmcfvSTsyI6qrcR898NzUauD6SRigg==",
+        "resolved": "8.4.0",
+        "contentHash": "ZFl318YX90p/sPgwdh9hJObBbRcVJEpoPcLd6sXkTPQBoYvEA6IylG2REmFqoG7ac6Z/6hXLOhmvPBFqDSSySA==",
         "dependencies": {
-          "Microsoft.IdentityModel.Protocols": "8.0.1",
-          "System.IdentityModel.Tokens.Jwt": "8.0.1"
+          "Microsoft.IdentityModel.Protocols": "8.4.0",
+          "System.IdentityModel.Tokens.Jwt": "8.4.0"
         }
       },
       "Microsoft.IdentityModel.Tokens": {
@@ -1431,6 +1431,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.2, )",
           "Microsoft.Extensions.Http": "[9.0.2, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.0.2, )",
+          "Microsoft.IdentityModel.Protocols.OpenIdConnect": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
           "Npgsql": "[9.0.2, )",
           "PuppeteerSharp": "[20.1.0, )",

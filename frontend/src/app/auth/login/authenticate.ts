@@ -1,40 +1,43 @@
-
 'use server'
 import { createSession } from '@/_lib/server/session'
 import { redirect } from 'next/navigation';
-import { httpPost } from '@/_lib/server/query-api';
+import { authApi, authErrorMessage } from '../_lib';
 
-export async function authenticate(prevState: { error: string }, formData: FormData)
-  : Promise<{ error: string }> {
+export interface LoginState {
+  step: 'password' | 'code',
+  challengeId?: string,
+  emailHint?: string | null,
+  error?: string,
+  info?: string,
+}
 
-  const res = await httpPost(
-    {
-      url: 'users/authenticate',
-      body: {
-        username: formData.get('username'),
-        password: formData.get('password'),
-        serverSecret: process.env.SERVER_SECRET
-      },
-      authorize: false,
-      raw: true,
-    }
-  )
+async function finish(tokens: { jwt: string, publicJwt: string, mustChangePassword: boolean }) {
+  await createSession(tokens.jwt, tokens.publicJwt);
+  redirect(tokens.mustChangePassword ? '/auth/change-password' : '/home/work');
+}
 
-  if (!res.ok) {
-    if (res.status === 429) return { error: "Too many attempts, please wait a minute." };
-    try {
-      const json = await res.json();
-      if (json?.locked) return { error: "Account temporarily locked after too many failed attempts." };
-    } catch { /* no body */ }
-    return { error: "Wrong username or password" }
+export async function authenticate(prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const intent = formData.get('intent')?.toString();
+
+  if (intent === 'resend' && prevState.challengeId) {
+    const result = await authApi('resend', { challengeId: prevState.challengeId });
+    if (result.codeRequired) return { ...prevState, error: undefined, info: 'A new code was sent.' };
+    return { ...prevState, info: undefined, error: authErrorMessage(result) };
   }
 
-  const jsonResponse = await res.json();
-
-  if (jsonResponse.jwt && jsonResponse.publicJwt) {
-    await createSession(jsonResponse.jwt,jsonResponse.publicJwt);
-    redirect(jsonResponse.mustChangePassword ? '/auth/change-password' : '/home/work');
+  if (intent === 'code' && prevState.challengeId) {
+    const result = await authApi('verify', { challengeId: prevState.challengeId, code: formData.get('code')?.toString() ?? '' });
+    if (result.tokens) await finish(result.tokens);
+    return { ...prevState, info: undefined, error: authErrorMessage(result) };
   }
-  console.log("jwt missing");
-  return { error: "Login failed", }
-} 
+
+  const result = await authApi('login', {
+    userName: formData.get('username')?.toString() ?? '',
+    password: formData.get('password')?.toString() ?? '',
+  });
+  if (result.tokens) await finish(result.tokens);
+  if (result.codeRequired) {
+    return { step: 'code', challengeId: result.challengeId, emailHint: result.emailHint };
+  }
+  return { step: 'password', error: authErrorMessage(result) };
+}

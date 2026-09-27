@@ -11,6 +11,8 @@ namespace Carmasters.Core.Application.Database
     {
         public User GetBy(string userName);
         public User GetByEmail(string email);
+        /// <summary>All accounts with this email address (case insensitive).</summary>
+        IReadOnlyList<User> GetAllByEmail(string email);
         public User GetBy(UserIdentifier id); 
         void Update(User user);
         void Add(User user);

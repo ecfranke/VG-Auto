@@ -11,6 +11,7 @@ using Carmasters.Core.Application.Printing;
 using Carmasters.Core.Application.RateLimiting;
 using Carmasters.Core.Application.Services;
 using Carmasters.Core.Application.Email;
+using Carmasters.Core.Application.Authentication;
 using Carmasters.Core.Domain;
 using Carmasters.Core.Repository.Postgres;
 using Microsoft.AspNetCore.Builder;
@@ -52,7 +53,8 @@ builder.Services
     .AddDistributedMemoryCache()
     .AddApplicationOptions(builder.Configuration)
     .AddExceptionHandler<JsonExceptionHandler>()
-    .AddTenantConfigurationServices();
+    .AddTenantConfigurationServices()
+    .AddLoginFlows(builder.Configuration);
 
 builder.Services.AddSingleton<RateLimitStrategyFactory>();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

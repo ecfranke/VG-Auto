@@ -1,6 +1,6 @@
 'use server'
 
-import { httpPut } from "@/_lib/server/query-api";
+import { httpDelete, httpPut } from "@/_lib/server/query-api";
 import {  pushToast } from "@/_lib/server/pushToast";
 import { redirect } from "next/navigation";  
 import { createSession } from "@/_lib/server/session";
@@ -46,3 +46,10 @@ export async function changePassword(
   redirect('/home/profile')
 }
 
+
+export async function unlinkExternalLogin(formData: FormData) {
+  const provider = formData.get('provider')?.toString() ?? '';
+  await httpDelete({ url: `profile/externallogins/${encodeURIComponent(provider)}`, body: null });
+  pushToast(`Microsoft account unlinked.`);
+  redirect('/home/profile/edit');
+}

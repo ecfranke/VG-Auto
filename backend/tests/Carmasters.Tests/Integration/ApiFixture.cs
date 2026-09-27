@@ -58,6 +58,9 @@ namespace Carmasters.Tests.Integration
                 ["DefaultAdmin__Password"] = AdminPassword,
                 ["DefaultAdmin__Email"] = "admin@example.com",
                 ["PdfDirectory"] = System.IO.Path.GetTempPath(),
+                ["Authentication__Microsoft__Enabled"] = "true",
+                ["Authentication__Microsoft__ClientId"] = "test-client-id",
+                ["Authentication__Microsoft__ClientSecret"] = "test-client-secret",
             };
             foreach (var (key, value) in settings)
             {
@@ -78,6 +81,8 @@ namespace Carmasters.Tests.Integration
                     services.AddScoped<IPdfGenerator, FakePdfGenerator>();
                     Mailbox.Register(services);
                     services.AddSingleton<Microsoft.AspNetCore.Hosting.IStartupFilter, TestClientIpStartupFilter>();
+                    services.RemoveAll<Carmasters.Core.Application.Authentication.IMicrosoftIdentityClient>();
+                    services.AddSingleton<Carmasters.Core.Application.Authentication.IMicrosoftIdentityClient, FakeMicrosoftIdentityClient>();
                 });
             });
             await Task.CompletedTask;
@@ -104,12 +109,21 @@ namespace Carmasters.Tests.Integration
             return client;
         }
 
+        /// <summary>Password login including the emailed code step.</summary>
         public async Task<(HttpClient Server, HttpClient Browser, LoginResult Login)> LoginAsync(string userName, string password)
         {
             var client = NewClient();
-            var response = await client.PostAsJsonAsync("/api/users/authenticate", new { userName, password, serverSecret = ServerSecret });
+            var response = await client.PostAsJsonAsync("/api/auth/login", new { userName, password, serverSecret = ServerSecret });
             response.EnsureSuccessStatusCode();
-            var login = await response.Content.ReadFromJsonAsync<LoginResult>();
+            var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            if (json.TryGetProperty("codeRequired", out var required) && required.GetBoolean())
+            {
+                var challengeId = json.GetProperty("challengeId").GetGuid();
+                var verify = await client.PostAsJsonAsync("/api/auth/verify", new { challengeId, code = Mailbox.LastCode(), serverSecret = ServerSecret });
+                verify.EnsureSuccessStatusCode();
+                json = await verify.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            }
+            var login = System.Text.Json.JsonSerializer.Deserialize<LoginResult>(json, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
             return (WithToken(login.Jwt), WithToken(login.PublicJwt), login);
         }
 

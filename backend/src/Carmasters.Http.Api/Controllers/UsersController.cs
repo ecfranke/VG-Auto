@@ -20,60 +20,14 @@ namespace Carmasters.Http.Api.Controllers
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        private const int SecondsToWaitOnFailedLogonAttempt = 2;
-
         private readonly IUserRepository repository;
         private readonly ILogger<UsersController> logger;
         private readonly IOptions<JwtOptions> jwtOptions;
-        private readonly AuthTokenService tokens;
-
-        public UsersController(IUserRepository repository, IOptions<JwtOptions> jwtOptions, ILogger<UsersController> logger, AuthTokenService tokens)
+        public UsersController(IUserRepository repository, IOptions<JwtOptions> jwtOptions, ILogger<UsersController> logger)
         {
             this.repository = repository;
             this.logger = logger;
             this.jwtOptions = jwtOptions;
-            this.tokens = tokens;
-        }
-
-        [AllowAnonymous, LimitRequests(MaxRequests = 10, TimeWindow = 60)]
-        [HttpPost("authenticate")]
-        public async Task<IActionResult> Authenticate(LoginDto model)
-        {
-            if (!AppJwtToken.SecretsEqual(jwtOptions.Value.ConsumerSecret, model.ServerSecret))
-            {
-                await Task.Delay(TimeSpan.FromSeconds(SecondsToWaitOnFailedLogonAttempt));
-                return Unauthorized();
-            }
-
-            var user = repository.GetBy(model.Username);
-            var now = DateTime.UtcNow;
-
-            if (user != null && user.IsLockedOut(now))
-            {
-                logger.LogWarning("Authentication refused, account locked: {user}", model.Username);
-                await Task.Delay(TimeSpan.FromSeconds(SecondsToWaitOnFailedLogonAttempt));
-                return Unauthorized(new { locked = true });
-            }
-
-            if (user == null || !PasswordHasher.verifyHash(model.Password, user.Password))
-            {
-                if (user != null)
-                {
-                    user.LoginFailed(now);
-                    repository.Update(user);
-                }
-                logger.LogInformation("Authentication failure: {user} {message}", model.Username, "Wrong password or username");
-                await Task.Delay(TimeSpan.FromSeconds(SecondsToWaitOnFailedLogonAttempt));
-                return Unauthorized();
-            }
-
-            if (user.FailedLoginCount > 0 || user.LockedUntil != null)
-            {
-                user.LoginSucceeded();
-                repository.Update(user);
-            }
-
-            return Ok(tokens.Issue(user, "pwd"));
         }
 
         [AllowAnonymous, LimitRequests(MaxRequests = 60, TimeWindow = 60)]
