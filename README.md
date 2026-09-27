@@ -13,7 +13,7 @@
 - 📎 Offer and invoice generation with PDF export
 - 🧰 Inventory and spare part control
 - 📩 Email integration for quotes/invoices
-- 🤪 CI/CD ready (Github Actions, Docker-based)
+- ✅ CI with GitHub Actions (build + tests on PostgreSQL and MySQL)
 - 🌐 Clean modern UI (Next.js + Tailwind)
 
 ## What is different in this fork (VG-Auto)
@@ -67,7 +67,7 @@ Tests: `cd backend/tests/Carmasters.Tests && dotnet test` (set `CARCARE_TEST_DB_
 - **Database:** PostgreSQL or MySQL 8
 - **Email:** MailKit (SMTP) or Microsoft Graph
 
-The Docker files from upstream (`docker-compose*.yml`, `*Dockerfile`) are not maintained in this fork.
+Docker is not used; the upstream Docker files were removed. CI (`.github/workflows/ci.yml`) builds and tests only.
 
 ## 📄 License
 

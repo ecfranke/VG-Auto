@@ -1,41 +1,96 @@
-name: CI (monorepo)
+name: CI
 
+# Build and test only, no deployment. Deploy on the server with deploy/install.sh.
 on:
-  pull_request:
-    paths:
-      - "backend/**"
-      - "frontend/**"
   push:
     branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
-    if: contains(github.event.head_commit.message, '[skip-backend]') == false
-    uses: ./.github/workflows/backend-build.yml
-    with:
-      db-host: localhost
-      db-password: ${{ secrets.DB_PASSWORD }}
-      application-host: carcareco.app
-      application-path: /opt/apps/
-      ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      jwt-secret: ${{ secrets.JWT_SECRET }}
-      consumer-secret: ${{ secrets.CONSUMER_SECRET }}
-      application-host-user: debian
-      smtp-host: ${{ secrets.SMTP_HOST }}
-      smtp-port: 587
-      smtp-password: ${{ secrets.SMTP_PASSWORD }}
-      smtp-user: ${{ secrets.SMTP_USER }}
-      cors-apphost: carcareco.app
+    name: Backend (${{ matrix.database }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [PostgreSql, MySql]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+          cache: true
+          cache-dependency-path: "backend/**/packages.lock.json"
+
+      # PostgreSQL 16 and MySQL 8 are preinstalled on the Ubuntu runner (no containers needed)
+      - name: Start PostgreSQL
+        if: matrix.database == 'PostgreSql'
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "CREATE ROLE carcare LOGIN SUPERUSER PASSWORD 'ci-password';"
+
+      - name: Start MySQL
+        if: matrix.database == 'MySql'
+        run: |
+          sudo systemctl start mysql.service
+          mysql -uroot -proot -e "CREATE USER 'carcare'@'%' IDENTIFIED BY 'ci-password'; GRANT ALL ON *.* TO 'carcare'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Build
+        working-directory: backend/src
+        run: |
+          touch Carmasters.Http.Api/appsettings.Secrets.json
+          dotnet build Carmasters.sln -c Release --nologo
+
+      - name: Test
+        working-directory: backend/tests/Carmasters.Tests
+        env:
+          CARCARE_TEST_DB_PROVIDER: ${{ matrix.database }}
+          CARCARE_TEST_DB_HOST: 127.0.0.1
+          CARCARE_TEST_DB_USER: carcare
+          CARCARE_TEST_DB_PASSWORD: ci-password
+        run: dotnet test -c Release --no-build --nologo --logger "console;verbosity=normal"
+
+      - name: Check for vulnerable packages
+        working-directory: backend/src
+        run: |
+          dotnet list Carmasters.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          ! grep -q "has the following vulnerable packages" vulnerable.txt
 
   frontend:
-    if: contains(github.event.head_commit.message, '[skip-frontend]') == false
-    uses: ./.github/workflows/frontend-build.yml
-    with:
-      api-url: http://localhost:15567
-      public-api-url: https://api.carcareco.app
-      application-host: carcareco.app
-      application-path: /opt/apps/
-      ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      consumer-secret: ${{ secrets.CONSUMER_SECRET }}
-      session-secret: ${{ secrets.SESSION_SECRET }}
-      application-host-user: debian
+    name: Frontend
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build (includes lint and type check)
+        env:
+          SESSION_SECRET: ci-session-secret-not-used-in-production
+          SERVER_SECRET: ci-server-secret
+          API_URL: http://localhost:15567
+          NEXT_PUBLIC_API_URL: http://localhost:15567
+          NEXT_PUBLIC_SESSION_TIMEOUT: "1500"
+          NEXT_PUBLIC_SESSION_DIALOG_TIMEOUT: "120"
+        run: npm run build
+
+      - name: Audit production dependencies (critical only)
+        run: npm audit --omit=dev --audit-level=critical
