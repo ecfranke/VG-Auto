@@ -34,8 +34,9 @@ namespace VgAuto.Core.Domain
             return $"Estimate nr. {Number}";
         }
         public virtual string Number { get; }
-        public virtual Estimate CreateFor(int purchaseTax,Offer offer, Employee issuer)
+        public virtual Estimate CreateFor(int purchaseTax,Offer offer, Employee issuer, string currency = null)
         {
+            UseCurrency(currency);
             var newSet = offer.Products.ToArray();
             ApplyClientInformation(offer.Work.Client);
             if (offer.IsVehicleLinesOnEstimate)

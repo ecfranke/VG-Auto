@@ -100,6 +100,11 @@ namespace VgAuto.Core.Domain
 
         public abstract string GetNumber();
 
+        /// <summary>Currency of the document, fixed when it is issued (null for documents issued before currencies existed: the company currency applies).</summary>
+        public virtual string Currency { get; protected set; }
+
+        protected void UseCurrency(string currency) => Currency = Currencies.Normalize(currency);
+
         public  virtual DateTime? SentOn { get; protected set; }
         public  virtual DateTime? PrintedOn { get; }
         public  virtual string Email { get; protected set; }

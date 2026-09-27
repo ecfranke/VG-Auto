@@ -44,7 +44,7 @@ namespace VgAuto.Core.Application.Services
                 pricing.EstimateEmailContent
             );
 
-            return new PricingOptions(invoiceOptions, estimateOptions);
+            return new PricingOptions(invoiceOptions, estimateOptions, VgAuto.Core.Domain.Currencies.Normalize(pricing.Currency));
         }
 
         public async Task<AppOptions> GetAppOptionsAsync()
@@ -82,7 +82,8 @@ namespace VgAuto.Core.Application.Services
                 pricingOptions.Invoice.Disclaimer,
                 pricingOptions.Invoice.SignatureLine,
                 pricingOptions.Invoice.EmailContent,
-                pricingOptions.Estimate.EmailContent
+                pricingOptions.Estimate.EmailContent,
+                pricingOptions.Currency
             );
 
             await repository.SavePricingAsync(pricing);

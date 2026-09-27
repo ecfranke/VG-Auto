@@ -43,9 +43,10 @@ namespace VgAuto.Core.Domain
             }
         }
 
-        internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,int purchaseTax,PaymentType paymentType, short dueDays, Employee issuer)
+        internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,int purchaseTax,PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
         {
             var invoice = new Invoice(numberProvider.Next(), issuer, DateTime.UtcNow,paymentType, dueDays,null);
+            invoice.UseCurrency(currency);
             
             invoice.ApplyClientInformation(work.Client);
             invoice.ApplyVehicleInformation(null);

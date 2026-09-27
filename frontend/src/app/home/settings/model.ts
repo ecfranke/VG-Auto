@@ -6,6 +6,14 @@ export interface IUserOptions {
 export interface Pricing {
     invoice:  Invoice;
     estimate: Estimate;
+    currency: string;
+}
+
+export interface ICurrency {
+    code:     string;
+    name:     string;
+    decimals: number;
+    culture:  string;
 }
 
 export interface Estimate {

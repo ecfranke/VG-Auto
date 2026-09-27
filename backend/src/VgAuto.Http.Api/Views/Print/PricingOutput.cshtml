@@ -9,6 +9,9 @@
     var pricingOptions = (PricingOptions)Model.PricingOptions;
     var isInvoice = pricing is VgAuto.Core.Domain.Invoice;
     var hasDiscounts = pricing.Lines.Any(x => x.Discount != 0);
+    // documents issued before currencies existed use the company currency
+    var currency = Currencies.Normalize(pricing.Currency ?? pricingOptions.Currency);
+    var amountFormat = Currencies.Decimals(currency) == 0 ? "#,##0" : "#,##0.00";
 }
   
 <div class="grid grid-cols-2">
@@ -54,7 +57,7 @@
             {
                 <th class="px-2 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Discount %</th>
             }
-            <th class="pl-2 pr-0 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Amount</th>
+            <th class="pl-2 pr-0 py-1 text-end font-light text-sm font-semibold whitespace-nowrap text-gray-900">Amount (@currency)</th>
         </tr>
     </thead>
     <tbody class="divide-y divide-gray-200 bg-white">
@@ -65,12 +68,12 @@
                 <td class="w-full text-start pl-0 pr-2 py-1 text-sm text-gray-900">@item.Description</td>
                 <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Quantity</td>
                 <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Unit</td>
-                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@(item.UnitPrice.ToString("0.00"))</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@(item.UnitPrice.ToString(amountFormat))</td>
                 @if (hasDiscounts)
                 {
                     <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@((item.Discount != null && item.Discount != 0) ? $"{item.Discount} %" : String.Empty)</td>
                 }
-                <td class="w-15 text-end pl-2 pr-0 py-1 text-sm whitespace-nowrap text-gray-900">@item.Total.ToString("0.00")</td>
+                <td class="w-15 text-end pl-2 pr-0 py-1 text-sm whitespace-nowrap text-gray-900">@item.Total.ToString(amountFormat)</td>
             </tr>
         }
     </tbody>
@@ -101,7 +104,7 @@
         <div class="grid grid-rows-3 gap-2 pt-2 pr-0">
             <div class="flex flex-row-reverse ">
                 <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
-                    @pricing.GetTotal(false).ToString("0.00") EUR
+                    @Currencies.Format(pricing.GetTotal(false), currency)
                 </div>
                 <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
                     Total
@@ -109,7 +112,7 @@
             </div>
             <div class="flex flex-row-reverse ">
                 <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
-                    @((pricing.GetTotal(true) - pricing.GetTotal(false)).ToString("0.00")) EUR
+                    @Currencies.Format(pricing.GetTotal(true) - pricing.GetTotal(false), currency)
                 </div>
                 <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
                     VAT
@@ -117,7 +120,7 @@
             </div>
             <div class="flex flex-row-reverse ">
                 <div class="pt-2 pl-4 text-end text-sm font-semibold text-gray-900 pl-0 w-35">
-                    @((pricing.GetTotal(true)).ToString("0.00")) EUR
+                    @Currencies.Format(pricing.GetTotal(true), currency) @currency
                 </div>
                 <div class="pt-2 pr-3 pl-4 text-right text-sm font-semibold text-gray-900 t pl-0">
                     To pay

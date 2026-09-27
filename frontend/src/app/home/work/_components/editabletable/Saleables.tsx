@@ -5,6 +5,8 @@ import {   IPriceSummary, IProduct  } from "../../model";
 import React, { useRef }  from "react";
 import { DataItemRow, DataItemRowHandle } from "./DataIItemRow"; 
 import { dragAndDrop } from "../activity/dragAndDrop"; 
+import { formatMoney } from "@/_lib/shared/money";
+import { useCurrency } from "../CurrencyContext";
 
 export default function Saleables({
     edit, 
@@ -23,7 +25,8 @@ export default function Saleables({
 }) {
 
      
-    const moneyFormatter = new Intl.NumberFormat('et-EE', { style: 'currency', currency: 'EUR' });
+    const currency = useCurrency();
+    const moneyFormatter = { format: (value: number) => formatMoney(value, currency) };
  
     const dragItem = useRef<string | undefined>(null);
     const dragOverItem = useRef<string | undefined>(null);

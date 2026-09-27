@@ -11,6 +11,7 @@ import { DataItemRowHandle } from "./editabletable/DataIItemRow"
 import { IActivities, IOfferIssuance, IProduct, IWorkData } from "../model"
 import OfferAcceptedDialog from "./activity/OfferAcceptedDialog" 
 import SendPricingDialog from "./activity/SendPricingDialog"
+import { CurrencyContext } from "./CurrencyContext"
 
 export default function Activity({
     edit,
@@ -137,9 +138,11 @@ export default function Activity({
                     <ActivityNotes notes={activities.current.notes} edit={edit} ></ActivityNotes>
                 </div>
             </div>
+            <CurrencyContext.Provider value={activities.current.currency}>
             <Saleables
                 edit={edit} data={data} priceSummary={activities.current.priceSummary} tableRef={tableRef} removeItem={removeItem} refreshData={setData} >
             </Saleables>
+            </CurrencyContext.Provider>
             <div className="xl:flex inline-flex float-right xl:items-center">
                 <div className="xl:flex-auto mt-8 inline-flex">
 

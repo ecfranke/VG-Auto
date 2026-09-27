@@ -32,7 +32,8 @@ export async function createOrUpdate(
         },
         estimate: {
           emailContent: formData.get('estimateEmailContent')
-        }
+        },
+        currency: formData.get('currency')?.toString() || null
       }
     }  as IUserOptions;
    

@@ -89,3 +89,27 @@ namespace VgAuto.Tests.Unit
         }
     }
 }
+
+namespace VgAuto.Tests.Unit
+{
+    public class CurrencyTests
+    {
+        [Theory]
+        [InlineData(1234.5, "CAD", "$1,234.50")]
+        [InlineData(1234.5, "USD", "$1,234.50")]
+        [InlineData(1234.5, "CNY", "¥1,234.50")]
+        [InlineData(1234.5, "JPY", "￥1,235")]
+        public void Amounts_are_formatted_like_in_the_home_country(double amount, string code, string expected)
+        {
+            Assert.Equal(expected, VgAuto.Core.Domain.Currencies.Format((decimal)amount, code));
+        }
+
+        [Fact]
+        public void Euro_uses_comma_decimals_and_unknown_codes_fall_back_to_the_default()
+        {
+            Assert.Contains("1.234,50", VgAuto.Core.Domain.Currencies.Format(1234.5m, "EUR"));
+            Assert.Equal("CAD", VgAuto.Core.Domain.Currencies.Normalize("xyz"));
+            Assert.Equal("USD", VgAuto.Core.Domain.Currencies.Normalize(" usd "));
+        }
+    }
+}

@@ -11,6 +11,8 @@ namespace VgAuto.Core.Domain
         public virtual bool SignatureLine { get; protected set; }
         public virtual string InvoiceEmailContent { get; protected set; }
         public virtual string EstimateEmailContent { get; protected set; }
+        /// <summary>ISO code of the company currency (see <see cref="Currencies"/>).</summary>
+        public virtual string Currency { get; protected set; } = Currencies.Default;
         public virtual DateTime CreatedAt { get; protected set; }
         public virtual DateTime UpdatedAt { get; protected set; }
 
@@ -32,6 +34,7 @@ namespace VgAuto.Core.Domain
             SignatureLine = signatureLine;
             InvoiceEmailContent = invoiceEmailContent;
             EstimateEmailContent = estimateEmailContent;
+            Currency = Currencies.Default;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -42,9 +45,15 @@ namespace VgAuto.Core.Domain
             string disclaimer,
             bool signatureLine,
             string invoiceEmailContent,
-            string estimateEmailContent)
+            string estimateEmailContent,
+            string currency = null)
         {
             VatRate = vatRate;
+            if (currency != null)
+            {
+                if (!Currencies.IsSupported(currency.Trim().ToUpperInvariant())) throw new UserException("Unsupported currency.");
+                Currency = currency.Trim().ToUpperInvariant();
+            }
             SurCharge = surCharge;
             Disclaimer = disclaimer;
             SignatureLine = signatureLine;

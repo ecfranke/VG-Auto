@@ -12,7 +12,8 @@ namespace VgAuto.Core.Application.Configuration
     public record RequisitesOptions(string Name, string Phone, string Address, string Email, string BankAccount, string RegNr, string KMKR) { public RequisitesOptions() : this(default, default, default, default, default, default, default) { } }
     public record InvoiceOptions(int VatRate,string SurCharge, string Disclaimer, bool SignatureLine, string EmailContent) { public InvoiceOptions() : this(default,default, default, default, default) { } }
     public record EstimateOptions(string EmailContent) { public EstimateOptions() : this(default(string)) { } }
-    public record PricingOptions(InvoiceOptions Invoice, EstimateOptions Estimate) { public PricingOptions() : this(default, default) { } }
+    /// <param name="Currency">ISO code of the company currency; null when saving keeps the current one.</param>
+    public record PricingOptions(InvoiceOptions Invoice, EstimateOptions Estimate, string Currency = null) { public PricingOptions() : this(default, default, default) { } }
 
     public record AppOptions(RequisitesOptions Requisites, PricingOptions Pricing) { public AppOptions() : this(default, default) { } }
 

@@ -159,6 +159,8 @@ Work that ends without an invoice (for example the client decided against the re
 
 **Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, tax ID), the VAT rate, and the email texts for invoices and estimates. Administrators click **Edit** to change them; normal users can only view them.
 
+The **currency** is set here too: one currency per company, Canadian dollar (CAD) by default, with common alternatives such as USD, EUR, CNY, GBP, HKD and JPY. Amounts are formatted the way the currency is written (`$1,234.50`, `1.234,50 €`, `¥1,234.50`); only the label changes, there is no conversion. Estimates and invoices keep the currency they were issued in, so changing the setting does not affect documents already issued.
+
 ![Settings](docs/screenshots/settings.png)
 
 **Email delivery** at the bottom checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.

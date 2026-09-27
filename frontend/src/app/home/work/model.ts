@@ -26,6 +26,8 @@ export interface ICurrentActivity{
     isVehicleLinesOnPricing: boolean;
     products: IProduct[];
     priceSummary: IPriceSummary
+    /** currency of the issued document, otherwise the company currency */
+    currency: string
 }
 
 export interface IActivity{

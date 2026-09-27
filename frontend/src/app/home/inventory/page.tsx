@@ -3,10 +3,14 @@ import Search from "../_components/Search";
 import Main from "../_components/Main"; 
 import { SearchCardHeader } from "../_components/SearchCardHeader";
 import SimpleSearchBar from "../_components/SimpleSearchBar";
+import { httpGet } from "@/_lib/server/query-api";
+import { formatMoney } from "@/_lib/shared/money";
 
  
 export default async function Page(
   { searchParams }: { searchParams: Promise<Record<string, string>> }) {
+
+  const currency = (await (await httpGet('options')).json())?.pricing?.currency as string;
 
   const columns = [
     {
@@ -35,7 +39,7 @@ export default async function Page(
       dataFormatter: ({ price }: { price?: number }) => {
         return (
           <Fragment>
-            {price?.toFixed(2)} {price&&'€'} 
+            {formatMoney(price, currency)} 
           </Fragment>
         )
       },

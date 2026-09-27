@@ -1,3 +1,4 @@
+using System.Linq;
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
@@ -68,6 +69,11 @@ namespace VgAuto.Http.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed to save configuration");
             }
         }
+
+        /// <summary>Currencies that can be chosen in the settings.</summary>
+        [HttpGet("currencies")]
+        public IActionResult Currencies() =>
+            Ok(VgAuto.Core.Domain.Currencies.All.Select(c => new { c.Code, c.Name, Decimals = VgAuto.Core.Domain.Currencies.Decimals(c.Code), c.Culture }));
 
         public record TestEmailDto(string To);
 

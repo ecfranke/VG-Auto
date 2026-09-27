@@ -148,6 +148,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.SignatureLine).Column("signature_line").Access.BackingField();
             Map(x => x.InvoiceEmailContent).Column("invoice_email_content").Access.BackingField();
             Map(x => x.EstimateEmailContent).Column("estimate_email_content").Access.BackingField();
+            Map(x => x.Currency).Column("currency").Access.BackingField();
             Map(x => x.CreatedAt).Column("created_at").Access.BackingField();
             Map(x => x.UpdatedAt).Column("updated_at").Access.BackingField();
         }
@@ -414,6 +415,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.VehicleLine3).Column("vehicleline3").Access.BackingField();
             Map(x => x.VehicleLine4).Column("vehicleline4").Access.BackingField();
             Map(x => x.IssuedOn).Column("issuedon").Access.BackingField().CustomType<UtcDateType>();//.HasConversion<DateTimeUtcConverter>();
+            Map(x => x.Currency).Column("currency").Access.BackingField();
 
            
             References(x => x.Issuer).Column("issuerid").Access.BackingField();

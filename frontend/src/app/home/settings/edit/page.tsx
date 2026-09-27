@@ -4,7 +4,7 @@
 import SettingsTabs from '@/_components/SettingsTabs'
 import Main from '../../_components/Main'
 import { httpGet } from '@/_lib/server/query-api';
-import { IUserOptions } from '../model';
+import { ICurrency, IUserOptions } from '../model';
 import FormInput from '@/_components/FormInput'; 
 import FormLabel from '@/_components/FormLabel';
 import FormTextArea from '@/_components/FormTextArea';
@@ -20,6 +20,7 @@ export default async function Page( ) {
 
     const data = await httpGet('options'); 
     const options = await data.json() as IUserOptions; 
+    const currencies = await (await httpGet('options/currencies')).json() as ICurrency[];
    
   return (
  
@@ -62,6 +63,14 @@ export default async function Page( ) {
           <h2 className="text-base/7 font-semibold text-gray-900">Invoice options</h2> 
 
           <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+             <div className="sm:col-span-2">
+                <FormLabel name="currency" label="Currency"></FormLabel>
+                <select id="currency" name="currency" defaultValue={options.pricing.currency}
+                  className="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                  {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">Used for new estimates and invoices. Issued documents keep their currency.</p>
+              </div>
              <div className="sm:col-span-2">
                 <FormInput name='vatRate' label='VAT Rate' defaultValue={options.pricing.invoice.vatRate}></FormInput> 
               </div>

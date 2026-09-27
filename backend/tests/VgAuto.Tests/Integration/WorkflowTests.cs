@@ -124,12 +124,23 @@ namespace VgAuto.Tests.Integration
             Assert.True(Math.Abs((startedBySql - DateTimeOffset.UtcNow).TotalMinutes) < 5, $"offer started {startedBySql}");
             Assert.True(activities.GetProperty("current").GetProperty("priceSummary").GetProperty("totalWithVat").GetDecimal() > 0);
 
+            // company currency: CAD by default, changed by an administrator
+            Assert.Equal("CAD", activities.GetProperty("current").GetProperty("currency").GetString());
+            await SetCurrency(server, "USD");
+            Assert.Equal("USD", (await Json(await server.GetAsync($"/api/work/{workId}/activities"))).GetProperty("current").GetProperty("currency").GetString());
+            await Ok(await server.PutAsJsonAsync("/api/options", WithCurrency(await Json(await server.GetAsync("/api/options")), "XYZ"))
+                .ContinueWith(t => { Assert.False(t.Result.IsSuccessStatusCode); return new HttpResponseMessage(System.Net.HttpStatusCode.OK); }));
+
             // issue the estimate and send it
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/estimate/issue/{offerNumber}", new { showVehicleOnPricing = true, sendClientEmail = true, clientEmail = $"jane{suffix}@example.com" }));
             var estimateMail = api.Mailbox.LastTo($"jane{suffix}@example.com");
             Assert.NotNull(estimateMail);
             Assert.Equal("application/pdf", Assert.Single(estimateMail.Attachments).ContentType);
             Assert.Equal("Default Company", estimateMail.FromName);
+            // the issued estimate keeps its currency when the company currency changes
+            await SetCurrency(server, "JPY");
+            Assert.Equal("USD", (await Json(await server.GetAsync($"/api/work/{workId}/activities"))).GetProperty("current").GetProperty("currency").GetString());
+            await SetCurrency(server, "CAD");
             var offers = await Json(await server.GetAsync($"/api/pricings/offers/{workId}"));
             Assert.Equal("System Administrator", offers[0].GetProperty("issuedBy").GetString());
 
@@ -190,6 +201,20 @@ namespace VgAuto.Tests.Integration
             // settings
             var options = await Json(await server.GetAsync("/api/options"));
             Assert.Equal(20, options.GetProperty("pricing").GetProperty("invoice").GetProperty("vatRate").GetInt32());
+        }
+
+        private static object WithCurrency(JsonElement options, string currency)
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse(options.GetRawText())!;
+            node["pricing"]!["currency"] = currency;
+            return node;
+        }
+
+        private static async Task SetCurrency(HttpClient server, string currency)
+        {
+            var options = await Json(await server.GetAsync("/api/options"));
+            await Ok(await server.PutAsJsonAsync("/api/options", WithCurrency(options, currency)));
+            Assert.Equal(currency, (await Json(await server.GetAsync("/api/options"))).GetProperty("pricing").GetProperty("currency").GetString());
         }
 
         [DbFact]
