@@ -136,6 +136,8 @@ export async function saveCompany(_: ActionState, form: FormData): Promise<Actio
         surCharge: text(form, 'surCharge'),
         disclaimer: text(form, 'disclaimer'),
         signatureLine: form.get('signatureLine') === 'on',
+        showBankAccount: form.get('showBankAccount') === 'on',
+        showRegNo: form.get('showRegNo') === 'on',
         emailContent: text(form, 'emailContent'),
       },
       estimate: { emailContent: text(form, 'estimateEmailContent') },

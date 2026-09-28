@@ -150,6 +150,8 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.SurCharge).Column("surcharge").Access.BackingField();
             Map(x => x.Disclaimer).Column("disclaimer").Access.BackingField();
             Map(x => x.SignatureLine).Column("signature_line").Access.BackingField();
+            Map(x => x.ShowBankAccount).Column("show_bank_account").Access.BackingField();
+            Map(x => x.ShowRegNo).Column("show_reg_no").Access.BackingField();
             Map(x => x.InvoiceEmailContent).Column("invoice_email_content").Access.BackingField();
             Map(x => x.EstimateEmailContent).Column("estimate_email_content").Access.BackingField();
             Map(x => x.Currency).Column("currency").Access.BackingField();

@@ -170,11 +170,11 @@
     </div>
     <div class="mt-2 text-right">
         <div>
-            @if (!string.IsNullOrWhiteSpace(requisitesOptions.BankAccount))
+            @if (pricingOptions.Invoice.ShowBankAccount == true && !string.IsNullOrWhiteSpace(requisitesOptions.BankAccount))
             {
                 <p class="text-xs">Bank account: @requisitesOptions.BankAccount</p>
             }
-            @if (!string.IsNullOrWhiteSpace(requisitesOptions.RegNr))
+            @if (pricingOptions.Invoice.ShowRegNo == true && !string.IsNullOrWhiteSpace(requisitesOptions.RegNr))
             {
                 <p class="text-xs">Reg No: @requisitesOptions.RegNr</p>
             }

@@ -10,7 +10,7 @@ import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 export interface ICompanyOptions {
   requisites: { name: string, phone: string, address: string, email: string, bankAccount: string, regNr: string, kmkr: string }
   pricing: {
-    invoice: { vatRate: number, surCharge: string, disclaimer: string, signatureLine: boolean, emailContent: string }
+    invoice: { vatRate: number, surCharge: string, disclaimer: string, signatureLine: boolean, emailContent: string, showBankAccount?: boolean, showRegNo?: boolean }
     estimate: { emailContent: string }
     currency: string
     taxes: ITaxOptions | null
@@ -77,6 +77,14 @@ export function CompanyForm({ t, companyId, options, currencies, countries }: { 
           <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
             <input type="checkbox" name="signatureLine" defaultChecked={inv.signatureLine} className="size-4 rounded border-gray-300 text-indigo-600" />
             {t.signatureLine}
+          </label>
+          <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
+            <input type="checkbox" name="showBankAccount" defaultChecked={!!inv.showBankAccount} className="size-4 rounded border-gray-300 text-indigo-600" />
+            {t.showBankAccount}
+          </label>
+          <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
+            <input type="checkbox" name="showRegNo" defaultChecked={!!inv.showRegNo} className="size-4 rounded border-gray-300 text-indigo-600" />
+            {t.showRegNo}
           </label>
           <Area label={t.disclaimer} name="disclaimer" defaultValue={inv.disclaimer} />
           <Area label={t.invoiceEmail} name="emailContent" defaultValue={inv.emailContent} rows={6} />

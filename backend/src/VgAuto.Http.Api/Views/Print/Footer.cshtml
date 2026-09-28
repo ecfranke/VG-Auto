@@ -30,12 +30,14 @@
                     </div>
                     <div style="text-align: right; display: inline-block">
                         <div>
-                            <span style="margin-right: 1cm">
-                                @requisitesOptions.BankAccount
-                            </span><br />
-                            <span style="margin-right: 1cm">
-                                Reg No: @requisitesOptions.RegNr
-                            </span><br />
+                            @if (pricingOptions.Invoice.ShowBankAccount == true)
+                            {
+                                <span style="margin-right: 1cm">@requisitesOptions.BankAccount</span><br />
+                            }
+                            @if (pricingOptions.Invoice.ShowRegNo == true)
+                            {
+                                <span style="margin-right: 1cm">Reg No: @requisitesOptions.RegNr</span><br />
+                            }
                             <span style="margin-right: 1cm">
                                 @Model.TaxIdLabel: @requisitesOptions.KMKR
                             </span><br />

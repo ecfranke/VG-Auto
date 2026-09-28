@@ -50,6 +50,8 @@ export default async function Page() {
                     <DescriptionItem label='Surcharge' value={options.pricing.invoice.surCharge}></DescriptionItem>
                     <DescriptionItem label='Disclaimer' className="whitespace-pre-line" value={options.pricing.invoice.disclaimer}></DescriptionItem>
                     <DescriptionItem label='Signature line' value={(options.pricing.invoice.signatureLine?'Yes':'No')}></DescriptionItem>
+                    <DescriptionItem label='Bank account on PDFs' value={(options.pricing.invoice.showBankAccount?'Shown':'Hidden')}></DescriptionItem>
+                    <DescriptionItem label='Reg No on PDFs' value={(options.pricing.invoice.showRegNo?'Shown':'Hidden')}></DescriptionItem>
                     <DescriptionItem label='Email content'  className="whitespace-pre-line" value={options.pricing.invoice.emailContent}></DescriptionItem> 
                 </dl>
             </div>

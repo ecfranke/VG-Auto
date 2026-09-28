@@ -35,6 +35,8 @@ export async function createOrUpdate(
           surCharge: formData.get('surCharge'),
           disclaimer: formData.get('disclaimer'),
           signatureLine: signatureLine,
+          showBankAccount: formData.get('showBankAccount') == 'on',
+          showRegNo: formData.get('showRegNo') == 'on',
           emailContent: formData.get('emailContent')
         },
         estimate: {

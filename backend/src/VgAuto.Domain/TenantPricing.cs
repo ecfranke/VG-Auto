@@ -9,6 +9,15 @@ namespace VgAuto.Core.Domain
         public virtual string SurCharge { get; protected set; }
         public virtual string Disclaimer { get; protected set; }
         public virtual bool SignatureLine { get; protected set; }
+        /// <summary>Print the bank account / Reg No of the company on estimates and invoices (off by default).</summary>
+        public virtual bool ShowBankAccount { get; protected set; }
+        public virtual bool ShowRegNo { get; protected set; }
+
+        public virtual void ShowOnDocuments(bool? bankAccount, bool? regNo)
+        {
+            if (bankAccount != null) ShowBankAccount = bankAccount.Value;
+            if (regNo != null) ShowRegNo = regNo.Value;
+        }
         public virtual string InvoiceEmailContent { get; protected set; }
         public virtual string EstimateEmailContent { get; protected set; }
         /// <summary>ISO code of the company currency (see <see cref="Currencies"/>).</summary>

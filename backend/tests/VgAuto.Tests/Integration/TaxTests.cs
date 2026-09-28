@@ -94,6 +94,17 @@ namespace VgAuto.Tests.Integration
             Assert.Contains("$224.00 CAD", html);
             Assert.Contains("100.00", html); // the unit price is printed as entered (before tax)
             Assert.Contains("GST/HST No.: 123456789RT0001", html);
+            Assert.DoesNotContain("Reg No:", html);        // hidden unless switched on
+            Assert.DoesNotContain("Bank account:", html);
+            var shown = JsonNode.Parse((await Json(await owner.GetAsync($"/api/admin/companies/{companyId}/options"))).GetRawText())!;
+            shown["requisites"]!["regNr"] = "R-" + suffix;
+            shown["requisites"]!["bankAccount"] = "B-" + suffix;
+            shown["pricing"]!["invoice"]!["showRegNo"] = true;
+            shown["pricing"]!["invoice"]!["showBankAccount"] = true;
+            (await owner.PutAsJsonAsync($"/api/admin/companies/{companyId}/options", shown)).EnsureSuccessStatusCode();
+            var withNumbers = await (await user.GetAsync($"/api/pricings/invoice/{workId}/html")).Content.ReadAsStringAsync();
+            Assert.Contains("Reg No: R-" + suffix, withNumbers);
+            Assert.Contains("Bank account: B-" + suffix, withNumbers);
 
             // the invoice keeps its taxes when the settings change later
             var later = JsonNode.Parse((await Json(await owner.GetAsync($"/api/admin/companies/{companyId}/options"))).GetRawText())!;

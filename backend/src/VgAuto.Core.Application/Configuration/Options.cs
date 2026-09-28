@@ -10,7 +10,9 @@ namespace VgAuto.Core.Application.Configuration
 {
     public record JwtOptions(string Secret, string ConsumerSecret,TimeSpan SessionTimeout) { public JwtOptions() : this(default,default, default) { } }
     public record RequisitesOptions(string Name, string Phone, string Address, string Email, string BankAccount, string RegNr, string KMKR) { public RequisitesOptions() : this(default, default, default, default, default, default, default) { } }
-    public record InvoiceOptions(int VatRate,string SurCharge, string Disclaimer, bool SignatureLine, string EmailContent) { public InvoiceOptions() : this(default,default, default, default, default) { } }
+    /// <param name="ShowBankAccount">print the bank account on estimates and invoices (null when saving keeps the current value)</param>
+    /// <param name="ShowRegNo">print the Reg No on estimates and invoices (null keeps the current value)</param>
+    public record InvoiceOptions(int VatRate,string SurCharge, string Disclaimer, bool SignatureLine, string EmailContent, bool? ShowBankAccount = null, bool? ShowRegNo = null) { public InvoiceOptions() : this(default,default, default, default, default) { } }
     public record EstimateOptions(string EmailContent) { public EstimateOptions() : this(default(string)) { } }
     /// <param name="Country">country of registration (CA, US, OTHER)</param>
     /// <param name="Region">province or state of registration (BC, ON, QC ...)</param>

@@ -37,7 +37,9 @@ namespace VgAuto.Core.Application.Services
                 pricing.SurCharge,
                 pricing.Disclaimer,
                 pricing.SignatureLine,
-                pricing.InvoiceEmailContent
+                pricing.InvoiceEmailContent,
+                pricing.ShowBankAccount,
+                pricing.ShowRegNo
             );
 
             var estimateOptions = new EstimateOptions(
@@ -89,6 +91,7 @@ namespace VgAuto.Core.Application.Services
                 pricingOptions.Estimate.EmailContent,
                 pricingOptions.Currency
             );
+            pricing.ShowOnDocuments(pricingOptions.Invoice.ShowBankAccount, pricingOptions.Invoice.ShowRegNo);
             var t = pricingOptions.Taxes;
             if (t != null)
             {

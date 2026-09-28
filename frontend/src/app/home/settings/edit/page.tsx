@@ -91,6 +91,14 @@ export default async function Page( ) {
                  </div>
                
               </div>
+              <div className="sm:col-span-3">
+                <FormLabel name="showBankAccount" label="Show bank account on estimates and invoices"></FormLabel>
+                <div className='mt-3'><FormSwitch name='showBankAccount' defaultChecked={!!options.pricing.invoice.showBankAccount}></FormSwitch></div>
+              </div>
+              <div className="sm:col-span-3">
+                <FormLabel name="showRegNo" label="Show Reg No on estimates and invoices"></FormLabel>
+                <div className='mt-3'><FormSwitch name='showRegNo' defaultChecked={!!options.pricing.invoice.showRegNo}></FormSwitch></div>
+              </div>
               <div className="sm:col-span-full">
                 <FormTextArea name='disclaimer' label='Disclaimer' defaultValue={options.pricing.invoice.disclaimer}></FormTextArea> 
               </div>

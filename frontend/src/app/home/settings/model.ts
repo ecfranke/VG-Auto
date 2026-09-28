@@ -28,6 +28,8 @@ export interface Invoice {
     surCharge:     string;
     disclaimer:    string;
     signatureLine: boolean;
+    showBankAccount?: boolean;
+    showRegNo?: boolean;
     emailContent:  string;
 }
 
