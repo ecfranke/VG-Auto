@@ -16,6 +16,9 @@ namespace VgAuto.Core.Application.Authentication
             public int CodeLifetimeMinutes { get; set; } = 10;
             public int MaxAttempts { get; set; } = 5;
             public int MaxSends { get; set; } = 3;
+            /// <summary>After a code was entered, the same browser skips the code for this many days (0: ask every time).
+            /// Changing the password ends it.</summary>
+            public int RememberDeviceDays { get; set; } = 7;
         }
 
         public class PasswordResetOptions

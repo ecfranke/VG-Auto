@@ -1,5 +1,5 @@
 'use server'
-import { createSession } from '@/_lib/server/session'
+import { createSession, rememberDevice, rememberedDevice } from '@/_lib/server/session'
 import { redirect } from 'next/navigation';
 import { authApi, authErrorMessage } from '../_lib';
 
@@ -11,8 +11,9 @@ export interface LoginState {
   info?: string,
 }
 
-async function finish(tokens: { jwt: string, publicJwt: string, mustChangePassword: boolean }) {
+async function finish(tokens: { jwt: string, publicJwt: string, mustChangePassword: boolean, deviceToken?: string | null }) {
   await createSession(tokens.jwt, tokens.publicJwt);
+  await rememberDevice(tokens.deviceToken);
   redirect(tokens.mustChangePassword ? '/auth/change-password' : '/home');
 }
 
@@ -34,6 +35,7 @@ export async function authenticate(prevState: LoginState, formData: FormData): P
   const result = await authApi('login', {
     userName: formData.get('username')?.toString() ?? '',
     password: formData.get('password')?.toString() ?? '',
+    deviceToken: await rememberedDevice(),
   });
   if (result.tokens) await finish(result.tokens);
   if (result.codeRequired) {

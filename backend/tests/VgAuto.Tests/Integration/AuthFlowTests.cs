@@ -49,6 +49,43 @@ namespace VgAuto.Tests.Integration
         }
 
         [DbFact]
+        public async Task Browser_that_entered_a_code_is_remembered_until_the_password_changes()
+        {
+            var user = await CreateUser("deviceuser", "device@example.com", "Device-User-Pass-1");
+            var client = api.Anonymous();
+            var step1 = await Json(await client.PostAsJsonAsync("/api/auth/login", new { userName = user, password = "Device-User-Pass-1", serverSecret = ApiFixture.ServerSecret }));
+            var challengeId = step1.GetProperty("challengeId").GetGuid();
+            var ok = await Json(await client.PostAsJsonAsync("/api/auth/verify", new { challengeId, code = api.Mailbox.LastCode("device@example.com"), serverSecret = ApiFixture.ServerSecret }));
+            var deviceToken = ok.GetProperty("deviceToken").GetString();
+            Assert.False(string.IsNullOrEmpty(deviceToken));
+            var expires = DateTimeOffset.FromUnixTimeSeconds(long.Parse(deviceToken!.Split('.')[1]));
+            Assert.InRange(expires - DateTimeOffset.UtcNow, TimeSpan.FromDays(6.9), TimeSpan.FromDays(7.1));
+
+            // the same browser signs in without a code
+            var again = await Json(await client.PostAsJsonAsync("/api/auth/login", new { userName = user, password = "Device-User-Pass-1", serverSecret = ApiFixture.ServerSecret, deviceToken }));
+            Assert.False(string.IsNullOrEmpty(again.GetProperty("jwt").GetString()));
+
+            // the password is still checked
+            var wrongPassword = await client.PostAsJsonAsync("/api/auth/login", new { userName = user, password = "wrong-password", serverSecret = ApiFixture.ServerSecret, deviceToken });
+            Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+
+            // a changed token or another browser still needs the code
+            var parts = deviceToken.Split('.');
+            var tampered = $"{parts[0]}.{long.Parse(parts[1]) + 86400}.{parts[2]}";
+            var withTampered = await Json(await client.PostAsJsonAsync("/api/auth/login", new { userName = user, password = "Device-User-Pass-1", serverSecret = ApiFixture.ServerSecret, deviceToken = tampered }));
+            Assert.True(withTampered.GetProperty("codeRequired").GetBoolean());
+            var otherUser = await CreateUser("deviceother", "deviceother@example.com", "Device-Other-Pass-1");
+            var foreign = await Json(await client.PostAsJsonAsync("/api/auth/login", new { userName = otherUser, password = "Device-Other-Pass-1", serverSecret = ApiFixture.ServerSecret, deviceToken }));
+            Assert.True(foreign.GetProperty("codeRequired").GetBoolean());
+
+            // changing the password ends the remembered browser
+            var session = api.WithToken(again.GetProperty("jwt").GetString()!);
+            (await session.PutAsJsonAsync("/api/profile/changepassword", new { currentPassword = "Device-User-Pass-1", newPassword = "Device-User-Pass-2x", confirmPassword = "Device-User-Pass-2x" })).EnsureSuccessStatusCode();
+            var afterChange = await Json(await client.PostAsJsonAsync("/api/auth/login", new { userName = user, password = "Device-User-Pass-2x", serverSecret = ApiFixture.ServerSecret, deviceToken }));
+            Assert.True(afterChange.GetProperty("codeRequired").GetBoolean());
+        }
+
+        [DbFact]
         public async Task Code_is_invalidated_after_too_many_wrong_attempts()
         {
             var user = await CreateUser("guessuser", "guess@example.com", "Guess-User-Pass-1");

@@ -32,9 +32,10 @@ export default function ClientAddress({
   const countries = Object.values(ct.getAllCountries() as ICountryName[]).map((x) => x.name);
   const [selectedAddress, setSelectedAddress] = useState<IAddressData | null>(!address?null:address);
   //const [addressData, setAddressData] = useState<IAddressData[]>([]);
-  const MYCOUNTRY = 'Estonia';
-  const [country, setCountry] = useState(!address?MYCOUNTRY:address.country);
-  const useEhak = country===MYCOUNTRY;
+  // new clients start in Canada; the Estonian address lookup (In-ADS) is only used for Estonian addresses
+  const DEFAULT_COUNTRY = 'Canada';
+  const [country, setCountry] = useState(!address?DEFAULT_COUNTRY:(address.country || ''));
+  const useEhak = country==='Estonia';
 
     
   const queryRemoteAddressData = (inputValue: string) =>
@@ -102,6 +103,9 @@ export default function ClientAddress({
         </div>
       </div>
       <div className="col-span-full"> 
+      {!useEhak
+        ? <FormInput name={`${name}[street]`} label='Street address' placeholder='e.g. 123 Main St, Unit 4' defaultValue={selectedAddress?.street}></FormInput>
+        : <>
       <FormLabel name='street' label=' Street address'></FormLabel>
       <TypeAheadCombobox
          name={name}
@@ -137,6 +141,7 @@ export default function ClientAddress({
         >
         
       </TypeAheadCombobox>
+      </>}
       </div>
     
       <div className="sm:col-span-2 sm:col-start-1">

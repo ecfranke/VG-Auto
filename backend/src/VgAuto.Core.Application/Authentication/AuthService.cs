@@ -78,7 +78,7 @@ namespace VgAuto.Core.Application.Authentication
 
         // ---------------------------------------------------------------- password login
 
-        public async Task<AuthResult> PasswordLoginAsync(string userName, string password)
+        public async Task<AuthResult> PasswordLoginAsync(string userName, string password, string deviceToken = null)
         {
             var user = string.IsNullOrWhiteSpace(userName) ? null : users.GetBy(userName.Trim());
             var now = DateTime.UtcNow;
@@ -127,7 +127,56 @@ namespace VgAuto.Core.Application.Authentication
                 return AuthResult.Fail(AuthStatus.NoEmail, "No email address is set for this account. Ask an administrator to add one.");
             }
 
+            // a browser that entered a code in the last days (RememberDeviceDays) is not asked again
+            if (IsTrustedDevice(user, deviceToken, now))
+            {
+                logger.LogInformation("Login code skipped for {user}: remembered browser", user.UserName);
+                return new AuthResult(AuthStatus.Success, tokens.Issue(user, "pwd+device"));
+            }
+
             return await StartChallengeAsync(user, ChallengePurpose.Login, null);
+        }
+
+        // ---------------------------------------------------------------- remembered browsers
+
+        private byte[] DeviceKey => SHA256.HashData(Encoding.UTF8.GetBytes("device:" + Convert.ToHexString(codeKey)));
+
+        private string DeviceSignature(User user, long expires)
+        {
+            using var hmac = new HMACSHA256(DeviceKey);
+            // the password hash is part of the signature: changing or resetting the password ends all remembered browsers
+            var data = $"{user.Id.TenantName}|{user.Id.EmployeeId:N}|{expires}|{user.Password}";
+            return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(data)));
+        }
+
+        /// <summary>"employeeId.expiresUnix.signature", given to the browser after a correct code.</summary>
+        private string NewDeviceToken(User user)
+        {
+            var days = options.EmailCode.RememberDeviceDays;
+            if (days <= 0) return null;
+            var expires = DateTimeOffset.UtcNow.AddDays(days).ToUnixTimeSeconds();
+            return $"{user.Id.EmployeeId:N}.{expires}.{DeviceSignature(user, expires)}";
+        }
+
+        private bool IsTrustedDevice(User user, string token, DateTime now)
+        {
+            if (options.EmailCode.RememberDeviceDays <= 0 || string.IsNullOrWhiteSpace(token)) return false;
+            var parts = token.Split('.');
+            if (parts.Length != 3 || !long.TryParse(parts[1], out var expires)) return false;
+            if (parts[0] != user.Id.EmployeeId.ToString("N")) return false;
+            if (expires < new DateTimeOffset(now, TimeSpan.Zero).ToUnixTimeSeconds()) return false;
+            // not longer than configured now (the setting may have been lowered)
+            if (expires > new DateTimeOffset(now, TimeSpan.Zero).AddDays(options.EmailCode.RememberDeviceDays).AddMinutes(5).ToUnixTimeSeconds()) return false;
+            try
+            {
+                var expected = Convert.FromHexString(DeviceSignature(user, expires));
+                var actual = Convert.FromHexString(parts[2]);
+                return CryptographicOperations.FixedTimeEquals(expected, actual);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         // ---------------------------------------------------------------- codes
@@ -161,7 +210,7 @@ namespace VgAuto.Core.Application.Authentication
                 return new AuthResult(AuthStatus.Success, tokens.Issue(user, parts[0]));
             }
 
-            return new AuthResult(AuthStatus.Success, tokens.Issue(user, "pwd+otp"));
+            return new AuthResult(AuthStatus.Success, tokens.Issue(user, "pwd+otp") with { DeviceToken = NewDeviceToken(user) });
         }
 
         public async Task<AuthResult> ResendCodeAsync(Guid challengeId)

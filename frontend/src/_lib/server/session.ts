@@ -70,6 +70,26 @@ export async function createSession(rootJwt: string,publicJwt: string) {
     path: '/',
   })
 }
+/** Browser that entered an emailed code: the API skips the code for it until the token expires (7 days by default). */
+const DEVICE_COOKIE = 'vg_device'
+
+export async function rememberDevice(token: string | null | undefined) {
+  if (!token) return
+  const expires = Number(token.split('.')[1])
+  if (!Number.isFinite(expires)) return
+  ;(await cookies()).set(DEVICE_COOKIE, token, {
+    httpOnly: true,
+    secure: secureCookies,
+    expires: new Date(expires * 1000),
+    sameSite: 'lax',
+    path: '/',
+  })
+}
+
+export async function rememberedDevice(): Promise<string | undefined> {
+  return (await cookies()).get(DEVICE_COOKIE)?.value
+}
+
 export async function deleteSession() {
   const cookieStore = await cookies()
   cookieStore.delete('session')

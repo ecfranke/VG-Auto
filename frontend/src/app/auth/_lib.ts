@@ -4,7 +4,7 @@ import { httpPost } from '@/_lib/server/query-api';
 export interface AuthApiResult {
   ok: boolean,
   status: number,
-  tokens?: { jwt: string, publicJwt: string, mustChangePassword: boolean },
+  tokens?: { jwt: string, publicJwt: string, mustChangePassword: boolean, deviceToken?: string | null },
   codeRequired?: boolean,
   challengeId?: string,
   emailHint?: string | null,

@@ -31,7 +31,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ![登录](docs/screenshots/login.png)
 
-系统会往你的邮箱发一个 6 位验证码。输入后点 **Verify**。没收到可以点 **Send a new code** 重新发送，验证码 10 分钟内有效。
+系统会往你的邮箱发一个 6 位验证码。输入后点 **Verify**。没收到可以点 **Send a new code** 重新发送，验证码 10 分钟内有效。同一个浏览器输入过验证码后，**7 天内**再登录只需要用户名和密码；换浏览器、清除 Cookie 或修改密码后需要重新验证（天数由 `Authentication:EmailCode:RememberDeviceDays` 设置，0 表示每次都要验证码）。
 
 ![输入验证码](docs/screenshots/login-code.png)
 

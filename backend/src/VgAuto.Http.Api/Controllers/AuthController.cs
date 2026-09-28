@@ -29,7 +29,7 @@ namespace VgAuto.Http.Api.Controllers
             this.jwtOptions = jwtOptions.Value;
         }
 
-        public record PasswordLoginDto(string UserName, string Password, string ServerSecret);
+        public record PasswordLoginDto(string UserName, string Password, string ServerSecret, string DeviceToken = null);
         public record VerifyCodeDto(Guid ChallengeId, string Code, string ServerSecret);
         public record ChallengeDto(Guid ChallengeId, string ServerSecret);
         public record ForgotPasswordDto(string Login, string ServerSecret);
@@ -42,7 +42,7 @@ namespace VgAuto.Http.Api.Controllers
         public async Task<IActionResult> Login(PasswordLoginDto model)
         {
             if (!ServerSecretOk(model.ServerSecret)) return await Reject();
-            return await ToResponse(await auth.PasswordLoginAsync(model.UserName, model.Password));
+            return await ToResponse(await auth.PasswordLoginAsync(model.UserName, model.Password, model.DeviceToken));
         }
 
         [LimitRequests(MaxRequests = 10, TimeWindow = 60)]

@@ -34,7 +34,8 @@ namespace VgAuto.Core.Domain
         {
             this.Email = client?.CurrentEmail;
             this.PartyName = client == null ? "Walk-in customer" : client.Name;
-            this.PartyAddress = client?.Address?.ToString();
+            // the full address, one line per part (street / city, province postal code / country)
+            this.PartyAddress = client?.Address == null ? null : string.Join("\n", client.Address.Lines());
              this.PartyCode = client?.RegCode;
             return this;
         }

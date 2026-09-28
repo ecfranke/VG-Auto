@@ -1,6 +1,7 @@
 'use server'
 
 import { DescriptionItem } from '@/_components/DescriptionItem';
+import { formatAddress } from '@/_lib/shared/address';
 import { httpGet } from '@/_lib/server/query-api'
 import Main from '../../_components/Main'; 
 import DisplayOptionsMenu from '@/_components/DisplayOptionsMenu';
@@ -53,7 +54,7 @@ export default async function Page({
                                 <DescriptionItem label='Registry code' value={client.regNr}></DescriptionItem>
                                 : <DescriptionItem label='Personal code' value={client.personalCode}></DescriptionItem>}
 
-                            <DescriptionItem label='Address' value={[client.address.country, client.address.region, client.address.city, client.address.street, client.address.postalCode].filter(item => item).join(', ')}></DescriptionItem>
+                            <DescriptionItem label='Address' value={formatAddress(client.address)}></DescriptionItem>
                             <DescriptionItem label='About' value={client.description}></DescriptionItem>
                             <DescriptionItem label='Added' value={client.introducedAt}></DescriptionItem>
                         </dl>

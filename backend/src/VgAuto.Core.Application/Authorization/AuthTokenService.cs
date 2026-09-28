@@ -4,7 +4,8 @@ using Microsoft.Extensions.Options;
 
 namespace VgAuto.Core.Application.Authorization
 {
-    public record AuthTokens(string Jwt, string PublicJwt, int Timeout, bool MustChangePassword);
+    /// <param name="DeviceToken">set after an emailed code was entered: lets this browser skip the code for a while</param>
+    public record AuthTokens(string Jwt, string PublicJwt, int Timeout, bool MustChangePassword, string DeviceToken = null);
 
     /// <summary>Issues the token pair used by the frontend: a server side (Root) token and a browser token.</summary>
     public class AuthTokenService

@@ -31,7 +31,7 @@ Enter your username and password and click **Sign in**.
 
 ![Sign in](docs/screenshots/login.png)
 
-A 6 digit code is sent to your email address. Enter it and click **Verify**. If it does not arrive, click **Send a new code**. Codes are valid for 10 minutes.
+A 6 digit code is sent to your email address. Enter it and click **Verify**. If it does not arrive, click **Send a new code**. Codes are valid for 10 minutes. After a code was entered, the same browser signs in with username and password only for **7 days**; another browser, cleared cookies or a changed password need a new code (`Authentication:EmailCode:RememberDeviceDays`, 0 asks every time).
 
 ![Enter the code](docs/screenshots/login-code.png)
 
