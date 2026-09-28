@@ -33,6 +33,9 @@ namespace VgAuto.Core.Domain
             return $"Invoice nr. {Number}";
         }
         public virtual void MarkPaid(bool paid) => IsPaid = paid;
+
+        /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the invoice table: numbers are unique per company.</summary>
+        public virtual Guid NumberCompanyId { get; protected internal set; }
         public virtual string PaymentStatus 
         {
             get

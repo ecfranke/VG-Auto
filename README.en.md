@@ -160,13 +160,14 @@ Work that ends without an invoice (for example the client decided against the re
 **Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, Reg No, Tax ID), the VAT rate, and the email texts for invoices and estimates. Click **Edit** to change them:
 
 - Everybody can change phone, address, email, bank account, the invoice options and the offer options.
-- **Company name, Reg No, Tax ID and currency** can only be changed by an administrator on the **Company** page of the administration (section 14); in the app they are shown greyed out.
+- **Company name, Reg No, Tax ID and currency** can only be changed by an administrator on the **Companies** page of the administration (section 14); in the app they are shown greyed out.
+- These are the settings of **your own company**; with several companies, each has its own settings.
 
 The **currency** is set here too: one currency per company, Canadian dollar (CAD) by default, with common alternatives such as USD, EUR, CNY, GBP, HKD and JPY. Amounts are formatted the way the currency is written (`$1,234.50`, `1.234,50 €`, `¥1,234.50`); only the label changes, there is no conversion. Estimates and invoices keep the currency they were issued in, so changing the setting does not affect documents already issued.
 
 ![Settings](docs/screenshots/settings.png)
 
-**Email delivery** at the bottom (visible to administrators only, also on the Company page of the administration) checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.
+**Email delivery** at the bottom (visible to administrators only, also on the Companies page of the administration) checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.
 
 ![Test email](docs/screenshots/settings-test-email.png)
 
@@ -178,12 +179,12 @@ The **currency** is set here too: one currency per company, Canadian dollar (CAD
 
 ### 14. User administration (/admin)
 
-Administrators manage employees and logins at `https://your-domain/admin`, also reachable through **Administration** in the user menu at the bottom left. The administration is available in English and Chinese (switch at the top right).
+Administrators manage companies, employees and logins at `https://your-domain/admin`, also reachable through **Administration** in the user menu at the bottom left. The administration is available in English and Chinese (switch at the top right).
 
 | Role | Can do |
 |---|---|
 | User | Works in the application (work, clients, vehicles, inventory); changes contact details, invoice and offer options, but not the company name, Reg No, Tax ID or currency; no access to the administration |
-| Administrator | Additionally manages all company settings (including name, Reg No, Tax ID, currency) and sends test emails on the **Company** page of the administration; creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
+| Administrator | Additionally creates companies, manages all settings of **every company** (including name, Reg No, Tax ID, currency) and sends test emails; moves employees to another company; creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
 | Super administrator | Additionally creates administrators and super administrators, changes roles and manages administrator accounts |
 
 - The initial account `admin` is the **owner** (a super administrator): only its owner can change it, and it cannot be disabled or demoted.
@@ -192,10 +193,17 @@ Administrators manage employees and logins at `https://your-domain/admin`, also 
 - Mechanics who do not sign in: leave the login unticked (or add them with **New** next to **Mechanics** when creating work). A login can be added later.
 - **Disable account**: for employees who leave. They are signed out at once and cannot sign in again; work and history are kept. Employees with a login cannot be deleted, only disabled.
 - **Reset password**: sets a new temporary password and unlocks the account; it must be changed at the next sign in.
-- **Company**: one page for all company details, currency, invoice and offer options, and the test email.
-- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles or the company settings, sent test emails, and when.
+- **Companies**: several companies (branches, workshops) can share one installation and one database:
+  - Every company has its own clients, vehicles, work, inventory, estimates and invoices, its own numbering (work, estimate and invoice numbers start at 1 per company), its own settings and currency.
+  - Every employee belongs to one company and only sees the data of that company.
+  - The **Companies** page lists all companies (Reg No, currency, employees, logins), creates new ones (name and currency), and **Edit** opens all details, currency, invoice and offer options of that company.
+  - Choose the company when creating a user; **Company** on the user page moves an employee to another company. They then work with the new company's data; work already done stays with the old company. You cannot move yourself.
+  - Data that existed before the upgrade belongs to the first company.
+- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles, created companies, changed company settings, moved users to another company, sent test emails, and when.
 
-![Company](docs/screenshots/admin-company.png)
+![Companies](docs/screenshots/admin-companies.png)
+
+![Edit company](docs/screenshots/admin-company.png)
 
 ![Users](docs/screenshots/admin-users.png)
 
@@ -375,8 +383,8 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `/api/clients`, `/api/privateclients`, `/api/legalclients` | Clients |
 | `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
 | `/api/employees` | Employees (mechanics); creating logins requires an administrator |
-| `/api/admin/*` | User administration: `me`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`), `audit` |
-| `/api/options` (with `testemail`) | Company settings, test email |
+| `/api/admin/*` | User administration: `me`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`), `audit` |
+| `/api/options` (with `testemail`) | Settings of the signed in user's company, test email |
 | `/api/profile` (with `changepassword`, `externallogins`) | Profile, password, Microsoft account link |
 | `/api/query` | List queries |
 | `GET /health` | Health check (no authentication) |
@@ -395,6 +403,7 @@ backend/src/DbUp/scripts_mysql/Script0006_description.sql   # MySQL
 - Numbers must increase; never change a script that has been released.
 - PostgreSQL uses the `domain.` and `tenant_config.` schemas; MySQL has no schemas, so the tables are named without the prefix and `tenant_config_*`, and `public.user` becomes `app_user`.
 - SQL in code goes through `SqlDialect` for table names and syntax differences; do not write syntax specific to one database.
+- **Company isolation**: business tables have a `company_id` column. NHibernate queries are filtered to the current company automatically (`CompanyFilter`) and new rows get the current company; hand-written SQL (Dapper, page queries) must filter on `company_id` itself (`PageResultQuery.ForCompany`, `this.CompanyId()`). New business tables need a `company_id` column and `ApplyFilter<CompanyFilter>` in their mapping.
 
 ### Tests
 

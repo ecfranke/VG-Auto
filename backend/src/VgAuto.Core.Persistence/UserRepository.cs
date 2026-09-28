@@ -24,7 +24,7 @@ namespace VgAuto.Core.Persistence
     {
         private readonly IDbConnectionFactory connections;
         private const string UserSelectQuery =
-            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil, role as Role, is_owner as IsOwner, disabled as Disabled FROM public.user";
+            "SELECT profile_image as ProfileImage, UserName, Password, TenantName, Email, Validated, EmployeeId, must_change_password as MustChangePassword, failed_login_count as FailedLoginCount, locked_until as LockedUntil, role as Role, is_owner as IsOwner, disabled as Disabled, company_id as CompanyId FROM public.user";
 
         public UserRepository(IDbConnectionFactory connections)
         {
@@ -136,7 +136,8 @@ namespace VgAuto.Core.Persistence
                                   locked_until = @LockedUntil,
                                   role = @Role,
                                   is_owner = @IsOwner,
-                                  disabled = @Disabled
+                                  disabled = @Disabled,
+                                  company_id = @CompanyId
                               WHERE TenantName = @TenantName AND EmployeeId = @EmployeeId"),
                             new
                             {
@@ -151,6 +152,7 @@ namespace VgAuto.Core.Persistence
                                 Role = user.Role,
                                 IsOwner = user.IsOwner,
                                 Disabled = user.Disabled,
+                                CompanyId = user.CompanyId,
                                 TenantName = user.Id.TenantName,
                                 EmployeeId = user.Id.EmployeeId
                             }, transaction);
@@ -178,8 +180,8 @@ namespace VgAuto.Core.Persistence
 
             using var connection = CreateConnection(GetUserListDatabase());
             connection.Execute(
-                Sql(@"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password, role, is_owner, disabled)
-                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword, @Role, @IsOwner, @Disabled)"),
+                Sql(@"INSERT INTO public.user (username, password, tenantname, email, validated, profile_image, employeeid, must_change_password, role, is_owner, disabled, company_id)
+                  VALUES (@UserName, @Password, @TenantName, @Email, @Validated, @ProfileImage, @EmployeeId, @MustChangePassword, @Role, @IsOwner, @Disabled, @CompanyId)"),
                 new
                 {
                     user.UserName,
@@ -192,7 +194,8 @@ namespace VgAuto.Core.Persistence
                     user.MustChangePassword,
                     user.Role,
                     user.IsOwner,
-                    user.Disabled
+                    user.Disabled,
+                    user.CompanyId
                 });
         }
 
@@ -231,6 +234,7 @@ namespace VgAuto.Core.Persistence
             user.LockedUntil,
             user.Role,
             user.IsOwner,
-            user.Disabled);
+            user.Disabled,
+            user.CompanyId == Guid.Empty ? null : user.CompanyId);
     }
 }

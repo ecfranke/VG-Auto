@@ -43,6 +43,7 @@ namespace VgAuto.Http.Api.Controllers.Clients
                   .PageQuery<ClientPageDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
                   .SearchFields("p.firstname", "p.lastname", "l.name", "ce.address", "c.phone", "c.address")
+                  .ForCompany("c.company_id", this.CompanyId())
                   .Sortable(SortColumns, "c.id")
                   .SelectSql(@"SELECT
                                     c.id, 

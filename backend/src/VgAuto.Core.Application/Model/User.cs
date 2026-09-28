@@ -18,7 +18,7 @@ namespace VgAuto.Core.Application
         protected User() { }
         public User(string userName, string password, string email, bool validated, byte[] profileImage,  UserIdentifier id = null,
             bool mustChangePassword = false, int failedLoginCount = 0, DateTime? lockedUntil = null,
-            string role = null, bool isOwner = false, bool disabled = false)
+            string role = null, bool isOwner = false, bool disabled = false, Guid? companyId = null)
         {
             if (string.IsNullOrWhiteSpace(userName))
             {
@@ -41,7 +41,13 @@ namespace VgAuto.Core.Application
             Role = VgAuto.Core.Application.Authorization.UserRoles.Normalize(role);
             IsOwner = isOwner;
             Disabled = disabled;
+            CompanyId = companyId ?? VgAuto.Core.Application.Database.ICompanyScope.FirstCompany;
         }
+
+        /// <summary>Company the user works for; the user sees only its data.</summary>
+        public virtual Guid CompanyId { get; protected set; }
+
+        public virtual void MoveToCompany(Guid companyId) => CompanyId = companyId;
 
         public const int MaxFailedLogins = 10;
         public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);

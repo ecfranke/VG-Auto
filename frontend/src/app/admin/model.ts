@@ -18,6 +18,8 @@ export interface IAdminUser {
   microsoftLinked: boolean
   isSelf: boolean
   allowedActions: string[]
+  companyId: string
+  companyName: string | null
 }
 
 export interface IAuditEntry {
@@ -27,4 +29,13 @@ export interface IAuditEntry {
   action: string
   target: string | null
   details: string | null
+}
+
+export interface ICompany {
+  id: string
+  name: string
+  regNo: string | null
+  currency: string
+  employees: number
+  users: number
 }

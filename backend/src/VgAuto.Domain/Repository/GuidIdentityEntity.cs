@@ -21,6 +21,15 @@ namespace VgAuto.Core
 
         public  virtual Guid Id { get; internal protected set; }
 
+        /// <summary>
+        /// Company the row belongs to (only mapped for the tables that carry a company_id). Set automatically
+        /// to the company of the signed in user when the entity is saved; administrators may set it explicitly.
+        /// </summary>
+        public virtual Guid CompanyId { get; protected internal set; }
+
+        /// <summary>Assigns the entity to a company (administration only).</summary>
+        public virtual void BelongsTo(Guid companyId) => CompanyId = companyId;
+
 		bool IEntity<Guid>.IsTransient => Id == Guid.Empty;
          
          

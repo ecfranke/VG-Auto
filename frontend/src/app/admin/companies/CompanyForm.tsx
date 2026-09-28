@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { saveCompany, sendTestEmail, ActionState } from '../actions'
+import { saveCompany, sendTestEmail, createCompany, ActionState } from '../actions'
 import type { Dictionary } from '../_i18n'
 import { Alert, Field, SubmitButton } from '../_components/Fields'
 
@@ -35,12 +35,13 @@ function Section({ title, hint, children }: { title: string, hint?: string, chil
   )
 }
 
-export function CompanyForm({ t, options, currencies }: { t: Dictionary, options: ICompanyOptions, currencies: { code: string, name: string }[] }) {
+export function CompanyForm({ t, companyId, options, currencies }: { t: Dictionary, companyId: string, options: ICompanyOptions, currencies: { code: string, name: string }[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(saveCompany, {})
   const r = options.requisites
   const inv = options.pricing.invoice
   return (
     <form action={action} className="space-y-6">
+      <input type="hidden" name="companyId" value={companyId} />
       {state.error && <Alert kind="error">{state.error}</Alert>}
       {state.ok && <Alert kind="success">{t.saved}</Alert>}
 
@@ -97,6 +98,27 @@ export function TestEmailForm({ t, defaultTo }: { t: Dictionary, defaultTo: stri
         <div className="flex flex-wrap items-end gap-3">
           <Field label={t.email} name="to" type="email" defaultValue={defaultTo} required className="w-80" />
           <SubmitButton pending={pending} secondary>{t.sendTestEmail}</SubmitButton>
+        </div>
+      </form>
+    </Section>
+  )
+}
+
+export function NewCompanyForm({ t, currencies }: { t: Dictionary, currencies: { code: string, name: string }[] }) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(createCompany, {})
+  return (
+    <Section title={t.newCompany}>
+      <form action={action} className="space-y-3">
+        {state.error && <Alert kind="error">{state.error}</Alert>}
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label={t.companyName} name="name" required className="w-80" />
+          <div>
+            <label htmlFor="newCurrency" className="block text-sm/6 font-medium text-gray-900">{t.currency}</label>
+            <select id="newCurrency" name="currency" defaultValue="CAD" className={areaClass}>
+              {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
+            </select>
+          </div>
+          <SubmitButton pending={pending}>{t.createCompany}</SubmitButton>
         </div>
       </form>
     </Section>

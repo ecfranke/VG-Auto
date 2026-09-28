@@ -160,13 +160,14 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 **Settings → Invoice Options** 里是公司信息（名称、地址、银行账户、Reg No、Tax ID，会打印在 PDF 上）、增值税率、发票和报价单的邮件正文等。点右下角 **Edit** 修改：
 
 - 所有人都可以修改电话、地址、邮箱、银行账户，以及发票设置（Invoice options）和报价单设置（Offer options）。
-- **公司名称、Reg No、Tax ID 和币种**只能由管理员在后台的 **公司设置** 页面修改（见第 14 节），前台显示为灰色不可编辑。
+- **公司名称、Reg No、Tax ID 和币种**只能由管理员在后台的 **公司** 页面修改（见第 14 节），前台显示为灰色不可编辑。
+- 这里改的是**自己所属公司**的设置；系统支持多个公司，每个公司的设置互不影响。
 
 **币种**（Currency）：每个公司一个币种，默认加元 CAD，可选美元、欧元、人民币、英镑、港币、日元等常用币种。金额按该币种的习惯格式显示（如 `$1,234.50`、`1.234,50 €`、`¥1,234.50`），只换符号，不做汇率换算。报价单和发票在出具时记下当时的币种，以后改设置不会影响已经开出的单据。
 
 ![设置](docs/screenshots/settings.png)
 
-页面底部的 **Email delivery**（只有管理员能看到，后台的公司设置页面里也有）用来检查邮件是否配置正确：填一个邮箱，点 **Send test email**，系统会提示通过 SMTP 还是 Microsoft Graph 发送成功。
+页面底部的 **Email delivery**（只有管理员能看到，后台的公司页面里也有）用来检查邮件是否配置正确：填一个邮箱，点 **Send test email**，系统会提示通过 SMTP 还是 Microsoft Graph 发送成功。
 
 ![测试邮件](docs/screenshots/settings-test-email.png)
 
@@ -178,12 +179,12 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 14. 用户管理后台（/admin）
 
-管理员在 `https://你的域名/admin` 管理员工和登录账号，也可以从左下角用户菜单里的 **Administration** 进入。后台界面支持中英文，右上角切换。
+管理员在 `https://你的域名/admin` 管理公司、员工和登录账号，也可以从左下角用户菜单里的 **Administration** 进入。后台界面支持中英文，右上角切换。
 
 | 角色 | 能做什么 |
 |---|---|
 | 普通用户 | 使用系统（工单、客户、车辆、库存）；可以修改公司的联系信息、发票和报价单设置，但不能改公司名称、Reg No、Tax ID 和币种；进不了后台 |
-| 管理员 | 另外可以在后台的 **公司设置** 页面修改全部公司设置（包括名称、Reg No、Tax ID、币种）并发送测试邮件；新建普通员工账号、修改资料、重置密码、解除锁定、禁用/启用普通员工、解绑 Microsoft 账号 |
+| 管理员 | 另外可以在后台新建公司、修改**所有公司**的全部设置（包括名称、Reg No、Tax ID、币种）并发送测试邮件；把员工调到其他公司；新建普通员工账号、修改资料、重置密码、解除锁定、禁用/启用普通员工、解绑 Microsoft 账号 |
 | 超级管理员 | 另外可以新建管理员和超级管理员、修改任何人的角色，管理管理员账号 |
 
 - 初始账号 `admin` 是**所有者**（超级管理员）：只有本人能修改它，不能被禁用或降级。
@@ -192,10 +193,17 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 - 只负责维修、不需要登录的技师：不勾选创建登录账号即可（新建工单时从 **Mechanics** 旁的 **New** 添加也一样）。以后需要时可以在后台为他创建登录账号。
 - **禁用账号**：员工离职时使用。禁用后立即退出、不能再登录，工单和历史记录都会保留。有登录账号的员工不能删除，只能禁用。
 - **重置密码**：生成新的临时密码并解除锁定，用户下次登录时必须修改。
-- **公司设置**：一个页面里管理全部公司信息、币种、发票和报价单设置，以及测试邮件。
-- **操作日志**：记录谁在什么时间新建账号、修改资料、重置密码、禁用/启用、修改角色、修改公司设置和发送测试邮件。
+- **公司**：系统支持多个公司（例如多家门店或分公司），共用一个数据库：
+  - 每个公司有各自的客户、车辆、工单、库存、报价单和发票，以及各自的编号（每个公司的工单、报价单、发票都从 1 开始编号）和各自的设置、币种。
+  - 每个员工属于一个公司，登录后只能看到自己公司的数据。
+  - 后台 **公司** 页面列出所有公司（Reg No、币种、员工数、登录账号数），可以新建公司（名称和币种），点 **编辑** 修改该公司的全部信息、币种、发票和报价单设置。
+  - 新建用户时选择所属公司；用户详情页的 **所属公司** 可以把员工调到其他公司，调动后他看到的是新公司的数据，已经做过的工单留在原公司。不能调动自己。
+  - 升级前已有的数据全部归入第一个公司。
+- **操作日志**：记录谁在什么时间新建账号、修改资料、重置密码、禁用/启用、修改角色、新建公司、修改公司设置、调动公司和发送测试邮件。
 
-![公司设置](docs/screenshots/admin-company.png)
+![公司列表](docs/screenshots/admin-companies.png)
+
+![编辑公司](docs/screenshots/admin-company.png)
 
 ![用户列表](docs/screenshots/admin-users.png)
 
@@ -375,8 +383,8 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `/api/clients`、`/api/privateclients`、`/api/legalclients` | 客户 |
 | `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆、配件、库位 |
 | `/api/employees` | 员工（技师）；创建登录账号需要管理员 |
-| `/api/admin/*` | 用户管理后台：`me`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`）、`audit` |
-| `/api/options`（含 `testemail`） | 公司设置、测试邮件 |
+| `/api/admin/*` | 用户管理后台：`me`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`、`company`）、`companies`（列表、新建、`{id}/options` 读取和修改）、`audit` |
+| `/api/options`（含 `testemail`） | 当前用户所属公司的设置、测试邮件 |
 | `/api/profile`（含 `changepassword`、`externallogins`） | 个人资料、改密码、Microsoft 账号绑定 |
 | `/api/query` | 列表查询 |
 | `GET /health` | 健康检查（不需要认证） |
@@ -395,6 +403,7 @@ backend/src/DbUp/scripts_mysql/Script0006_描述.sql   # MySQL
 - 编号必须递增，已经发布的脚本不要修改。
 - PostgreSQL 使用 `domain.`、`tenant_config.` 等 schema；MySQL 没有 schema，对应表名分别是去掉前缀的表名和 `tenant_config_*`，`public.user` 对应 `app_user`。
 - 在代码中写 SQL 时，通过 `SqlDialect` 处理表名和语法差异，不要直接写某一种数据库特有的语法。
+- **公司隔离**：业务表都有 `company_id` 列。通过 NHibernate 的查询会自动加上当前公司的过滤条件（`CompanyFilter`），新记录自动写入当前公司；手写 SQL（Dapper、分页查询）必须自己加 `company_id` 条件（`PageResultQuery.ForCompany`、`this.CompanyId()`）。新增业务表时也要加 `company_id` 列并在映射里 `ApplyFilter<CompanyFilter>`。
 
 ### 测试
 

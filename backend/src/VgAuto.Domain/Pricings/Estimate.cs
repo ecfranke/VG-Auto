@@ -34,6 +34,9 @@ namespace VgAuto.Core.Domain
             return $"Estimate nr. {Number}";
         }
         public virtual string Number { get; }
+
+        /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the estimate table: numbers are unique per company.</summary>
+        public virtual Guid NumberCompanyId { get; protected internal set; }
         public virtual Estimate CreateFor(int purchaseTax,Offer offer, Employee issuer, string currency = null)
         {
             UseCurrency(currency);

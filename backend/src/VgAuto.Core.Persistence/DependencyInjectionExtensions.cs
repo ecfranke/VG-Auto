@@ -1,3 +1,4 @@
+using VgAuto.Core.Application.Authorization;
 ﻿using VgAuto.Core.Application.Configuration;
 using VgAuto.Core.Application.Database;
 using VgAuto.Core.Application.Services;
@@ -45,9 +46,27 @@ namespace VgAuto.Core.Persistence
             services.AddScoped<VgAuto.Core.Application.Authentication.IAuthChallengeRepository, VgAuto.Core.Persistence.AuthChallengeRepository>();
             services.AddScoped<VgAuto.Core.Application.Authentication.IExternalLoginRepository, VgAuto.Core.Persistence.ExternalLoginRepository>();
             services.AddScoped<VgAuto.Core.Application.Authorization.IAdminAuditLog, VgAuto.Core.Persistence.AdminAuditLog>();
+            // company of the request: the signed in user's company (first company for anonymous requests)
+            services.AddScoped<CompanyInterceptor>(x =>
+            {
+                var account = x.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>()?.HttpContext?.CurrentAccount();
+                return new CompanyInterceptor(account?.CompanyId ?? ICompanyScope.FirstCompany);
+            });
+            services.AddScoped<ICompanyScope>(x =>
+            {
+                var interceptor = x.GetRequiredService<CompanyInterceptor>();
+                return new CompanyScope(interceptor.CompanyId, interceptor, new System.Lazy<ISession>(() => x.GetRequiredService<ISession>()));
+            });
             services.AddScoped<ISession>(x =>{
+                var interceptor = x.GetRequiredService<CompanyInterceptor>();
+                ISession Open(ISessionFactory factory)
+                {
+                    var session = factory.WithOptions().Interceptor(interceptor).OpenSession();
+                    session.EnableFilter(CompanyFilter.Name).SetParameter(CompanyFilter.Parameter, interceptor.CompanyId);
+                    return session;
+                }
 
-                if (!multitenancyEnabled) return defaultFactory.OpenSession();
+                if (!multitenancyEnabled) return Open(defaultFactory);
 
                 var user = x.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext.User;
                 if (user.Identity.IsAuthenticated) 
@@ -62,7 +81,7 @@ namespace VgAuto.Core.Persistence
                             }
                         }
                     } 
-                    return appFactory.OpenSession();
+                    return Open(appFactory);
                 }
                 throw new System.Exception("Unable to open database session, user not authenticated.");
             });

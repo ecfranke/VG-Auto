@@ -36,6 +36,7 @@ namespace VgAuto.Core.Application.Authorization
         Enable,
         UnlinkMicrosoft,
         ChangeRole,
+        ChangeCompany,
     }
 
     /// <param name="Role">role of the administrator performing the action</param>
@@ -54,6 +55,9 @@ namespace VgAuto.Core.Application.Authorization
         {
             if (actor == null || !UserRoles.IsAdmin(actor.Role)) return "Administrator rights are required.";
             var super = actor.Role == UserRoles.SuperAdmin;
+
+            if (action == AdminAction.ChangeCompany && target.IsSelf) return "You cannot move your own account.";
+            if (action == AdminAction.ChangeCompany && !target.HasAccount && !target.IsSelf) return null;
 
             if (action == AdminAction.CreateAccount)
             {

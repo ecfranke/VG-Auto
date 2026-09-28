@@ -112,6 +112,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("tenant_config");
             Table("requisites");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
             Id(x => x.Id)
                 .Column("id")
@@ -136,6 +138,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("tenant_config");
             Table("pricing");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
             Id(x => x.Id)
                 .Column("id")
@@ -308,6 +312,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("work");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -374,6 +380,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Schema("domain");
             Table("invoice");
             KeyColumn("id");
+            Map(x => x.NumberCompanyId).Column("company_id");
             Map(x => x.Number).Column("number").Access.BackingField().Unique();
             Map(x => x.PaymentType).Column("paymenttype").CustomType<int>().Access.BackingField();
             Map(x => x.DueDays).Column("duedays").Access.BackingField();
@@ -388,6 +395,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Schema("domain");
             Table("estimate");
             KeyColumn("id");
+            Map(x => x.NumberCompanyId).Column("company_id");
             Map(x => x.Number).Column("number").Access.BackingField().Unique();
         }
     }
@@ -397,6 +405,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("pricing");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -435,6 +445,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("vehicle");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -491,6 +503,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("client");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -563,6 +577,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("employee");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -585,6 +601,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("storage");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -605,6 +623,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("sparepart");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
 
             Id(x => x.Id)
@@ -634,6 +654,8 @@ namespace VgAuto.Core.Persistence.Repositories
         {
             Schema("domain");
             Table("unitedmotorsprice");
+            Map(x => x.CompanyId).Column("company_id");
+            ApplyFilter<CompanyFilter>(CompanyFilter.Condition);
 
             Id(x=>x.Id,"id").GeneratedBy.DefaultGeneratedBy();
              

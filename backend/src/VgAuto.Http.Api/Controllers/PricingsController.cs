@@ -1,3 +1,4 @@
+using VgAuto.Core.Application.Extensions;
 ﻿using System;
 using System.IO;
 using System.Linq;
@@ -49,7 +50,8 @@ namespace VgAuto.Http.Api.Controllers
                                     inner join domain.pricing e on e.id = o.estimateid
                                     inner join domain.estimate est on est.id = o.estimateid
                                     inner join domain.employee i on i.id = e.issuerid
-                                    where o.workid = @workId"), new { workId = workId })
+                                    inner join domain.work w on w.id = o.workid
+                                    where o.workid = @workId and w.company_id = @companyId"), new { workId = workId, companyId = this.CompanyId() })
                                   .ToList();
              
             return Ok(issuances);

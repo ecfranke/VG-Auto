@@ -87,6 +87,7 @@ namespace VgAuto.Http.Api.Controllers
         public async Task<dynamic> Activities(Guid id,Guid? currentId) 
             
         {
+            RequireVisible(session.Get<Work>(id));
             var d = SqlDialect.Current;
             var activities  = session.Connection.Query<ActivityDto>(d.Sql(
                                 $@"select a.id,{d.CastToText("ordernr")} as number,startedon,name,concat_ws(' ',firstname,lastname) as startedby,notes,isvehiclelinesonpricing,isempty from ( 
@@ -150,6 +151,13 @@ namespace VgAuto.Http.Api.Controllers
         {
             var pricingOptions = await tenantConfigService.GetPricingAsync();
             return pricingOptions.Invoice.VatRate;
+        }
+
+        /// <summary>Offers and repair jobs have no company of their own: loading their work checks it.</summary>
+        private static void RequireVisible(Work work)
+        {
+            if (work == null) throw new UserException("Not found.");
+            NHibernate.NHibernateUtil.Initialize(work);
         }
 
         private async Task<string> GetCurrencyAsync()
@@ -272,7 +280,8 @@ namespace VgAuto.Http.Api.Controllers
             var sortExpression = onlyIssued ? "i.number" : "w.changedon";
             var query = repository
                  .PageQuery<WorkPage>(null, limit, offset, true)
-                 .Sortable(new Dictionary<string, string>(), sortExpression);
+                 .Sortable(new Dictionary<string, string>(), sortExpression)
+                 .ForCompany("w.company_id", this.CompanyId());
 
             if (!onlyIssued)
             {
@@ -405,6 +414,7 @@ order by page.sortkey desc").ToResult();
         [HttpGet("offer/{offerId}/productsorservices")]
         public  OkObjectResult  GetProductsAndServicesOfAnOffer(Guid offerId) 
         {
+            RequireVisible(session.Get<Offer>(offerId)?.Work);
              
             var products = session.QueryOver<ProductOffered>()
                   .Where(x => x.Offer.Id == offerId)
@@ -416,6 +426,7 @@ order by page.sortkey desc").ToResult();
         public OkObjectResult PutProductsOrServicesOfAnOffer(Guid offerId, [FromBody] PutProductOrService[] model)
         {
             var offer = session.Get<Offer>(offerId);
+            RequireVisible(offer?.Work);
 
             var products = model.Select((x, i) => new ProductOffered(offer,  Convert.ToInt16(i + 1)  , x.Code, x.Name, x.Quantity, x.Unit, x.Price, x.Discount, x.Id)).ToArray();
 
@@ -434,6 +445,7 @@ order by page.sortkey desc").ToResult();
         [HttpGet("repairjob/{jobId}/productsorservices")]
         public OkObjectResult GetProductsOrServicesOfRepairJob(Guid jobId)
         {
+            RequireVisible(session.Get<RepairJob>(jobId)?.Work);
             var products = session.QueryOver<ProductInstalled>()
                   .Where(x => x.Job.Id == jobId)
                   .List();
@@ -445,6 +457,7 @@ order by page.sortkey desc").ToResult();
         public OkObjectResult PutProductsOrServicesOfRepairJob(Guid jobId, [FromBody] PutProductOrService[] model)
         {
             var job = session.Get<RepairJob>(jobId);
+            RequireVisible(job?.Work);
 
             var products = model.Select((x, i) => new ProductInstalled(job, Convert.ToInt16(i + 1), x.Code, x.Name, x.Quantity, x.Unit, x.Price, x.Discount, x.Id)).ToArray();
 
@@ -535,6 +548,7 @@ order by page.sortkey desc").ToResult();
         public async Task<OkResult> SendEstimate( Guid offerId, [FromBody] SendPricingDto model)
         {
             var offer = session.Get<Offer>(offerId); 
+            RequireVisible(offer?.Work);
             await offer.Estimate.Send(pricingSender, model.EmailAddress);//model.displayname
             offer.Work.Changed();
             session.Update(offer.Work);

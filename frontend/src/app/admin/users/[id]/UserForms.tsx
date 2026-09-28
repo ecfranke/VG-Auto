@@ -1,10 +1,10 @@
 'use client'
 
 import { useActionState } from 'react'
-import { accountAction, ActionState, changeRole, createAccount, editUser, resetPassword } from '../../actions'
+import { accountAction, ActionState, changeCompany, changeRole, createAccount, editUser, resetPassword } from '../../actions'
 import type { Dictionary } from '../../_i18n'
 import type { IAdminUser } from '../../model'
-import { Alert, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
+import { Alert, CompanySelect, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
 
 type Props = { user: IAdminUser, t: Dictionary }
 const can = (user: IAdminUser, action: string) => user.allowedActions.includes(action)
@@ -97,6 +97,24 @@ export function AccountButton({ user, action: name, label, danger, confirmText }
       <input type="hidden" name="action" value={name} />
       <SubmitButton pending={pending} danger={danger} secondary={!danger}>{label}</SubmitButton>
       {state.error && <Alert kind="error">{state.error}</Alert>}
+    </form>
+  )
+}
+
+export function CompanyForm({ user, t, companies }: Props & { companies: { id: string, name: string }[] }) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(changeCompany, {})
+  return (
+    <form action={action} className="space-y-3" onSubmit={e => { if (!window.confirm(t.confirmMove)) e.preventDefault() }}>
+      <input type="hidden" name="employeeId" value={user.employeeId} />
+      {state.error && <Alert kind="error">{state.error}</Alert>}
+      {state.ok && <Alert kind="success">{t.saved}</Alert>}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-64">
+          <CompanySelect key={user.companyId} label={t.companyOf} companies={companies} defaultValue={user.companyId} />
+        </div>
+        <SubmitButton pending={pending} secondary>{t.moveCompany}</SubmitButton>
+      </div>
+      <p className="text-sm text-gray-500">{t.moveCompanyHint}</p>
     </form>
   )
 }

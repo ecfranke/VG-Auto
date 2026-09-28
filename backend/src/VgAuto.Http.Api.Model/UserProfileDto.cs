@@ -56,6 +56,7 @@ namespace VgAuto.Http.Api.Models
         public string Role { get; set; }
         public bool IsOwner { get; set; }
         public bool Disabled { get; set; }
+        public Guid CompanyId { get; set; }
     }
 
 }

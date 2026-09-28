@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { httpRaw } from '@/_lib/server/query-api'
+import { httpGet, httpRaw } from '@/_lib/server/query-api'
 import { currentAccount } from '@/_lib/server/account'
 import { getDictionary } from '../../_i18n'
-import { IAdminUser } from '../../model'
+import { IAdminUser, ICompany } from '../../model'
 import { RoleBadges, StatusBadges } from '../../_components/Badges'
 import { Alert } from '../../_components/Fields'
-import { AccountButton, CreateAccountForm, ProfileForm, ResetPasswordForm, RoleForm } from './UserForms'
+import { AccountButton, CompanyForm, CreateAccountForm, ProfileForm, ResetPasswordForm, RoleForm } from './UserForms'
 
 function Section({ title, children }: { title: string, children: React.ReactNode }) {
   return (
@@ -17,6 +17,8 @@ function Section({ title, children }: { title: string, children: React.ReactNode
   )
 }
 
+const can0 = (user: IAdminUser, action: string) => user.allowedActions.includes(action)
+
 export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
   const me = await currentAccount()
   if (!me.isAdmin) return null
@@ -26,6 +28,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   if (!response.ok) notFound()
   const user = await response.json() as IAdminUser
   const { t } = await getDictionary()
+  const companies = can0(user, 'ChangeCompany') ? await (await httpGet('admin/companies')).json() as ICompany[] : []
   const can = (action: string) => user.allowedActions.includes(action)
   const creatableRoles = me.role === 'superadmin' ? ['user', 'admin', 'superadmin'] : ['user']
   const readOnly = user.hasAccount && !user.isSelf && !user.isOwner && user.allowedActions.length === 0
@@ -49,12 +52,18 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
         <ProfileForm user={user} t={t} />
       </Section>
 
+      <Section title={t.companyOf}>
+        {can('ChangeCompany')
+          ? <CompanyForm user={user} t={t} companies={companies} />
+          : <p className="text-sm text-gray-700">{user.companyName ?? '—'}</p>}
+      </Section>
+
       <Section title={t.accountSection}>
         {!user.hasAccount && (can('CreateAccount')
           ? <CreateAccountForm user={user} t={t} roles={creatableRoles} />
           : <p className="text-sm text-gray-500">{t.noLogin}</p>)}
 
-        {user.hasAccount && !['ChangeRole', 'ResetPassword', 'Unlock', 'UnlinkMicrosoft', 'Disable', 'Enable'].some(can) && (
+        {user.hasAccount && !['ChangeRole', 'ResetPassword', 'Unlock', 'UnlinkMicrosoft', 'Disable', 'Enable'].some(a => can(a)) && (
           <p className="text-sm text-gray-500">{t.noActions}</p>
         )}
         {user.hasAccount && (

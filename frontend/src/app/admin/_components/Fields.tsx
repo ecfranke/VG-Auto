@@ -28,6 +28,19 @@ export function RoleSelect({ label, name = 'role', defaultValue, roles, disabled
   )
 }
 
+export function CompanySelect({ label, name = 'companyId', defaultValue, companies }: {
+  label: string, name?: string, defaultValue?: string | null, companies: { id: string, name: string }[]
+}) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm/6 font-medium text-gray-900">{label}</label>
+      <select id={name} name={name} defaultValue={defaultValue ?? undefined} className={clsx('mt-1', inputClass)}>
+        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+    </div>
+  )
+}
+
 export function Alert({ kind, children }: { kind: 'error' | 'success' | 'info', children: React.ReactNode }) {
   const colors = {
     error: 'bg-red-50 text-red-800 ring-red-600/20',

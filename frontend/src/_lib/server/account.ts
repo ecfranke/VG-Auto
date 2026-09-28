@@ -7,6 +7,8 @@ export interface IAccount {
   role: 'user' | 'admin' | 'superadmin';
   isOwner: boolean;
   isAdmin: boolean;
+  companyId: string;
+  email: string | null;
 }
 
 /** The signed in account with its current role (read from the API, not from the token). */

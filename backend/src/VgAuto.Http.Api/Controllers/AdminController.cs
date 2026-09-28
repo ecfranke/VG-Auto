@@ -1,3 +1,4 @@
+using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,30 +38,36 @@ namespace VgAuto.Http.Api.Controllers
         private readonly IAdminAuditLog audit;
         private readonly IExternalLoginRepository externalLogins;
         private readonly AuthenticationOptions authOptions;
+        private readonly ICompanyScope companies;
 
         public AdminController(IUserRepository users, ISession session, IAdminAuditLog audit,
-            IExternalLoginRepository externalLogins, IOptions<AuthenticationOptions> authOptions)
+            IExternalLoginRepository externalLogins, IOptions<AuthenticationOptions> authOptions, ICompanyScope companies)
         {
             this.users = users;
             this.session = session;
             this.audit = audit;
             this.externalLogins = externalLogins;
             this.authOptions = authOptions.Value;
+            this.companies = companies;
+            // the administration works across all companies (the actions check the administrator rights)
+            companies.AllCompanies();
         }
 
         // ---------------------------------------------------------------- models
 
-        public record MeDto(string UserName, string FullName, string Role, bool IsOwner, bool IsAdmin);
+        public record MeDto(string UserName, string FullName, string Role, bool IsOwner, bool IsAdmin, Guid CompanyId, string Email);
 
         public record AdminUserDto(
             Guid EmployeeId, string FirstName, string LastName, string Email, string Phone, string Profession, string Description,
             bool HasAccount, string UserName, string Role, bool IsOwner, bool Disabled, bool Locked, bool MustChangePassword,
-            bool MicrosoftLinked, bool IsSelf, IReadOnlyList<string> AllowedActions);
+            bool MicrosoftLinked, bool IsSelf, IReadOnlyList<string> AllowedActions, Guid CompanyId, string CompanyName);
 
         public record EmployeeInput(string FirstName, string LastName, string Email, string Phone, string Profession, string Description);
 
         public record CreateUserInput(string FirstName, string LastName, string Email, string Phone, string Profession, string Description,
-            bool CreateAccount, string UserName, string Password, string Role);
+            bool CreateAccount, string UserName, string Password, string Role, Guid? CompanyId = null);
+
+        public record CompanyInput(Guid CompanyId);
 
         public record EditUserInput(string FirstName, string LastName, string Email, string Phone, string Profession, string Description, string UserName);
 
@@ -81,7 +88,7 @@ namespace VgAuto.Http.Api.Controllers
             var me = this.CurrentAccount();
             if (me == null) return Unauthorized();
             var employee = session.Get<Employee>(me.Id.EmployeeId);
-            return new MeDto(me.UserName, employee?.Name ?? me.UserName, me.Role, me.IsOwner, me.IsAdmin);
+            return new MeDto(me.UserName, employee?.Name ?? me.UserName, me.Role, me.IsOwner, me.IsAdmin, me.CompanyId, employee?.Email);
         }
 
         // ---------------------------------------------------------------- users
@@ -93,6 +100,7 @@ namespace VgAuto.Http.Api.Controllers
             var me = this.CurrentAccount();
             var accounts = users.GetAllByTenant(this.TenantName()).ToDictionary(u => u.Id.EmployeeId);
             var employees = session.Query<Employee>().ToList();
+            companyNames = CompanyNames();
             var result = new List<AdminUserDto>();
             foreach (var employee in employees.OrderBy(e => e.FirstName).ThenBy(e => e.LastName))
             {
@@ -108,6 +116,7 @@ namespace VgAuto.Http.Api.Controllers
         {
             var (employee, account) = Load(employeeId);
             if (employee == null) return NotFound();
+            companyNames = CompanyNames();
             return await ToDto(this.CurrentAccount(), employee, account);
         }
 
@@ -118,6 +127,9 @@ namespace VgAuto.Http.Api.Controllers
             var me = this.CurrentAccount();
             var employee = new Employee(Required(input.FirstName, "First name"), Required(input.LastName, "Last name"), DateTime.UtcNow,
                 Clean(input.Phone), Clean(input.Email), Clean(input.Profession), Clean(input.Description));
+            var companyId = input.CompanyId ?? me.CompanyId;
+            if (!CompanyNames().ContainsKey(companyId)) throw new UserException("Unknown company.");
+            employee.BelongsTo(companyId);
 
             string temporaryPassword = null;
             if (input.CreateAccount)
@@ -262,6 +274,107 @@ namespace VgAuto.Http.Api.Controllers
             return Ok();
         }
 
+        /// <summary>Moves an employee (and its login) to another company.</summary>
+        [RequireAdmin]
+        [HttpPut("users/{employeeId:guid}/company")]
+        public async Task<IActionResult> ChangeCompany(Guid employeeId, [FromBody] CompanyInput input)
+        {
+            var (me, employee, account) = Authorize(employeeId, AdminAction.ChangeCompany);
+            var names = CompanyNames();
+            if (!names.ContainsKey(input.CompanyId)) throw new UserException("Unknown company.");
+            if (employee.CompanyId == input.CompanyId) return Ok();
+            var previous = names.TryGetValue(employee.CompanyId, out var n) ? n : employee.CompanyId.ToString();
+            employee.BelongsTo(input.CompanyId);
+            session.Update(employee);
+            if (account != null)
+            {
+                account.MoveToCompany(input.CompanyId);
+                users.Update(account);
+            }
+            await Log("user.company", account?.UserName, $"{employee.Name}: {previous} -> {names[input.CompanyId]}");
+            return Ok();
+        }
+
+        // ---------------------------------------------------------------- companies
+
+        public record CompanyDto(Guid Id, string Name, string RegNo, string Currency, int Employees, int Users);
+
+        public record NewCompanyInput(string Name, string Currency);
+
+        [RequireAdmin]
+        [HttpGet("companies")]
+        public ActionResult<IEnumerable<CompanyDto>> Companies()
+        {
+            var d = SqlDialect.Current;
+            var rows = session.Connection.Query<(Guid Id, string Name, string RegNo, string Currency, long Employees)>(d.Sql(
+                @"select c.id, coalesce(r.name, c.name) as name, r.reg_nr as regno, p.currency,
+                         (select count(*) from domain.employee e where e.company_id = c.id) as employees
+                    from domain.company c
+                    left join tenant_config.requisites r on r.company_id = c.id
+                    left join tenant_config.pricing p on p.company_id = c.id
+                   order by coalesce(r.name, c.name)")).ToList();
+            var accounts = users.GetAllByTenant(this.TenantName()).GroupBy(u => u.CompanyId).ToDictionary(g => g.Key, g => g.Count());
+            return rows.Select(r => new CompanyDto(r.Id, r.Name, r.RegNo, Currencies.Normalize(r.Currency), (int)r.Employees,
+                accounts.TryGetValue(r.Id, out var count) ? count : 0)).ToList();
+        }
+
+        [RequireAdmin]
+        [HttpPost("companies")]
+        public async Task<ActionResult<Guid>> CreateCompany([FromBody] NewCompanyInput input,
+            [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
+        {
+            var name = Required(input?.Name, "Name");
+            var id = Guid.NewGuid();
+            session.CreateSQLQuery(SqlDialect.Current.Sql("insert into domain.company (id, name, created_at) values (:id, :name, :createdAt)"))
+                .SetParameter("id", id).SetParameter("name", name).SetParameter("createdAt", DateTime.UtcNow)
+                .ExecuteUpdate();
+            companies.SwitchTo(id);
+            var options = await tenantConfig.GetAppOptionsAsync(); // creates the settings of the new company
+            await tenantConfig.SaveAppOptionsAsync(options with
+            {
+                Requisites = options.Requisites with { Name = name },
+                Pricing = options.Pricing with { Currency = Currencies.Normalize(input.Currency) },
+            });
+            await Log("company.create", null, name);
+            return id;
+        }
+
+        [RequireAdmin]
+        [HttpGet("companies/{companyId:guid}/options")]
+        public async Task<ActionResult<VgAuto.Core.Application.Configuration.AppOptions>> CompanyOptions(Guid companyId,
+            [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
+        {
+            if (!CompanyNames().ContainsKey(companyId)) return NotFound();
+            companies.SwitchTo(companyId);
+            return await tenantConfig.GetAppOptionsAsync();
+        }
+
+        [RequireAdmin]
+        [HttpPut("companies/{companyId:guid}/options")]
+        public async Task<IActionResult> SaveCompanyOptions(Guid companyId, [FromBody] VgAuto.Core.Application.Configuration.AppOptions options,
+            [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
+        {
+            if (!CompanyNames().ContainsKey(companyId)) return NotFound();
+            if (options?.Requisites == null || options.Pricing?.Invoice == null || options.Pricing.Estimate == null)
+                throw new UserException("Incomplete settings.");
+            Required(options.Requisites.Name, "Name");
+            companies.SwitchTo(companyId);
+            await tenantConfig.SaveAppOptionsAsync(options);
+            session.CreateSQLQuery(SqlDialect.Current.Sql("update domain.company set name = :name where id = :id"))
+                .SetParameter("name", options.Requisites.Name.Trim()).SetParameter("id", companyId).ExecuteUpdate();
+            await Log("settings.update", null, options.Requisites.Name.Trim());
+            return Ok();
+        }
+
+        private Dictionary<Guid, string> companyNames;
+
+        // through the session, so it also works inside the request transaction (MySQL)
+        private Dictionary<Guid, string> CompanyNames() =>
+            session.CreateSQLQuery(SqlDialect.Current.Sql(
+                "select c.id, coalesce(r.name, c.name) as name from domain.company c left join tenant_config.requisites r on r.company_id = c.id"))
+                .List<object[]>()
+                .ToDictionary(x => x[0] is Guid g ? g : Guid.Parse(x[0].ToString()!), x => x[1]?.ToString());
+
         // ---------------------------------------------------------------- audit log
 
         public record AuditPageDto(IReadOnlyList<AuditEntry> Items, int Total);
@@ -313,7 +426,8 @@ namespace VgAuto.Http.Api.Controllers
             return new AdminUserDto(employee.Id, employee.FirstName, employee.LastName, account?.Email ?? employee.Email, employee.Phone,
                 employee.Proffession, employee.Description, account != null, account?.UserName, account?.Role, account?.IsOwner ?? false,
                 account?.Disabled ?? false, account?.IsLockedOut(DateTime.UtcNow) ?? false, account?.MustChangePassword ?? false,
-                microsoft, target.IsSelf, allowed);
+                microsoft, target.IsSelf, allowed, employee.CompanyId,
+                companyNames != null && companyNames.TryGetValue(employee.CompanyId, out var companyName) ? companyName : null);
         }
 
         private string AddAccount(Employee employee, string userName, string password, string email, string role)
@@ -323,7 +437,7 @@ namespace VgAuto.Http.Api.Controllers
             var policyError = PasswordPolicy.Validate(plain, userName.Trim());
             if (policyError != null) throw new UserException(policyError);
             users.Add(new User(userName.Trim(), PasswordHasher.getHash(plain), Clean(email), false, null,
-                new UserIdentifier(this.TenantName(), employee.Id), mustChangePassword: true, role: role));
+                new UserIdentifier(this.TenantName(), employee.Id), mustChangePassword: true, role: role, companyId: employee.CompanyId));
             return generated ? plain : null;
         }
 

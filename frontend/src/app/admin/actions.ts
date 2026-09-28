@@ -49,6 +49,7 @@ export async function createUser(_: ActionState, form: FormData): Promise<Action
     userName: createAccount ? field(form, 'userName') : null,
     password: createAccount ? field(form, 'password') : null,
     role: field(form, 'role') || 'user',
+    companyId: field(form, 'companyId') || null,
   })
 }
 
@@ -109,11 +110,13 @@ function text(form: FormData, name: string): string {
   return form.get(name)?.toString() ?? ''
 }
 
-/** Full company settings (administrators only; the API enforces it). */
+/** Full settings of any company (administrators only; the API enforces it). */
 export async function saveCompany(_: ActionState, form: FormData): Promise<ActionState> {
+  const companyId = field(form, 'companyId')
+  if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
   const vatRate = Number(text(form, 'vatRate'))
   if (!Number.isInteger(vatRate) || vatRate < 0 || vatRate > 100) return { ok: false, error: 'VAT rate must be a whole number between 0 and 100.' }
-  return send('PUT', 'options', {
+  return send('PUT', `admin/companies/${companyId}/options`, {
     requisites: {
       name: text(form, 'name'),
       phone: text(form, 'phone'),
@@ -142,4 +145,17 @@ export async function sendTestEmail(_: ActionState, form: FormData): Promise<Act
   if (!response.ok) return { ok: false, error: await errorOf(response) }
   const json = await response.json()
   return { ok: true, transport: json.transport }
+}
+
+export async function createCompany(_: ActionState, form: FormData): Promise<ActionState & { companyId?: string }> {
+  const response = await httpRaw('POST', 'admin/companies', { name: field(form, 'name'), currency: field(form, 'currency') })
+  if (!response.ok) return { ok: false, error: await errorOf(response) }
+  const companyId = await response.json() as string
+  revalidatePath('/admin', 'layout')
+  redirect(`/admin/companies/${companyId}`)
+}
+
+export async function changeCompany(_: ActionState, form: FormData): Promise<ActionState> {
+  const id = field(form, 'employeeId')
+  return send('PUT', `admin/users/${id}/company`, { companyId: field(form, 'companyId') }, id)
 }

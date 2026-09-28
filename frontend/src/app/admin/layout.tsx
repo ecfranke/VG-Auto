@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <span className="text-slate-400">·</span>
             <span className="text-slate-200">{t.title}</span>
           </Link>
-          {me.isAdmin && <AdminNav items={[{ href: '/admin/users', label: t.users }, { href: '/admin/company', label: t.company }, { href: '/admin/audit', label: t.audit }]} />}
+          {me.isAdmin && <AdminNav items={[{ href: '/admin/users', label: t.users }, { href: '/admin/companies', label: t.companies }, { href: '/admin/audit', label: t.audit }]} />}
           <div className="ml-auto flex items-center gap-x-4 text-sm">
             <span className="hidden text-slate-300 sm:inline">
               {me.fullName} · {t.roles[me.role]}

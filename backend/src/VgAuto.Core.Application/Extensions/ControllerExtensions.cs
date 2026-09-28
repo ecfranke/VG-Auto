@@ -20,6 +20,11 @@ namespace VgAuto.Core.Application.Extensions
         {
             return controller.HttpContext.User.Claims.First(x => x.Type == ClaimTypes.Spn)?.Value;
         }
+        /// <summary>Company whose data the request works with.</summary>
+        public static Guid CompanyId(this ControllerBase controller) =>
+            Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                .GetRequiredService<VgAuto.Core.Application.Database.ICompanyScope>(controller.HttpContext.RequestServices).CompanyId;
+
         public static string UserName(this ControllerBase controller)
         {
             return controller.HttpContext.User.Identity.Name;

@@ -1,3 +1,4 @@
+using VgAuto.Core.Application.Extensions;
 ﻿using System;
 using System.Linq;
 using VgAuto.Core.Application.RateLimiting;
@@ -27,7 +28,7 @@ namespace VgAuto.Http.Api.Controllers
         public virtual ActionResult Get()
         {
             var locations = repository.GetConnection()
-               .Query(SqlDialect.Current.Sql(@"select id,name from domain.storage")).Select(x =>
+               .Query(SqlDialect.Current.Sql(@"select id,name from domain.storage where company_id = @companyId"), new { companyId = this.CompanyId() }).Select(x =>
                 new
                 {
                     Id = x.id,
@@ -52,6 +53,7 @@ namespace VgAuto.Http.Api.Controllers
                 .PageQuery<StorageDto>(orderby, limit, offset, desc)
                 .FilterBy(searchText)
                 .SearchFields("name", "address", "description")
+                .ForCompany("company_id", this.CompanyId())
                 .Sortable(SortColumns, "id")
                 .SelectSql(@"select * from domain.storage")
                 .ToResult();

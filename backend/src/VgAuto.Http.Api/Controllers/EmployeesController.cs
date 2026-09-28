@@ -63,6 +63,7 @@ namespace VgAuto.Http.Api.Controllers
                   .PageQuery<EmployeeDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
                   .SearchFields("firstname", "lastname", "email", "phone")
+                  .ForCompany("company_id", this.CompanyId())
                   .Sortable(SortColumns, "id")
                   .SelectSql(@"select employee.*,'' as username  from domain.employee ") //left join public.user u on u.employeeid = employee.id
                   .ToResult();

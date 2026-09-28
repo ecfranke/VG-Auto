@@ -1,3 +1,4 @@
+using VgAuto.Core.Application.Extensions;
 ﻿using VgAuto.Core.Domain;
 using VgAuto.Http.Api.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -37,7 +38,7 @@ namespace VgAuto.Http.Api.Controllers
                .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer,v.model,v.regnr,v.vin,v.id,r.ownerid from domain.vehicleregistration r
 										    inner join domain.vehicle v on v.id = r.vehicleid
 											  where r.ownerid = @ownerid  
-												  and r.datetimeto is null"), new { ownerid = clientId })
+												  and r.datetimeto is null and v.company_id = @companyId"), new { ownerid = clientId, companyId = this.CompanyId() })
                .ToArray();
 
 
@@ -136,6 +137,7 @@ namespace VgAuto.Http.Api.Controllers
                   .PageQuery<VehiclePageDto>(orderby, limit, offset, desc)
                   .FilterBy(searchText)
                   .SearchFields("v.regnr", "v.vin", "p.firstname", "p.lastname", "l.name", "v.producer", "v.model")
+                  .ForCompany("v.company_id", this.CompanyId())
                   .Sortable(SortColumns, "v.id")
                   .SelectSql($@"SELECT 
                         v.id, 

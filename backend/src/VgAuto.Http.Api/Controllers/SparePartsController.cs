@@ -1,3 +1,4 @@
+using VgAuto.Core.Application.Extensions;
 ﻿using System;
 using System.Linq;
 using VgAuto.Core.Application.RateLimiting;
@@ -44,6 +45,7 @@ namespace VgAuto.Http.Api.Controllers
                  .FilterBy(searchText)
                  .SearchFields("sparepart.code", "sparepart.name", "s.name")
                  .Sortable(SortColumns, "sparepart.id")
+                 .ForCompany("sparepart.company_id", this.CompanyId())
                  .SelectSql(@"select sparepart.*,s.name as storagename
                                     from domain.sparepart left join domain.storage s on s.id = storageid  ")
                  .ToResult();

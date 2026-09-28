@@ -19,22 +19,14 @@ namespace VgAuto.Core.Persistence.Repositories
 
         public async Task<TenantRequisites> GetRequisitesAsync()
         {
-            // Get the first record (should only be one per tenant)
-            var requisites = session.QueryOver<TenantRequisites>().List<TenantRequisites>().Single();
+            // one record per company (the session is limited to the current company)
+            var requisites = session.QueryOver<TenantRequisites>().List<TenantRequisites>().SingleOrDefault();
                
 
             if (requisites == null)
             {
                 // Create default if none exists
-                requisites = new TenantRequisites(
-                    "Default Company",
-                    "+1234567890",
-                    "123 Main St",
-                    "info@example.com",
-                    "EE123456789012",
-                    "REG12345",
-                    "KMKR123456"
-                );
+                requisites = new TenantRequisites("New company", "", "", "", "", "", "");
                 await session.SaveAsync(requisites);
                 await session.FlushAsync();
             }
@@ -45,7 +37,7 @@ namespace VgAuto.Core.Persistence.Repositories
         public async Task<TenantPricing> GetPricingAsync()
         {
             // Get the first record (should only be one per tenant)
-            var pricing =   session.QueryOver<TenantPricing>().List<TenantPricing>().Single();
+            var pricing = session.QueryOver<TenantPricing>().List<TenantPricing>().SingleOrDefault();
                 
 
             if (pricing == null)

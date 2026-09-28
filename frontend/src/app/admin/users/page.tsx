@@ -29,6 +29,7 @@ export default async function UsersPage() {
             <tr>
               <th className="px-4 py-3 font-semibold">{t.name}</th>
               <th className="px-4 py-3 font-semibold">{t.userName}</th>
+              <th className="px-4 py-3 font-semibold">{t.companyOf}</th>
               <th className="px-4 py-3 font-semibold">{t.email}</th>
               <th className="px-4 py-3 font-semibold">{t.role}</th>
               <th className="px-4 py-3 font-semibold">{t.status}</th>
@@ -45,12 +46,13 @@ export default async function UsersPage() {
                   {user.profession && <div className="text-xs text-gray-500">{user.profession}</div>}
                 </td>
                 <td className="px-4 py-3 text-gray-700">{user.userName ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-700">{user.companyName ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-700">{user.email ?? '—'}</td>
                 <td className="px-4 py-3"><RoleBadges user={user} t={t} /></td>
                 <td className="px-4 py-3"><StatusBadges user={user} t={t} /></td>
               </tr>
             ))}
-            {users.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">{t.empty}</td></tr>}
+            {users.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">{t.empty}</td></tr>}
           </tbody>
         </table>
       </div>

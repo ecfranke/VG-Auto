@@ -95,6 +95,9 @@ namespace VgAuto.Core.Application.Services
             return this;
         }
 
+        /// <summary>Limits the rows to one company (<paramref name="column"/> is the company_id column of the main table).</summary>
+        public PageResultQuery<DTO> ForCompany(string column, Guid companyId) => Where($"{column} = {Parameter(companyId)}");
+
         /// <summary>Adds a trusted SQL condition. Use <see cref="Parameter"/> for values.</summary>
         public PageResultQuery<DTO> Where(string expression)
         {

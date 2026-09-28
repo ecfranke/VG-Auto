@@ -4,9 +4,10 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { createUser, ActionState } from '../../actions'
 import type { Dictionary } from '../../_i18n'
-import { Alert, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
+import { Alert, CompanySelect, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
+import type { ICompany } from '../../model'
 
-export default function NewUserForm({ t, roles }: { t: Dictionary, roles: string[] }) {
+export default function NewUserForm({ t, roles, companies, defaultCompany }: { t: Dictionary, roles: string[], companies: ICompany[], defaultCompany: string }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(createUser, {})
   const [withLogin, setWithLogin] = useState(true)
 
@@ -30,6 +31,7 @@ export default function NewUserForm({ t, roles }: { t: Dictionary, roles: string
         <Field label={t.phone} name="phone" />
         <Field label={t.profession} name="profession" />
         <Field label={t.description} name="description" />
+        <CompanySelect label={t.companyOf} companies={companies} defaultValue={defaultCompany} />
       </div>
 
       <div className="border-t border-gray-100 pt-6">
