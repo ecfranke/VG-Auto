@@ -8,6 +8,8 @@ export interface IWorkData extends IActivity{
     clientEmail:     string;
     clientPhone:     string;
     vehicleId:       string;
+    /** readable work number, e.g. RP_TF_2019_HC_2026_09_28_15 */
+    code: string;
     vehicleManufacturer: string;
     vehicleModel:    string;
     vehicleYear:     number | null;

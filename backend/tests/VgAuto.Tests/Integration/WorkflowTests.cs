@@ -188,6 +188,9 @@ namespace VgAuto.Tests.Integration
             Assert.Equal("completed", recent.GetProperty("status").GetString());
             Assert.Equal("Toyota", recent.GetProperty("vehicleManufacturer").GetString());
             Assert.Equal(2020, recent.GetProperty("vehicleYear").GetInt32());
+            var workCode = recent.GetProperty("code").GetString()!;
+            Assert.Matches(@"^RP_JD_2020_TC_\d{4}_\d{2}_\d{2}_\d+$", workCode);
+            Assert.Single((await Json(await server.GetAsync($"/api/work/page?limit=10&scope=all&searchText={workCode}"))).GetProperty("items").EnumerateArray());
             var overdue = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&status=overdue&searchText=REG{suffix}"));
             Assert.Single(overdue.GetProperty("items").EnumerateArray());
 

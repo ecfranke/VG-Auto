@@ -41,6 +41,9 @@ namespace VgAuto.Http.Api.Models
         int? VehicleYear = null) 
     {
         public WorkPage() : this(default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default) { }
+
+        /// <summary>Readable work number, e.g. RP_TF_2019_HC_2026_09_28_15 (see <see cref="VgAuto.Core.Domain.WorkCode"/>).</summary>
+        public string Code => VgAuto.Core.Domain.WorkCode.Format(hasRepairs || Issuance != null, ClientName, VehicleYear, VehicleManufacturer, VehicleModel, StartedOn, WorkNr);
     }
 
 }

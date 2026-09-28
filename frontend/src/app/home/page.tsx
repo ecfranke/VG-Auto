@@ -12,6 +12,7 @@ import WorkStatusBadge from './work/_components/activity/badges/WorkStatusBadge'
 interface IRecentWork {
   id: string
   workNr: string
+  code: string
   startedOn: string
   status: string
   clientId: string | null
@@ -85,7 +86,7 @@ export default async function Page() {
                       return (
                         <tr key={w.id} className={w.status === 'closed' ? 'line-through' : ''}>
                           <td className="whitespace-nowrap px-4 py-3 sm:pl-6">
-                            <Link href={`/home/work/${w.id}`} className="font-medium text-indigo-600 hover:text-indigo-500">Work nr. {w.workNr}</Link>
+                            <Link href={`/home/work/${w.id}`} className="font-mono text-sm font-medium text-indigo-600 hover:text-indigo-500">{w.code}</Link>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">

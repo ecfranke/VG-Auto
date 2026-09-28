@@ -119,7 +119,7 @@ export function WorkInformation({
                 <h2 className="sr-only">Summary</h2>
                 <dl className="flex flex-wrap">
                     <div className="flex-auto xl:pt-6 xl:pl-6">
-                        <dt className="text-base font-semibold text-gray-900 mr-2">Work nr {work.number}{' '}
+                        <dt className="text-base font-semibold text-gray-900 mr-2"><span className="font-mono">{work.code}</span>{' '}
                             <WorkStatusBadge   status={work.status}></WorkStatusBadge> 
                         </dt>
                         <dd className="text-sm/6 text-gray-500">
