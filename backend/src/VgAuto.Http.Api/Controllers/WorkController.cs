@@ -258,7 +258,16 @@ namespace VgAuto.Http.Api.Controllers
                     throw new UserException("Cannot delete work, it contains an invoice sent to a client.");
                 }
 
+                // the issued (unsent) estimates go with the work: a left-over estimate kept its number ("15-0")
+                // and a new work that got number 15 could not issue its offer any more.
+                // Invoices stay: their numbers must remain an unbroken sequence.
+                var estimates = dObj.Offers.Select(x => x.Estimate).Where(x => x != null).ToList();
                 repository.Delete(dObj);
+                foreach (var estimate in estimates)
+                {
+                    repository.Delete(estimate);
+                    DeletePdf(estimate);
+                }
             }
             return Ok();
         }
