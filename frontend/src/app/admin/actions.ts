@@ -63,6 +63,7 @@ export async function editUser(_: ActionState, form: FormData): Promise<ActionSt
     profession: field(form, 'profession'),
     description: field(form, 'description'),
     userName: field(form, 'userName') || null,
+    companyId: field(form, 'companyId') || null,
   }, id)
 }
 
@@ -155,7 +156,25 @@ export async function createCompany(_: ActionState, form: FormData): Promise<Act
   redirect(`/admin/companies/${companyId}`)
 }
 
-export async function changeCompany(_: ActionState, form: FormData): Promise<ActionState> {
-  const id = field(form, 'employeeId')
-  return send('PUT', `admin/users/${id}/company`, { companyId: field(form, 'companyId') }, id)
+/** Company details edited from the user page: merged into the full settings of that company. */
+export async function saveCompanyInfo(_: ActionState, form: FormData): Promise<ActionState> {
+  const companyId = field(form, 'companyId')
+  if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
+  const current = await httpRaw('GET', `admin/companies/${companyId}/options`)
+  if (!current.ok) return { ok: false, error: await errorOf(current) }
+  const options = await current.json()
+  return send('PUT', `admin/companies/${companyId}/options`, {
+    ...options,
+    requisites: {
+      ...options.requisites,
+      name: text(form, 'name'),
+      regNr: text(form, 'regNr'),
+      kmkr: text(form, 'kmkr'),
+      phone: text(form, 'phone'),
+      email: text(form, 'email'),
+      address: text(form, 'address'),
+      bankAccount: text(form, 'bankAccount'),
+    },
+    pricing: { ...options.pricing, currency: text(form, 'currency') },
+  })
 }

@@ -197,7 +197,8 @@ Administrators manage companies, employees and logins at `https://your-domain/ad
   - Every company has its own clients, vehicles, work, inventory, estimates and invoices, its own numbering (work, estimate and invoice numbers start at 1 per company), its own settings and currency.
   - Every employee belongs to one company and only sees the data of that company.
   - The **Companies** page lists all companies (Reg No, currency, employees, logins), creates new ones (name and currency), and **Edit** opens all details, currency, invoice and offer options of that company.
-  - Choose the company when creating a user; **Company** on the user page moves an employee to another company. They then work with the new company's data; work already done stays with the old company. You cannot move yourself.
+  - Choose the company when creating a user. **Company** in the employee details of the user page moves an employee to another company when saved. They then work with the new company's data; work already done stays with the old company. You cannot move yourself.
+  - **Company details** further down the user page edit the name, Reg No, Tax ID, currency, phone, email, address and bank account of that user's company (for the whole company); invoice and offer options are under **All settings of this company**.
   - Data that existed before the upgrade belongs to the first company.
 - **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles, created companies, changed company settings, moved users to another company, sent test emails, and when.
 

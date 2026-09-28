@@ -105,6 +105,15 @@ namespace VgAuto.Tests.Integration
             (await owner.PutAsJsonAsync($"/api/admin/users/{userB.GetProperty("employeeId").GetGuid()}/company", new { companyId = companyA })).EnsureSuccessStatusCode();
             Assert.Single((await Json(await staffB.GetAsync($"/api/clients/page?limit=10&searchText=alpha{suffix}"))).GetProperty("items").EnumerateArray());
             Assert.Empty((await Json(await staffB.GetAsync($"/api/clients/page?limit=10&searchText=beta{suffix}"))).GetProperty("items").EnumerateArray());
+            // the company can also be changed together with the employee details
+            (await owner.PutAsJsonAsync($"/api/admin/users/{userB.GetProperty("employeeId").GetGuid()}", new
+            {
+                firstName = "Test", lastName = "staffb" + suffix, email = $"staffb{suffix}@example.com",
+                userName = "staffb" + suffix, companyId = companyB,
+            })).EnsureSuccessStatusCode();
+            Assert.Single((await Json(await staffB.GetAsync($"/api/clients/page?limit=10&searchText=beta{suffix}"))).GetProperty("items").EnumerateArray());
+            var moved = (await Json(await owner.GetAsync("/api/admin/users"))).EnumerateArray().Single(u => u.GetProperty("userName").GetString() == "staffb" + suffix);
+            Assert.Equal(companyB, moved.GetProperty("companyId").GetGuid());
             Assert.NotNull(firstCompany);
         }
     }

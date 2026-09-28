@@ -2,14 +2,14 @@ import clsx from 'clsx'
 
 const inputClass = 'block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500'
 
-export function Field({ label, name, defaultValue, type = 'text', required, disabled, placeholder, className, autoComplete }: {
-  label: string, name: string, defaultValue?: string | null, type?: string, required?: boolean, disabled?: boolean,
+export function Field({ label, name, id = name, defaultValue, type = 'text', required, disabled, placeholder, className, autoComplete }: {
+  label: string, name: string, id?: string, defaultValue?: string | null, type?: string, required?: boolean, disabled?: boolean,
   placeholder?: string, className?: string, autoComplete?: string
 }) {
   return (
     <div className={className}>
-      <label htmlFor={name} className="block text-sm/6 font-medium text-gray-900">{label}</label>
-      <input id={name} name={name} type={type} defaultValue={defaultValue ?? ''} required={required} disabled={disabled}
+      <label htmlFor={id} className="block text-sm/6 font-medium text-gray-900">{label}</label>
+      <input id={id} name={name} type={type} defaultValue={defaultValue ?? ''} required={required} disabled={disabled}
         placeholder={placeholder} autoComplete={autoComplete ?? 'off'} className={clsx('mt-1', inputClass)} />
     </div>
   )

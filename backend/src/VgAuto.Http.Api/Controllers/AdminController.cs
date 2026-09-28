@@ -69,7 +69,7 @@ namespace VgAuto.Http.Api.Controllers
 
         public record CompanyInput(Guid CompanyId);
 
-        public record EditUserInput(string FirstName, string LastName, string Email, string Phone, string Profession, string Description, string UserName);
+        public record EditUserInput(string FirstName, string LastName, string Email, string Phone, string Profession, string Description, string UserName, Guid? CompanyId = null);
 
         public record AccountInput(string UserName, string Password, string Role);
 
@@ -159,6 +159,8 @@ namespace VgAuto.Http.Api.Controllers
             var (employee, account) = Load(employeeId);
             if (employee == null) return NotFound();
             Allow(me, TargetOf(me, employee, account), AdminAction.EditProfile);
+            var moveTo = input.CompanyId is Guid target && target != Guid.Empty && target != employee.CompanyId ? target : (Guid?)null;
+            if (moveTo != null) Allow(me, TargetOf(me, employee, account), AdminAction.ChangeCompany);
 
             employee.Change(Required(input.FirstName, "First name"), Required(input.LastName, "Last name"),
                 Clean(input.Phone), Clean(input.Email), Clean(input.Profession), Clean(input.Description));
@@ -184,6 +186,7 @@ namespace VgAuto.Http.Api.Controllers
                 users.Update(account);
             }
             await Log("user.edit", account?.UserName, string.Join(", ", changes.Prepend(employee.Name)));
+            if (moveTo != null) await MoveToCompany(employee, account, moveTo.Value);
             return Ok();
         }
 
@@ -279,20 +282,25 @@ namespace VgAuto.Http.Api.Controllers
         [HttpPut("users/{employeeId:guid}/company")]
         public async Task<IActionResult> ChangeCompany(Guid employeeId, [FromBody] CompanyInput input)
         {
-            var (me, employee, account) = Authorize(employeeId, AdminAction.ChangeCompany);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.ChangeCompany);
+            await MoveToCompany(employee, account, input.CompanyId);
+            return Ok();
+        }
+
+        private async Task MoveToCompany(Employee employee, User account, Guid companyId)
+        {
             var names = CompanyNames();
-            if (!names.ContainsKey(input.CompanyId)) throw new UserException("Unknown company.");
-            if (employee.CompanyId == input.CompanyId) return Ok();
+            if (!names.ContainsKey(companyId)) throw new UserException("Unknown company.");
+            if (employee.CompanyId == companyId) return;
             var previous = names.TryGetValue(employee.CompanyId, out var n) ? n : employee.CompanyId.ToString();
-            employee.BelongsTo(input.CompanyId);
+            employee.BelongsTo(companyId);
             session.Update(employee);
             if (account != null)
             {
-                account.MoveToCompany(input.CompanyId);
+                account.MoveToCompany(companyId);
                 users.Update(account);
             }
-            await Log("user.company", account?.UserName, $"{employee.Name}: {previous} -> {names[input.CompanyId]}");
-            return Ok();
+            await Log("user.company", account?.UserName, $"{employee.Name}: {previous} -> {names[companyId]}");
         }
 
         // ---------------------------------------------------------------- companies

@@ -6,7 +6,7 @@ import { getDictionary } from '../../_i18n'
 import { IAdminUser, ICompany } from '../../model'
 import { RoleBadges, StatusBadges } from '../../_components/Badges'
 import { Alert } from '../../_components/Fields'
-import { AccountButton, CompanyForm, CreateAccountForm, ProfileForm, ResetPasswordForm, RoleForm } from './UserForms'
+import { AccountButton, CompanyInfoForm, CreateAccountForm, ICompanyInfo, ProfileForm, ResetPasswordForm, RoleForm } from './UserForms'
 
 function Section({ title, children }: { title: string, children: React.ReactNode }) {
   return (
@@ -29,6 +29,9 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   const user = await response.json() as IAdminUser
   const { t } = await getDictionary()
   const companies = can0(user, 'ChangeCompany') ? await (await httpGet('admin/companies')).json() as ICompany[] : []
+  const companyResponse = await httpRaw('GET', `admin/companies/${user.companyId}/options`)
+  const companyInfo = companyResponse.ok ? await companyResponse.json() as ICompanyInfo : null
+  const currencies = companyInfo ? await (await httpGet('options/currencies')).json() as { code: string, name: string }[] : []
   const can = (action: string) => user.allowedActions.includes(action)
   const creatableRoles = me.role === 'superadmin' ? ['user', 'admin', 'superadmin'] : ['user']
   const readOnly = user.hasAccount && !user.isSelf && !user.isOwner && user.allowedActions.length === 0
@@ -49,14 +52,18 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       {readOnly && <Alert kind="info">{t.noRightsHint}</Alert>}
 
       <Section title={t.profileSection}>
-        <ProfileForm user={user} t={t} />
+        <ProfileForm user={user} t={t} companies={companies} />
       </Section>
 
-      <Section title={t.companyOf}>
-        {can('ChangeCompany')
-          ? <CompanyForm user={user} t={t} companies={companies} />
-          : <p className="text-sm text-gray-700">{user.companyName ?? '—'}</p>}
-      </Section>
+      {companyInfo && (
+        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-base font-semibold text-gray-900">{t.companyInfoOf} · {companyInfo.requisites.name}</h2>
+            <Link href={`/admin/companies/${user.companyId}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">{t.allSettings} →</Link>
+          </div>
+          <CompanyInfoForm t={t} companyId={user.companyId} info={companyInfo} currencies={currencies} />
+        </section>
+      )}
 
       <Section title={t.accountSection}>
         {!user.hasAccount && (can('CreateAccount')
