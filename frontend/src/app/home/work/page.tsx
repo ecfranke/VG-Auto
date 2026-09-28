@@ -14,6 +14,7 @@ import SearchParams from "./_components/SearchParams";
 import PrimaryButton from "@/_components/PrimaryButton";
 import SearchInput from "../_components/SearchInput";
 import FormInput from "@/_components/FormInput";
+import { vehicleTitle } from "@/_lib/shared/vehicle";
 
 export default async function Page(
   { searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -22,10 +23,10 @@ export default async function Page(
 
   const isInvoiceView = options.issued == 'on';
 
-  const secondColumn = isInvoiceView ? {
+  // type of the work: repair job and/or offer (the invoice in the invoice view)
+  const typeColumn = isInvoiceView ? {
     dataField: 'issuance',
-    headerText: 'Invoice',
-
+    headerText: 'Type',
     dataFormatter: ({ issuance, id }: { issuance: IWorkIssuance, id: string }) => {
       return (
         issuance ?
@@ -38,19 +39,14 @@ export default async function Page(
               hidePaperClip={true}
               clickableElement={<ArrowDownTrayIcon aria-hidden="true" className="h-6 w-5 text-gray-400" ></ArrowDownTrayIcon>} >
             </PricingDownloadLink> </div>
-            <div>
-              <EmailSentBadge issueance={issuance}></EmailSentBadge>
-              <OverdueBadge issueance={issuance}></OverdueBadge></div>
           </div> :
           <></>
       );
     }
   } : {
     dataField: 'offerissuance',
-    headerText: 'Repair, Offer',
-
+    headerText: 'Type',
     dataFormatter: ({ offerIssuance, hasRepairs, numberOfOffers }: { hasRepairs: boolean, offerIssuance: IOfferIssuance, numberOfOffers: number }) => {
-
       return (
         <div className="flex gap-x-2">
           {hasRepairs && <BlueBadge text="Repair job"></BlueBadge>}
@@ -71,9 +67,9 @@ export default async function Page(
                   <div> <h5><EmailSentBadge issueance={offerIssuance}></EmailSentBadge></h5></div>
                 </>
               }
+              {!offerIssuance && numberOfOffers === 1 && <BlueBadge text="Offer"></BlueBadge>}
             </>
           }</div>
-
       );
     }
   };
@@ -82,29 +78,27 @@ export default async function Page(
     {
       dataField: 'workNr',
       headerText: 'Work',
-
-      dataFormatter: ({ id, workNr, status }: { id: string, status: string, workNr: string }) => {
-
+      dataFormatter: ({ id, workNr }: { id: string, workNr: string }) => {
         return (
           <a href={'/home/work/' + id}>
-            <h5 >Work nr. {workNr}
-              {' '} {!isInvoiceView && <WorkStatusBadge status={status} ></WorkStatusBadge>}
-            </h5>
+            <h5 className="whitespace-nowrap">Work nr. {workNr}</h5>
           </a>
         );
       }
     },
-    secondColumn,
+    typeColumn,
     {
-      dataField: 'startedOn',
-      headerText: 'Started on',//  {moment(activity?.startedOn, true).format('LLL')}
-      dataFormatter: ({ startedOn }: { startedOn: Date }) => {
+      dataField: 'status',
+      headerText: 'Status',
+      dataFormatter: ({ status, issuance }: { status: string, issuance: IWorkIssuance }) => {
         return (
-          moment(startedOn, true).format('LL')
+          <div className="flex gap-x-1">
+            <WorkStatusBadge status={status}></WorkStatusBadge>
+            {isInvoiceView && issuance && <><EmailSentBadge issueance={issuance}></EmailSentBadge><OverdueBadge issueance={issuance}></OverdueBadge></>}
+          </div>
         );
       }
     },
-
     {
       dataField: 'clientId',
       headerText: 'Client',
@@ -119,22 +113,33 @@ export default async function Page(
     {
       dataField: 'vehicleId',
       headerText: 'Vehicle',
-      dataFormatter: ({ licensePlate, vehicleId }: { licensePlate: string, vehicleId: string }) => {
+      dataFormatter: ({ licensePlate, vehicleId, vehicleManufacturer, vehicleModel, vehicleYear }: { licensePlate: string, vehicleId: string, vehicleManufacturer?: string, vehicleModel?: string, vehicleYear?: number }) => {
+        if (!vehicleId) return <></>;
+        const title = vehicleTitle({ year: vehicleYear, manufacturer: vehicleManufacturer, model: vehicleModel });
         return (
           <a href={'/home/vehicles/' + vehicleId} >
-            <h5 className="mb-0 fs--1">{licensePlate}</h5>
+            <h5 className="mb-0 fs--1">{licensePlate || title}</h5>
+            {licensePlate && title && <p className="text-xs text-gray-500">{title}</p>}
           </a>
         );
       }
     },
-
     {
       dataField: 'mechanicNames',
       headerText: 'Mechanics',
     },
     {
+      dataField: 'startedOn',
+      headerText: 'Start date',
+      dataFormatter: ({ startedOn }: { startedOn: Date }) => {
+        return (
+          <span className="whitespace-nowrap">{moment(startedOn, true).format('LL')}</span>
+        );
+      }
+    },
+    {
       dataField: 'notes',
-      headerText: 'Description',
+      headerText: 'Note',
       dataFormatter: ({ notes }: { notes: string }) => {
         return (
           <p title={notes} className="truncate" style={{ maxWidth: '300px', marginBottom: "-5px" }} >

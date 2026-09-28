@@ -304,8 +304,12 @@ namespace VgAuto.Core.Application.Services
             {
                 // usually missing system libraries (libnss3, libgbm1 ...) on a minimal server
                 logger.LogError(ex, "Starting the PDF browser {path} failed", _executablePath);
-                throw new UserException("The PDF could not be created: the browser on the server does not start (missing system libraries?). " +
-                    "Run \"vgauto pdf-setup\" on the server. Details are in the server log.");
+                // the first line usually names the missing library ("libnss3.so: cannot open shared object file")
+                var reason = (ex.InnerException?.Message ?? ex.Message).Split('\n').Select(l => l.Trim())
+                    .FirstOrDefault(l => l.Contains(".so") || l.Contains("error", StringComparison.OrdinalIgnoreCase)) ?? ex.Message;
+                if (reason.Length > 300) reason = reason[..300];
+                throw new UserException("The PDF could not be created: the browser on the server does not start (" + reason + "). " +
+                    "Run \"sudo vgauto pdf-setup\" on the server.");
             }
             await using var browser = launched;
              

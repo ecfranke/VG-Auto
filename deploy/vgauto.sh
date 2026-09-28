@@ -337,6 +337,15 @@ cmd_pdf_setup() {
       libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 \
       libcairo2 xdg-utils >/dev/null || warn "some packages could not be installed"
     apt-get install -y -q libasound2t64 >/dev/null 2>&1 || apt-get install -y -q libasound2 >/dev/null 2>&1 || true
+  elif [[ "$OS" == "Linux" ]] && { command -v dnf >/dev/null || command -v yum >/dev/null; }; then
+    # CentOS / Rocky / AlmaLinux / OpenCloudOS (common on Baota servers)
+    local pm; pm="$(command -v dnf || command -v yum)"
+    log "Installing the system libraries and fonts the PDF browser needs ($(basename "$pm"))"
+    "$pm" install -y -q nss nspr atk at-spi2-atk cups-libs libdrm libxkbcommon libXcomposite libXdamage libXfixes \
+      libXrandr mesa-libgbm pango cairo alsa-lib gtk3 liberation-fonts >/dev/null || warn "some packages could not be installed"
+    "$pm" install -y -q google-noto-sans-cjk-ttc-fonts >/dev/null 2>&1 \
+      || "$pm" install -y -q google-noto-sans-cjk-fonts >/dev/null 2>&1 \
+      || "$pm" install -y -q wqy-microhei-fonts >/dev/null 2>&1 || warn "no CJK font package found (Chinese text in PDFs may not show)"
   fi
   log "Preparing the PDF browser (an installed Chrome/Chromium, otherwise Chrome is downloaded once)"
   mkdir -p "$DATA_DIR/pdf" "$DATA_DIR/puppeteer"; chown -R "$RUN_USER" "$DATA_DIR" 2>/dev/null || true

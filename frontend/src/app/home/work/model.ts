@@ -122,6 +122,7 @@ export interface IActivityNames{
   } as IActivityNames
 
   export const statusNames = {
+    default: 'Open',
     closed: 'Closed',
     inprogress:'In Progress',
     completed:'Completed'

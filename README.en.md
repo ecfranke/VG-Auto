@@ -23,7 +23,7 @@ Create client → Register vehicle → Create work (estimate) → Add parts and 
         → Client accepts, a repair job is created → Work is done, issue the invoice → Mark as paid
 ```
 
-The main menu on the left has **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. The current user is shown at the bottom left; click it to open your profile or sign out.
+The main menu on the left has **Home**, **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. After signing in you land on **Home**: buttons for new work, client and vehicle, and the 10 most recently updated jobs (finished ones included). The **Work** list shows work number, type (repair job / offer), status, client, vehicle, mechanics, start date and note. The current user is shown at the bottom left; click it to open your profile or sign out.
 
 ### 1. Sign in
 

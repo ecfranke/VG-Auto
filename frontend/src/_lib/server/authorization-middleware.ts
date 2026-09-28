@@ -36,7 +36,7 @@ export default async function authorizationMiddleware(request: NextRequest, resp
   }
   // signed in users skip the auth pages (the forced password change page stays reachable)
   if (!isProtectedRoute && jwt && !path.startsWith('/auth/change-password')) {
-    return redirectTo('/home/work')
+    return redirectTo('/home')
   }
 
   return response

@@ -3,6 +3,7 @@ import Image from "next/image"
 import ProfileMenu from "./ProfileMenu"
 import { 
     Cog6ToothIcon, 
+    HomeIcon,
     QueueListIcon,
     TruckIcon,
     UsersIcon, 
@@ -11,7 +12,7 @@ import clsx from "clsx";
 import { usePathname } from 'next/navigation'
  const navigationIconClass = "size-6 shrink-0";
 const navigation = [
-    // { name: 'Dashboard', href: '/home', icon: <HomeIcon aria-hidden="true" className={navigationIconClass}></HomeIcon>},
+    { name: 'Home', href: '/home', icon: <HomeIcon aria-hidden="true" className={navigationIconClass}></HomeIcon>},
     { name: 'Work', href: '/home/work', icon: <QueueListIcon aria-hidden="true" className={navigationIconClass}></QueueListIcon> },
     { name: 'Clients', href: '/home/clients', icon: <UsersIcon aria-hidden="true" className={navigationIconClass}></UsersIcon>  },
     { name: 'Vehicles', href: '/home/vehicles', icon: <TruckIcon aria-hidden="true" className={navigationIconClass}></TruckIcon>  },

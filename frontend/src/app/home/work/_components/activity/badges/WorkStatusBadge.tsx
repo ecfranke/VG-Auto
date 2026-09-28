@@ -9,6 +9,7 @@ export default function WorkStatusBadge({    status }: {   status:string  }){
            {status == 'inprogress'&&<><GreenBadge text= {statusNames[status]} ></GreenBadge></>}
            {status == 'closed'&&<YellowBadge text= {statusNames[status]}></YellowBadge> }
            {status == 'completed'&&<DefaultBadge text= {statusNames[status]}></DefaultBadge> }
+           {(!status || status == 'default')&&<DefaultBadge text= {statusNames['default']}></DefaultBadge> }
         </>
     )
 }

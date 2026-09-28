@@ -29,5 +29,5 @@ export async function changeInitialPassword(prevState: { error: string }, formDa
 
   const tokens = await res.json();
   await createSession(tokens.jwt, tokens.publicJwt);
-  redirect('/home/work');
+  redirect('/home');
 }

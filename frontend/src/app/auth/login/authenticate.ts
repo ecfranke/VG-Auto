@@ -13,7 +13,7 @@ export interface LoginState {
 
 async function finish(tokens: { jwt: string, publicJwt: string, mustChangePassword: boolean }) {
   await createSession(tokens.jwt, tokens.publicJwt);
-  redirect(tokens.mustChangePassword ? '/auth/change-password' : '/home/work');
+  redirect(tokens.mustChangePassword ? '/auth/change-password' : '/home');
 }
 
 export async function authenticate(prevState: LoginState, formData: FormData): Promise<LoginState> {

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   if (result.tokens) {
     await createSession(result.tokens.jwt, result.tokens.publicJwt);
-    const response = NextResponse.redirect(`${base}${result.tokens.mustChangePassword ? '/auth/change-password' : '/home/work'}`);
+    const response = NextResponse.redirect(`${base}${result.tokens.mustChangePassword ? '/auth/change-password' : '/home'}`);
     response.cookies.delete({ name: OAUTH_COOKIE, path: '/auth/microsoft' });
     return response;
   }

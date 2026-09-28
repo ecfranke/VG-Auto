@@ -35,7 +35,10 @@ namespace VgAuto.Http.Api.Models
         bool hasRepairs,
         int numberOfOffers,
         JsonNode OfferIssuance, 
-        JsonNode Issuance) 
+        JsonNode Issuance,
+        string VehicleManufacturer = null,
+        string VehicleModel = null,
+        int? VehicleYear = null) 
     {
         public WorkPage() : this(default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default) { }
     }

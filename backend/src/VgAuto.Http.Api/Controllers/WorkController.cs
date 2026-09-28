@@ -272,7 +272,8 @@ namespace VgAuto.Http.Api.Controllers
             DateTime? workForm,
             DateTime? workTo,
             DateTime? invoiceFrom,
-            DateTime? invoiceTo)
+            DateTime? invoiceTo,
+            string scope = null)
         {
             var d = SqlDialect.Current;
             var onlyIssued = issued == "on";
@@ -285,7 +286,8 @@ namespace VgAuto.Http.Api.Controllers
                  .Sortable(new Dictionary<string, string>(), sortExpression)
                  .ForCompany("w.company_id", this.CompanyId());
 
-            if (!onlyIssued)
+            // scope=all (home page): unfinished and completed work, most recently changed first
+            if (!onlyIssued && scope != "all")
             {
                 query.Where("w.invoiceid is null");
             }
@@ -397,6 +399,9 @@ from (
     concat_ws(' ',p.firstname,p.lastname,l.name) as clientname,
     w.vehicleid,
     v.regnr as licenseplate, 
+    v.producer as vehiclemanufacturer,
+    v.model as vehiclemodel,
+    v.year as vehicleyear,
 	(select {d.StringAgg("concat_ws(' ',m.firstname, m.lastname)", "/ ")}
 	   from domain.assignment a 
 		inner join domain.employee m on a.mechanicid = m.id and a.workid = w.id

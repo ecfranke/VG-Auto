@@ -182,6 +182,12 @@ namespace VgAuto.Tests.Integration
             var issued = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&searchText={invoiceNumber}%20REG{suffix}&invoiceFrom=2000-01-01"));
             var issuedRow = issued.GetProperty("items").EnumerateArray().Single();
             Assert.Equal(invoiceNumber, issuedRow.GetProperty("issuance").GetProperty("invoiceNumber").GetInt32());
+            // the home page lists finished work too, with the vehicle
+            Assert.Empty((await Json(await server.GetAsync($"/api/work/page?limit=10&searchText=REG{suffix}"))).GetProperty("items").EnumerateArray());
+            var recent = (await Json(await server.GetAsync($"/api/work/page?limit=10&scope=all&searchText=REG{suffix}"))).GetProperty("items").EnumerateArray().Single();
+            Assert.Equal("completed", recent.GetProperty("status").GetString());
+            Assert.Equal("Toyota", recent.GetProperty("vehicleManufacturer").GetString());
+            Assert.Equal(2020, recent.GetProperty("vehicleYear").GetInt32());
             var overdue = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&status=overdue&searchText=REG{suffix}"));
             Assert.Single(overdue.GetProperty("items").EnumerateArray());
 
