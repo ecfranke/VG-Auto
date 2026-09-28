@@ -59,8 +59,7 @@ namespace VgAuto.Http.Api.Controllers
                 
                 work.Id,
                 Number =work.Number.ToString(),
-                Code = WorkCode.Format(work.Jobs.Any() || work.Invoice != null, work.Client?.Name, work.Vehicle?.Year,
-                    work.Vehicle?.Manufacturer, work.Vehicle?.Model, work.StartedOn, work.Number.ToString()),
+                work.Code,
                 work.StartedOn,
                 StartedBy = work.Starter?.Name,
                 Name="work",
@@ -81,7 +80,7 @@ namespace VgAuto.Http.Api.Controllers
                 Mechanics = work.Mechanics.ToList().Select(x => new { x.Id, x.Name }).ToArray(),
                 Status= status,
                 Issuance = work.Invoice is not null ? 
-                  new WorkIssuanceDto( work.Invoice.SentOn,work.Invoice.IssuedOn,work.Invoice.Issuer.Name,work.Invoice.Email,work.Invoice.Number,work.Invoice.DueDays,work.Invoice.IsPaid)
+                  new WorkIssuanceDto( work.Invoice.SentOn,work.Invoice.IssuedOn,work.Invoice.Issuer.Name,work.Invoice.Email,work.Invoice.Number,work.Invoice.DueDays,work.Invoice.IsPaid,work.Invoice.GetNumber())
                   : null
             };
         }
@@ -278,9 +277,9 @@ namespace VgAuto.Http.Api.Controllers
             string scope = null)
         {
             var d = SqlDialect.Current;
-            // a pasted work code (RP_TF_2019_HC_2026_09_28_15) finds the work by its number
-            var code = System.Text.RegularExpressions.Regex.Match(searchText ?? string.Empty, @"^\s*(?:RP|OF)_\S*_(\d+)\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (code.Success) searchText = code.Groups[1].Value;
+            // a pasted work, estimate or invoice code (RP_TF_2019_HC_2026_09_28_15, OF_…_15-1) finds exactly that work
+            int? codeNumber = WorkCode.TryParseNumber(searchText, out var number) ? number : null;
+            if (codeNumber != null) searchText = null;
             var onlyIssued = issued == "on";
             Guid? clientId = Guid.TryParse(Request.Query["clientiId[value]"].FirstOrDefault(), out var cid) ? cid : null;
             Guid? vehicleId = Guid.TryParse(Request.Query["vehicleId[value]"].FirstOrDefault(), out var vid) ? vid : null;
@@ -290,6 +289,8 @@ namespace VgAuto.Http.Api.Controllers
                  .PageQuery<WorkPage>(null, limit, offset, true)
                  .Sortable(new Dictionary<string, string>(), sortExpression)
                  .ForCompany("w.company_id", this.CompanyId());
+
+            if (codeNumber != null) query.Where($"w.number = {query.Parameter(codeNumber.Value)}");
 
             // scope=all (home page): unfinished and completed work, most recently changed first
             if (!onlyIssued && scope != "all")
@@ -340,6 +341,7 @@ $@" exists (select 1 from domain.productoffered p
 
             var issuanceSql = d.JsonObject(
                 ("invoiceNumber", "i.number"),
+                ("code", $"coalesce(ip.code, {d.CastToText("i.number")})"),
                 ("isPaid", d.JsonBool("i.ispaid")),
                 ("dueDays", "i.duedays"),
                 ("issuedOn", d.JsonTimestamp("ip.issuedon")),
@@ -350,6 +352,7 @@ $@" exists (select 1 from domain.productoffered p
             var offerIssuanceSql = $@"(select {d.JsonObject(
                 ("id", "o.id"),
                 ("number", "e.number"),
+                ("code", "coalesce(p.code, e.number)"),
                 ("acceptedOn", d.JsonTimestamp("o.acceptedon")),
                 ("acceptedBy", "concat_ws(' ',acp.firstname,acp.lastname)"),
                 ("sentOn", d.JsonTimestamp("p.senton")),

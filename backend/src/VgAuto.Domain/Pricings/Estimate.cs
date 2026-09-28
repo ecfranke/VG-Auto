@@ -25,14 +25,9 @@ namespace VgAuto.Core.Domain
             this.Number = number;
         }
 
-        public  override string GetFileName()
-        {
-            return $"estimate_nr_{Number}.pdf";
-        }
-        public override string GetDisplayName()
-        {
-            return $"Estimate nr. {Number}";
-        }
+        public override string GetTitle() => "Estimate";
+
+        /// <summary>Internal number: work number - order number of the offer (15-0).</summary>
         public virtual string Number { get; }
 
         /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the estimate table: numbers are unique per company.</summary>
@@ -41,6 +36,8 @@ namespace VgAuto.Core.Domain
         {
             UseCurrency(currency);
             UseTaxes(taxes);
+            // named like the work: the first offer OF_TF_2019_HC_2026_09_28_15, a later one OF_TF_2019_HC_2026_09_28_15-1
+            Code = offer.Work.DocumentCode(isRepair: false, offer.OrderNr == 0 ? null : "-" + offer.OrderNr);
             var newSet = offer.Products.ToArray();
             ApplyClientInformation(offer.Work.Client);
             if (offer.IsVehicleLinesOnEstimate)
@@ -57,7 +54,7 @@ namespace VgAuto.Core.Domain
 
         public override string GetNumber()
         {
-            return Number.ToString();
+            return Code ?? Number;
         }
     }
 }

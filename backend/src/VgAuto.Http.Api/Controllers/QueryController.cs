@@ -1,7 +1,12 @@
 using VgAuto.Core.Application.Extensions;
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.Linq;
 using VgAuto.Core.Application.RateLimiting;
 using VgAuto.Core.Application.Services;
+using VgAuto.Core.Domain;
 using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +27,10 @@ namespace VgAuto.Http.Api.Controllers
             this.session = session;
         }
 
-        /// <summary>Global quick search. Every word of the search text must appear in the result name.</summary>
+        /// <summary>
+        /// Global quick search. Every word of the search text must appear in the result name.
+        /// Work, estimates and invoices are named by their code (RP_TF_2019_HC_2026_09_28_15); a pasted code also finds its work.
+        /// </summary>
         [HttpGet("{searchText}")]
         public dynamic Get(string searchText)
         {
@@ -40,6 +48,7 @@ namespace VgAuto.Http.Api.Controllers
                 .ToArray();
             if (conditions.Length == 0) return new dynamic[0];
             parameters.Add("companyId", this.CompanyId());
+            parameters.Add("workNumber", WorkCode.TryParseNumber(searchText, out var number) ? number.ToString(CultureInfo.InvariantCulture) : null, DbType.String);
 
             var sql = d.Sql($@"select * from ( 
                         select pc.id,'Client' as resourcename, concat_ws(' ',firstname,lastname) as name,'klient' as controller, c.company_id from domain.privateclient pc inner join domain.client c on c.id = pc.id
@@ -48,20 +57,28 @@ namespace VgAuto.Http.Api.Controllers
                         union all
                         select id, 'Vehicle' as resourcename,concat_ws(' ',regnr,(case when vin is null or vin='' then null else {d.Concat("'('", "vin", "')'")} end)) as name,'soiduk' as controller, company_id from domain.vehicle  
                         union all
-                        select id,'Work nr. ' as resourcename, {d.CastToText("number")} as name, 'too' as controller, company_id from domain.work
+                        select id,'Work' as resourcename, {d.CastToText("number")} as name, 'too' as controller, company_id from domain.work
                         union all
-                        select work.id, 'Invoice nr. ' as resourcename, {d.CastToText("invoice.number")} as name,'too' as controller, work.company_id from domain.invoice inner join domain.work on work.invoiceid = invoice.id
+                        select work.id, 'Invoice' as resourcename, pricing.code as name,'too' as controller, work.company_id from domain.work inner join domain.pricing on pricing.id = work.invoiceid
                         union all
-                        select work.id, 'Estimate nr. ' as resourcename, estimate.number as name,'too' as controller, work.company_id from domain.offer inner join domain.work on work.id = offer.workid inner join domain.estimate on estimate.id = offer.estimateid
+                        select work.id, 'Estimate' as resourcename, pricing.code as name,'too' as controller, work.company_id from domain.offer inner join domain.work on work.id = offer.workid inner join domain.pricing on pricing.id = offer.estimateid
                         union all
                         select id, 'Sparepart' as resourcename , code as name, 'varuosa' as controller, company_id from domain.sparepart
                         union all
                         select id, 'Employer' as resourcename,concat_ws(' ',firstname,lastname) as name,'tootaja' as controller, company_id from domain.employee 
                         ) results   
-                        where company_id = @companyId and {string.Join(" and ", conditions)}
+                        where company_id = @companyId and (({string.Join(" and ", conditions)}) or (resourcename = 'Work' and name = @workNumber))
                         limit 10");
 
-            return session.Connection.Query(sql, parameters).ToList();
+            var results = session.Connection.Query(sql, parameters).ToList();
+            // work is found by its number and shown by its code
+            foreach (IDictionary<string, object> row in results)
+            {
+                if (!Equals(row["resourcename"], "Work")) continue;
+                var work = session.Get<Work>(Guid.Parse(row["id"].ToString()));
+                if (work != null) row["name"] = work.Code;
+            }
+            return results;
         }
     }
 }

@@ -23,7 +23,7 @@ Create client → Register vehicle → Create work (estimate) → Add parts and 
         → Client accepts, a repair job is created → Work is done, issue the invoice → Mark as paid
 ```
 
-The main menu on the left has **Home**, **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. After signing in you land on **Home**: buttons for new work, client and vehicle, and the 10 most recently updated jobs (finished ones included). Work numbers look like `RP_TF_2019_HC_2026_09_28_15`: type (RP repair / OF offer only) _ client initials _ vehicle year _ manufacturer and model initials _ start date _ work number, X for missing parts; the code follows the current data (an accepted offer becomes RP) and pasting it into the search finds the work. The **Work** list shows work number, type (repair job / offer), status, client, vehicle, mechanics, start date and note. The current user is shown at the bottom left; click it to open your profile or sign out.
+The main menu on the left has **Home**, **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. After signing in you land on **Home**: buttons for new work, client and vehicle, and the 10 most recently updated jobs (finished ones included). Work numbers look like `RP_TF_2019_HC_2026_09_28_15`: type (RP repair / OF offer only) _ client initials _ vehicle year _ manufacturer and model initials _ start date _ work number, X for missing parts; the code follows the current data (an accepted offer becomes RP). Estimates and invoices are named the same way: an estimate is `OF_TF_2019_HC_2026_09_28_15` (the second offer of the same work `…_15-1`), an invoice `RP_TF_2019_HC_2026_09_28_15`, the same as its work; a document keeps the code it got when it was issued, and the PDF file name and the email subject use it too, so there are no "nr. 12" numbers anywhere. Pasting a work, estimate or invoice code into the search finds the work. The **Work** list shows work number, type (repair job / offer), status, client, vehicle, mechanics, start date and note. The current user is shown at the bottom left; click it to open your profile or sign out.
 
 ### 1. Sign in
 
@@ -96,7 +96,7 @@ Click **Issue offer**:
 
 ![Issue the estimate](docs/screenshots/issue-offer.png)
 
-After **OK** the estimate gets a number and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right.
+After **OK** the estimate gets its code (e.g. `OF_TF_2019_HC_2026_09_28_15`) and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right.
 
 ![Estimate issued](docs/screenshots/offer-issued.png)
 
@@ -124,7 +124,7 @@ Click **Issue invoice**:
 
 ![Issue the invoice](docs/screenshots/issue-invoice.png)
 
-The work becomes **Completed** and the invoice shows **Unpaid**.
+The work becomes **Completed** and the invoice (named like the work, e.g. `RP_TF_2019_HC_2026_09_28_15`) shows **Unpaid**.
 
 ![Invoice](docs/screenshots/invoice.png)
 

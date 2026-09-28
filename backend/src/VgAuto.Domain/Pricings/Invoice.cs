@@ -24,14 +24,7 @@ namespace VgAuto.Core.Domain
         public  virtual bool IsCredited { get; }
 
         public virtual bool IsOverDue => !IsPaid && this.IssuedOn.AddDays(DueDays) <= DateTime.UtcNow;
-        public override string GetFileName()
-        {
-            return $"invoice_nr_{Number}.pdf";
-        }
-        public override string GetDisplayName()
-        {
-            return $"Invoice nr. {Number}";
-        }
+        public override string GetTitle() => "Invoice";
         public virtual void MarkPaid(bool paid) => IsPaid = paid;
 
         /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the invoice table: numbers are unique per company.</summary>
@@ -49,6 +42,8 @@ namespace VgAuto.Core.Domain
         internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,Taxes taxes,PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
         {
             var invoice = new Invoice(numberProvider.Next(), issuer, DateTime.UtcNow,paymentType, dueDays,null);
+            // the number sequence stays internal (only the last invoice can be deleted), the invoice is named like the work
+            invoice.Code = work.DocumentCode(isRepair: true);
             invoice.UseCurrency(currency);
             invoice.UseTaxes(taxes);
             
@@ -66,7 +61,7 @@ namespace VgAuto.Core.Domain
 
         public override string GetNumber()
         {
-            return Number.ToString();
+            return Code ?? Number.ToString();
         }
     }
 }

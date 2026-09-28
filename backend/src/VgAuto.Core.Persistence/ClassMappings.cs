@@ -433,6 +433,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.VehicleLine3).Column("vehicleline3").Access.BackingField();
             Map(x => x.VehicleLine4).Column("vehicleline4").Access.BackingField();
             Map(x => x.IssuedOn).Column("issuedon").Access.BackingField().CustomType<UtcDateType>();//.HasConversion<DateTimeUtcConverter>();
+            Map(x => x.Code).Column("code").Access.BackingField();
             Map(x => x.Currency).Column("currency").Access.BackingField();
             Map(x => x.Tax1Name).Column("tax1_name").Access.BackingField();
             Map(x => x.Tax1Rate).Column("tax1_rate").Access.BackingField();

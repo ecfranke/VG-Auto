@@ -149,10 +149,21 @@ namespace VgAuto.Tests.Integration
             var offers = await Json(await server.GetAsync($"/api/pricings/offers/{workId}"));
             Assert.Equal("System Administrator", offers[0].GetProperty("issuedBy").GetString());
 
+            // documents are named like the work: the estimate of the first offer has the code of the work
+            var estimateCode = offers[0].GetProperty("code").GetString()!;
+            Assert.Matches(@"^OF_JD_2020_TC_\d{4}_\d{2}_\d{2}_\d+$", estimateCode);
+            Assert.Equal(estimateCode, (await Json(await server.GetAsync($"/api/work/{workId}"))).GetProperty("code").GetString());
+            Assert.Equal("Estimate " + estimateCode, estimateMail.Subject);
+            Assert.Equal($"estimate_{estimateCode}.pdf", estimateMail.Attachments.Single().FileName);
+            var estimateHtml = await (await server.GetAsync($"/api/pricings/offer/{offerId}/html")).Content.ReadAsStringAsync();
+            Assert.Contains(estimateCode, estimateHtml);
+            Assert.DoesNotContain("nr.", estimateHtml);
+
             var workList = await Json(await server.GetAsync($"/api/work/page?limit=10&searchText=REG{suffix}"));
             var row = workList.GetProperty("items").EnumerateArray().Single();
             Assert.Equal(workId, row.GetProperty("id").GetGuid());
             Assert.Equal(JsonValueKind.Object, row.GetProperty("offerIssuance").ValueKind);
+            Assert.Equal(estimateCode, row.GetProperty("offerIssuance").GetProperty("code").GetString());
             Assert.Equal(1, row.GetProperty("numberOfOffers").GetInt32());
             var bySaleable = await Json(await server.GetAsync($"/api/work/page?limit=10&saleable=OF-{suffix}"));
             Assert.Single(bySaleable.GetProperty("items").EnumerateArray());
@@ -178,10 +189,26 @@ namespace VgAuto.Tests.Integration
             var work = await Json(await server.GetAsync($"/api/work/{workId}"));
             Assert.Equal("completed", work.GetProperty("status").GetString());
             var invoiceNumber = work.GetProperty("issuance").GetProperty("invoiceNumber").GetInt32();
+            // the invoice is named like the work (RP), its number sequence stays internal
+            var invoiceCode = work.GetProperty("issuance").GetProperty("code").GetString()!;
+            Assert.Matches(@"^RP_JD_2020_TC_\d{4}_\d{2}_\d{2}_\d+$", invoiceCode);
+            Assert.Equal(work.GetProperty("code").GetString(), invoiceCode);
+            Assert.Equal(estimateCode, "OF" + invoiceCode[2..]);
 
             var issued = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&searchText={invoiceNumber}%20REG{suffix}&invoiceFrom=2000-01-01"));
             var issuedRow = issued.GetProperty("items").EnumerateArray().Single();
             Assert.Equal(invoiceNumber, issuedRow.GetProperty("issuance").GetProperty("invoiceNumber").GetInt32());
+            Assert.Equal(invoiceCode, issuedRow.GetProperty("issuance").GetProperty("code").GetString());
+            // a pasted invoice or estimate code finds its work
+            var byInvoiceCode = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&searchText={invoiceCode}"));
+            Assert.Equal(workId, byInvoiceCode.GetProperty("items").EnumerateArray().Single().GetProperty("id").GetGuid());
+            var byEstimateCode = await Json(await server.GetAsync($"/api/work/page?limit=10&scope=all&searchText={estimateCode}"));
+            Assert.Equal(workId, byEstimateCode.GetProperty("items").EnumerateArray().Single().GetProperty("id").GetGuid());
+            var invoiceHtml = await (await server.GetAsync($"/api/pricings/invoice/{workId}/html")).Content.ReadAsStringAsync();
+            Assert.Contains(invoiceCode, invoiceHtml);
+            Assert.DoesNotContain("nr.", invoiceHtml);
+            var invoicePdf = await server.GetAsync($"/api/pricings/invoice/{workId}/pdf");
+            Assert.Equal($"invoice_{invoiceCode}.pdf", invoicePdf.Content.Headers.ContentDisposition!.FileNameStar);
             // the home page lists finished work too, with the vehicle
             Assert.Empty((await Json(await server.GetAsync($"/api/work/page?limit=10&searchText=REG{suffix}"))).GetProperty("items").EnumerateArray());
             var recent = (await Json(await server.GetAsync($"/api/work/page?limit=10&scope=all&searchText=REG{suffix}"))).GetProperty("items").EnumerateArray().Single();
@@ -195,7 +222,9 @@ namespace VgAuto.Tests.Integration
             Assert.Single(overdue.GetProperty("items").EnumerateArray());
 
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/invoice/send", new { emailAddress = $"acme{suffix}@example.com" }));
-            Assert.NotNull(api.Mailbox.LastTo($"acme{suffix}@example.com"));
+            var invoiceMail = api.Mailbox.LastTo($"acme{suffix}@example.com");
+            Assert.Equal("Invoice " + invoiceCode, invoiceMail.Subject);
+            Assert.Equal($"invoice_{invoiceCode}.pdf", invoiceMail.Attachments.Single().FileName);
 
             await Ok(await server.PutAsJsonAsync($"/api/work/{workId}/invoice/paid", true));
             overdue = await Json(await server.GetAsync($"/api/work/page?limit=10&issued=on&status=overdue&searchText=REG{suffix}"));
@@ -206,6 +235,11 @@ namespace VgAuto.Tests.Integration
             Assert.NotEqual(workId, copyId);
             var quick = await Json(await server.GetAsync($"/api/query/Doe{suffix}"));
             Assert.Contains(quick.EnumerateArray(), x => x.GetProperty("resourcename").GetString() == "Client");
+            // work and documents are listed by their code, a pasted code finds the work too
+            var quickByCode = (await Json(await server.GetAsync($"/api/query/{invoiceCode}"))).EnumerateArray().ToList();
+            Assert.Contains(quickByCode, x => x.GetProperty("resourcename").GetString() == "Invoice" && x.GetProperty("name").GetString() == invoiceCode);
+            Assert.Contains(quickByCode, x => x.GetProperty("resourcename").GetString() == "Work" && x.GetProperty("name").GetString() == invoiceCode);
+            Assert.DoesNotContain(quickByCode, x => x.GetProperty("resourcename").GetString()!.Contains("nr"));
 
             // the last invoice can be deleted again
             await Ok(await server.PutAsync($"/api/work/{workId}/invoice/delete", null));

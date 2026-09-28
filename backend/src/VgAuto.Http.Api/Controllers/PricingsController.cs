@@ -40,6 +40,7 @@ namespace VgAuto.Http.Api.Controllers
                                   @"select  
                                         o.id,
                                         est.number, 
+                                        coalesce(e.code, est.number) as code,
                                         e.senton,
                                         e.issuedon,
                                         e.email as receiveremail,
@@ -106,7 +107,10 @@ namespace VgAuto.Http.Api.Controllers
         {
             if (pricing == null) return NotFound();
 
-             Response.Headers.Append("content-disposition", "inline;filename=" + pricing.GetFileName());
+            // the code can have non-ASCII initials (陈): filename* carries them, filename is an ASCII fallback
+            var disposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("inline");
+            disposition.SetHttpFileName(pricing.GetFileName());
+            Response.Headers.ContentDisposition = disposition.ToString();
             var pdfBytes = await pdfGenerator.Generate(pricing);
             return File(pdfBytes, "application/pdf");
         }

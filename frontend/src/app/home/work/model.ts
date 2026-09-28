@@ -44,6 +44,8 @@ export interface IActivity{
 
 export interface IWorkIssuance extends IIssuance{
     invoiceNumber: number;
+    /** the invoice, named like the work: RP_TF_2019_HC_2026_09_28_15 */
+    code: string;
      dueDays: number;
      isPaid:boolean;
 }
@@ -51,6 +53,8 @@ export interface IWorkIssuance extends IIssuance{
 export interface IOfferIssuance extends IIssuance{
     id: string,
     number: string,
+    /** the estimate, named like the work: OF_TF_2019_HC_2026_09_28_15 (a later offer …_15-1) */
+    code: string,
     acceptedOn?: Date;
     acceptedBy?: string;
 }

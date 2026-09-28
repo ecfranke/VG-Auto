@@ -37,21 +37,26 @@ namespace VgAuto.Http.Api.Model
         }
         public Guid Id { get; set; }
         public string Number { get; set; }
+        /// <summary>Readable number of the estimate, e.g. OF_TF_2019_HC_2026_09_28_15.</summary>
+        public string Code { get; set; }
         public string AcceptedBy { get; set; }
         public DateTime? AcceptedOn { get; set; }
     }
 
     public class WorkIssuanceDto : IssuanceDto
     {
-        public WorkIssuanceDto(  DateTime? sentOn, DateTime issuedOn, string issuedBy, string receiverEmail, int invoiceNumber, short dueDays, bool isPaid)
+        public WorkIssuanceDto(  DateTime? sentOn, DateTime issuedOn, string issuedBy, string receiverEmail, int invoiceNumber, short dueDays, bool isPaid, string code)
             : base(  sentOn, issuedOn, issuedBy, receiverEmail)
         { 
             InvoiceNumber = invoiceNumber;
             DueDays = dueDays;
             IsPaid = isPaid;
+            Code = code;
         }
          
         public int InvoiceNumber { get; set; }
+        /// <summary>Readable number of the invoice, e.g. RP_TF_2019_HC_2026_09_28_15.</summary>
+        public string Code { get; set; }
         public short DueDays { get; set; }
         public bool IsPaid { get; set; }
     }

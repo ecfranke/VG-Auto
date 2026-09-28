@@ -32,7 +32,7 @@ export default function ActivitySelect({
                             items.map(item => {
                                 const id = item.id;
                                 const issuance = issueances.find(x => x.id === item.id);
-                                const name = getActivityDisplayName(item.name, item.number, issuance?.number);
+                                const name = getActivityDisplayName(item.name, item.number, issuance?.code);
                                 const href = `/home/work/${work.id}/${item.id}`;
                                 return (
                                     <option value={href} key={id}>{name}</option>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -131,6 +132,18 @@ namespace VgAuto.Core.Domain
         }
 
         public virtual int Number { get; protected set; }
+
+        /// <summary>Readable work number, e.g. RP_TF_2019_HC_2026_09_28_15 (see <see cref="WorkCode"/>); it follows the current data.</summary>
+        public virtual string Code => DocumentCode(Jobs.Any() || Invoice != null);
+
+        /// <summary>
+        /// The code with the given type (RP repair / OF offer) from the current data, <paramref name="suffix"/> after the work number.
+        /// Estimates and invoices keep the code they got when they were issued.
+        /// </summary>
+        protected internal virtual string DocumentCode(bool isRepair, string suffix = null) =>
+            WorkCode.Format(isRepair, Client?.Name, Vehicle?.Year, Vehicle?.Manufacturer, Vehicle?.Model, StartedOn,
+                Number.ToString(CultureInfo.InvariantCulture) + suffix);
+
         public virtual int? Odo { get; protected set; }
         public virtual Employee Starter { get; protected set; }
         public virtual DateTime? CompletedOn { get; protected set; }
