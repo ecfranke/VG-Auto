@@ -4,6 +4,7 @@ import { httpGet, httpRaw } from '@/_lib/server/query-api'
 import { currentAccount } from '@/_lib/server/account'
 import { getDictionary } from '../../_i18n'
 import { IAdminUser, ICompany } from '../../model'
+import type { ITaxCountry } from '@/_lib/shared/taxes'
 import { RoleBadges, StatusBadges } from '../../_components/Badges'
 import { Alert } from '../../_components/Fields'
 import { AccountButton, CompanyInfoForm, CreateAccountForm, ICompanyInfo, ProfileForm, ResetPasswordForm, RoleForm } from './UserForms'
@@ -32,6 +33,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   const companyResponse = await httpRaw('GET', `admin/companies/${user.companyId}/options`)
   const companyInfo = companyResponse.ok ? await companyResponse.json() as ICompanyInfo : null
   const currencies = companyInfo ? await (await httpGet('options/currencies')).json() as { code: string, name: string }[] : []
+  const countries = companyInfo ? await (await httpGet('options/taxregions')).json() as ITaxCountry[] : []
   const can = (action: string) => user.allowedActions.includes(action)
   const creatableRoles = me.role === 'superadmin' ? ['user', 'admin', 'superadmin'] : ['user']
   const readOnly = user.hasAccount && !user.isSelf && !user.isOwner && user.allowedActions.length === 0
@@ -61,7 +63,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
             <h2 className="text-base font-semibold text-gray-900">{t.companyInfoOf} · {companyInfo.requisites.name}</h2>
             <Link href={`/admin/companies/${user.companyId}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">{t.allSettings} →</Link>
           </div>
-          <CompanyInfoForm t={t} companyId={user.companyId} info={companyInfo} currencies={currencies} />
+          <CompanyInfoForm t={t} companyId={user.companyId} info={companyInfo} currencies={currencies} countries={countries} />
         </section>
       )}
 

@@ -37,9 +37,10 @@ namespace VgAuto.Core.Domain
 
         /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the estimate table: numbers are unique per company.</summary>
         public virtual Guid NumberCompanyId { get; protected internal set; }
-        public virtual Estimate CreateFor(int purchaseTax,Offer offer, Employee issuer, string currency = null)
+        public virtual Estimate CreateFor(Taxes taxes,Offer offer, Employee issuer, string currency = null)
         {
             UseCurrency(currency);
+            UseTaxes(taxes);
             var newSet = offer.Products.ToArray();
             ApplyClientInformation(offer.Work.Client);
             if (offer.IsVehicleLinesOnEstimate)
@@ -50,7 +51,7 @@ namespace VgAuto.Core.Domain
             IssuedNowBy(issuer);
             SentOn = default;
             Email = default;
-             PricingLine.Synchronize(newSet.Select((x, i) => ToLine(purchaseTax,x, Convert.ToInt16(i + 1))).ToArray(), lines);
+             PricingLine.Synchronize(newSet.Select((x, i) => ToLine(taxes,x, Convert.ToInt16(i + 1))).ToArray(), lines);
             return this;
         }
 

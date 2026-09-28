@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { httpRaw } from '@/_lib/server/query-api'
 import { LANG_COOKIE } from './_i18n'
+import { taxesFromForm } from '@/_lib/shared/taxes'
 
 export interface ActionState {
   ok?: boolean
@@ -115,8 +116,10 @@ function text(form: FormData, name: string): string {
 export async function saveCompany(_: ActionState, form: FormData): Promise<ActionState> {
   const companyId = field(form, 'companyId')
   if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
-  const vatRate = Number(text(form, 'vatRate'))
-  if (!Number.isInteger(vatRate) || vatRate < 0 || vatRate > 100) return { ok: false, error: 'VAT rate must be a whole number between 0 and 100.' }
+  const parsed = taxesFromForm(form)
+  if ('error' in parsed) return { ok: false, error: parsed.error }
+  const taxes = parsed.taxes
+  const vatRate = Math.round(taxes.tax1Rate + taxes.tax2Rate)
   return send('PUT', `admin/companies/${companyId}/options`, {
     requisites: {
       name: text(form, 'name'),
@@ -137,6 +140,7 @@ export async function saveCompany(_: ActionState, form: FormData): Promise<Actio
       },
       estimate: { emailContent: text(form, 'estimateEmailContent') },
       currency: text(form, 'currency'),
+      taxes,
     },
   })
 }
@@ -160,6 +164,8 @@ export async function createCompany(_: ActionState, form: FormData): Promise<Act
 export async function saveCompanyInfo(_: ActionState, form: FormData): Promise<ActionState> {
   const companyId = field(form, 'companyId')
   if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
+  const parsed = taxesFromForm(form)
+  if ('error' in parsed) return { ok: false, error: parsed.error }
   const current = await httpRaw('GET', `admin/companies/${companyId}/options`)
   if (!current.ok) return { ok: false, error: await errorOf(current) }
   const options = await current.json()
@@ -175,6 +181,7 @@ export async function saveCompanyInfo(_: ActionState, form: FormData): Promise<A
       address: text(form, 'address'),
       bankAccount: text(form, 'bankAccount'),
     },
-    pricing: { ...options.pricing, currency: text(form, 'currency') },
+    pricing: { ...options.pricing, currency: text(form, 'currency'), taxes: parsed.taxes,
+      invoice: { ...options.pricing.invoice, vatRate: Math.round(parsed.taxes.tax1Rate + parsed.taxes.tax2Rate) } },
   })
 }

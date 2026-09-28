@@ -11,6 +11,8 @@ import FormTextArea from '@/_components/FormTextArea';
 import FormSwitch from '@/_components/FormSwitch';
 import { createOrUpdate } from '../createOrUpdate'; 
 import { currentAccount } from '@/_lib/server/account';
+import TaxFields from '@/_components/TaxFields';
+import { ITaxCountry } from '@/_lib/shared/taxes';
 
  
 
@@ -20,6 +22,7 @@ export default async function Page( ) {
     const data = await httpGet('options'); 
     const options = await data.json() as IUserOptions; 
     const currencies = await (await httpGet('options/currencies')).json() as ICurrency[];
+    const countries = await (await httpGet('options/taxregions')).json() as ITaxCountry[];
    
   return (
  
@@ -60,6 +63,13 @@ export default async function Page( ) {
           </div>
          
         <div className="border-b border-gray-900/10 pb-12">
+          <h2 className="text-base/7 font-semibold text-gray-900">Taxes</h2>
+          <div className="mt-6">
+            <TaxFields countries={countries} value={options.pricing.taxes} canChangeRegion={isAdmin} />
+          </div>
+        </div>
+
+        <div className="border-b border-gray-900/10 pb-12">
           <h2 className="text-base/7 font-semibold text-gray-900">Invoice options</h2> 
 
           <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -70,9 +80,6 @@ export default async function Page( ) {
                   {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
                 </select>
                 <p className="mt-1 text-xs text-gray-500">{isAdmin ? 'Used for new estimates and invoices. Issued documents keep their currency.' : 'Set by an administrator.'}</p>
-              </div>
-             <div className="sm:col-span-2">
-                <FormInput name='vatRate' label='VAT Rate' defaultValue={options.pricing.invoice.vatRate}></FormInput> 
               </div>
               <div className="sm:col-span-2">
                 <FormInput name='surCharge' label='Surcharge' defaultValue={options.pricing.invoice.surCharge}></FormInput> 

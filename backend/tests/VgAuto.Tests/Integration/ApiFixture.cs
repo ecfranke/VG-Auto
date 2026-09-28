@@ -139,11 +139,15 @@ namespace VgAuto.Tests.Integration
         public record LoginResult(string Jwt, string PublicJwt, int Timeout, bool MustChangePassword);
     }
 
+    /// <summary>No browser in tests: the PDF is fake, the HTML of the document is the real one.</summary>
     public class FakePdfGenerator : IPdfGenerator
     {
+        private readonly PricingBodyHtmlGenerator body;
+        private readonly PricingFooterHtmlGenerator footer;
+        public FakePdfGenerator(PricingBodyHtmlGenerator body, PricingFooterHtmlGenerator footer) { this.body = body; this.footer = footer; }
         public Task<byte[]> Generate(Pricing pricing) => Task.FromResult(System.Text.Encoding.ASCII.GetBytes("%PDF-1.4 fake"));
-        public IPricingHtmlGenerator GetBodyGenerator() => throw new NotSupportedException();
-        public IPricingHtmlGenerator GetFooterGenerator() => throw new NotSupportedException();
+        public IPricingHtmlGenerator GetBodyGenerator() => body;
+        public IPricingHtmlGenerator GetFooterGenerator() => footer;
     }
 
     [CollectionDefinition("api")]

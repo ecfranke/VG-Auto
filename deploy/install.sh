@@ -270,6 +270,16 @@ if [[ $SKIP_MIGRATIONS -eq 0 ]]; then
 fi
 
 if [[ $SKIP_API -eq 0 ]]; then
+  log "Preparing the PDF renderer"
+  # uses an installed Chrome/Chromium, otherwise downloads Chrome into $DATA_DIR/puppeteer once;
+  # without it estimates and invoices cannot be downloaded or emailed as PDF
+  if ! (cd "$PREFIX/api" && as_user env DOTNET_NOLOGO=1 ASPNETCORE_ENVIRONMENT=Production \
+        "PdfDirectory=$DATA_DIR/pdf" "PuppeteerPath=$DATA_DIR/puppeteer" dotnet VgAuto.Http.Api.dll --pdf-setup); then
+    printf '\nWarning: no browser for the PDF renderer. Install Google Chrome or Chromium, or run "vgauto pdf-setup" later.\n' >&2
+  fi
+fi
+
+if [[ $SKIP_API -eq 0 ]]; then
   if [[ "$SERVICE_MODE" == "systemd" ]]; then
     log "Installing systemd service vg-auto-api"
     API_BIND="http://$BIND_HOST:15567"

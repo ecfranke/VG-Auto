@@ -326,6 +326,27 @@ cmd_upgrade() {
   "$REPO_DIR/deploy/install.sh" ${args[@]+"${args[@]}"}
 }
 
+# ---- PDF renderer --------------------------------------------------------------------------------
+cmd_pdf_setup() {
+  need_root pdf-setup "$@"
+  installed
+  if [[ "$OS" == "Linux" ]] && command -v apt-get >/dev/null; then
+    log "Installing the system libraries and fonts the PDF browser needs"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get install -y -q fonts-liberation fonts-noto-cjk libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgbm1 \
+      libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 \
+      libcairo2 xdg-utils >/dev/null || warn "some packages could not be installed"
+    apt-get install -y -q libasound2t64 >/dev/null 2>&1 || apt-get install -y -q libasound2 >/dev/null 2>&1 || true
+  fi
+  log "Preparing the PDF browser (an installed Chrome/Chromium, otherwise Chrome is downloaded once)"
+  mkdir -p "$DATA_DIR/pdf" "$DATA_DIR/puppeteer"; chown -R "$RUN_USER" "$DATA_DIR" 2>/dev/null || true
+  (cd "$PREFIX/api" && as_user env DOTNET_NOLOGO=1 ASPNETCORE_ENVIRONMENT=Production \
+      "PdfDirectory=$DATA_DIR/pdf" "PuppeteerPath=$DATA_DIR/puppeteer" dotnet VgAuto.Http.Api.dll --pdf-setup) \
+    || die "no browser for the PDF renderer. Install Google Chrome or Chromium (or allow downloads from storage.googleapis.com) and run this again"
+  ok "PDF renderer ready"
+  api_ctl restart
+}
+
 # ---- Baota panel -----------------------------------------------------------------------------------
 cmd_baota() {
   [[ "$OS" == "Linux" ]] || die "the Baota mode is for Linux servers"
@@ -341,6 +362,7 @@ cmd_baota() {
     libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 libcairo2 xdg-utils \
     || die "apt-get install failed"
   apt-get install -y -q libasound2t64 >/dev/null 2>&1 || apt-get install -y -q libasound2 >/dev/null 2>&1 || true
+  apt-get install -y -q fonts-noto-cjk >/dev/null 2>&1 || true
 
   if ! dotnet --list-sdks 2>/dev/null | grep -q '^9\.'; then
     . /etc/os-release
@@ -396,6 +418,8 @@ ${B}VG Auto control${N}   $( [[ "$OS" == "Darwin" ]] && echo "vgauto" || echo "s
                             (default directory $BACKUP_DIR; --keep N deletes older ones)
   restore FILE [--with-config] [--yes]
                             restore database and PDFs from a backup (makes a safety backup first)
+  pdf-setup                 install what the PDF renderer needs (libraries, fonts, browser),
+                            use it when downloading or emailing PDFs fails
   baota [install.sh options]
                             Baota panel server: installs .NET/Node/pm2 without nginx or a database,
                             then runs install.sh --proxy. Example for the first installation:
@@ -456,6 +480,7 @@ case "$cmd" in
   backup)    cmd_backup "$@" ;;
   restore)   cmd_restore "$@" ;;
   baota|bt)  cmd_baota "$@" ;;
+  pdf-setup|pdf) cmd_pdf_setup "$@" ;;
   help|-h|--help) cmd_help ;;
   *) cmd_help; exit 1 ;;
 esac

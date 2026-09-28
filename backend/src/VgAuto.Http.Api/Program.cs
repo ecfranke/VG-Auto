@@ -117,6 +117,24 @@ if (app.Configuration.GetValue("Swagger:Enabled", app.Environment.IsDevelopment(
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
+// "--pdf-setup": make sure the PDF renderer has a browser (downloads Chrome when none is installed), then exit
+if (System.Linq.Enumerable.Contains(args, "--pdf-setup"))
+{
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        var generator = (VgAuto.Core.Application.Services.PdfGenerator)scope.ServiceProvider.GetRequiredService<VgAuto.Core.Application.Services.IPdfGenerator>();
+        Console.WriteLine("PDF browser: " + await generator.EnsureBrowserAsync());
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("PDF browser setup failed: " + ex.Message);
+        return 1;
+    }
+}
+
 app.Run();
+return 0;
 
 public partial class Program { }

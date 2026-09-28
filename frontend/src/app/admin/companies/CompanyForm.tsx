@@ -4,6 +4,8 @@ import { useActionState } from 'react'
 import { saveCompany, sendTestEmail, createCompany, ActionState } from '../actions'
 import type { Dictionary } from '../_i18n'
 import { Alert, Field, SubmitButton } from '../_components/Fields'
+import TaxFields from '@/_components/TaxFields'
+import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 
 export interface ICompanyOptions {
   requisites: { name: string, phone: string, address: string, email: string, bankAccount: string, regNr: string, kmkr: string }
@@ -11,6 +13,7 @@ export interface ICompanyOptions {
     invoice: { vatRate: number, surCharge: string, disclaimer: string, signatureLine: boolean, emailContent: string }
     estimate: { emailContent: string }
     currency: string
+    taxes: ITaxOptions | null
   }
 }
 
@@ -35,7 +38,7 @@ function Section({ title, hint, children }: { title: string, hint?: string, chil
   )
 }
 
-export function CompanyForm({ t, companyId, options, currencies }: { t: Dictionary, companyId: string, options: ICompanyOptions, currencies: { code: string, name: string }[] }) {
+export function CompanyForm({ t, companyId, options, currencies, countries }: { t: Dictionary, companyId: string, options: ICompanyOptions, currencies: { code: string, name: string }[], countries: ITaxCountry[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(saveCompany, {})
   const r = options.requisites
   const inv = options.pricing.invoice
@@ -64,9 +67,12 @@ export function CompanyForm({ t, companyId, options, currencies }: { t: Dictiona
         </div>
       </Section>
 
+      <Section title={t.taxes}>
+        <TaxFields countries={countries} value={options.pricing.taxes} labels={t.taxLabels} />
+      </Section>
+
       <Section title={t.invoiceOptions}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label={t.vatRate} name="vatRate" type="number" defaultValue={String(inv.vatRate)} required />
           <Field label={t.surcharge} name="surCharge" defaultValue={inv.surCharge} />
           <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
             <input type="checkbox" name="signatureLine" defaultChecked={inv.signatureLine} className="size-4 rounded border-gray-300 text-indigo-600" />

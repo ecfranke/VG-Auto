@@ -5,6 +5,8 @@ import { accountAction, ActionState, changeRole, createAccount, editUser, resetP
 import type { Dictionary } from '../../_i18n'
 import type { IAdminUser } from '../../model'
 import { Alert, CompanySelect, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
+import TaxFields from '@/_components/TaxFields'
+import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 
 type Props = { user: IAdminUser, t: Dictionary }
 const can = (user: IAdminUser, action: string) => user.allowedActions.includes(action)
@@ -116,10 +118,10 @@ export function AccountButton({ user, action: name, label, danger, confirmText }
 
 export interface ICompanyInfo {
   requisites: { name: string, phone: string, address: string, email: string, bankAccount: string, regNr: string, kmkr: string }
-  pricing: { currency: string }
+  pricing: { currency: string, taxes: ITaxOptions | null }
 }
 
-export function CompanyInfoForm({ t, companyId, info, currencies }: { t: Dictionary, companyId: string, info: ICompanyInfo, currencies: { code: string, name: string }[] }) {
+export function CompanyInfoForm({ t, companyId, info, currencies, countries }: { t: Dictionary, companyId: string, info: ICompanyInfo, currencies: { code: string, name: string }[], countries: ITaxCountry[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(saveCompanyInfo, {})
   const r = info.requisites
   return (
@@ -143,6 +145,10 @@ export function CompanyInfoForm({ t, companyId, info, currencies }: { t: Diction
         <Field label={t.email} name="email" id="company-email" type="email" defaultValue={r.email} />
         <Field label={t.address} name="address" id="company-address" defaultValue={r.address} className="sm:col-span-2" />
         <Field label={t.bankAccount} name="bankAccount" id="company-bankAccount" defaultValue={r.bankAccount} className="sm:col-span-2" />
+      </div>
+      <div className="border-t border-gray-100 pt-4">
+        <h3 className="mb-3 text-sm font-semibold text-gray-900">{t.taxes}</h3>
+        <TaxFields countries={countries} value={info.pricing.taxes} labels={t.taxLabels} />
       </div>
       <div className="flex justify-end"><SubmitButton pending={pending}>{t.save}</SubmitButton></div>
     </form>

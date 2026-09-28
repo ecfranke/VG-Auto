@@ -30,7 +30,7 @@ export default function InventoryInput({
                     <div className=" grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                         <div className="sm:col-span-2"> <FormInput name='code' defaultValue={sparepart?.code} label='Product code'></FormInput></div>
                         <div className="sm:col-span-2"> <FormInput name='name' defaultValue={sparepart?.name} label='Product name'></FormInput></div> 
-                        <div className="sm:col-span-2"> <FormInput name='price' type='number' step='any'   defaultValue={sparepart?.price} label='Price'></FormInput></div>
+                        <div className="sm:col-span-2"> <FormInput name='price' type='number' step='any'   defaultValue={sparepart?.price} label='Price (before tax)'></FormInput></div>
                         <div className="sm:col-span-2"> <FormInput name='quantity' type='number' step='any'  defaultValue={sparepart?.quantity} label='Quantity'></FormInput></div>
                         <div className="lg:col-span-4 sm:col-span-full">
                             <FormLabel name='location' label='Location'></FormLabel>

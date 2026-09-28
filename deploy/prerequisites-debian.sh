@@ -22,6 +22,8 @@ apt-get install -y ca-certificates curl gnupg rsync openssl python3 sudo nginx c
 || apt-get install -y ca-certificates curl gnupg rsync openssl python3 sudo nginx certbot python3-certbot-nginx \
   fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 \
   libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libpango-1.0-0 libcairo2 xdg-utils
+# Chinese, Japanese and Korean characters in PDFs (client names, descriptions)
+apt-get install -y fonts-noto-cjk || true
 
 # .NET 9 SDK (Microsoft package repository)
 if ! dotnet --list-sdks 2>/dev/null | grep -q '^9\.'; then

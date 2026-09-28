@@ -31,7 +31,7 @@ namespace VgAuto.Core.Domain
             this.Number = number;
         }
       
-        public virtual async Task<Offer> Issue(Offer offer, IPricingSender sender, int purchaseTax, Employee issuer, bool showVehicleOnPricing, bool sendClientEmail, string clientEmail, string currency = null)
+        public virtual async Task<Offer> Issue(Offer offer, IPricingSender sender, Taxes taxes, Employee issuer, bool showVehicleOnPricing, bool sendClientEmail, string clientEmail, string currency = null)
         {
             if (sendClientEmail && string.IsNullOrWhiteSpace(clientEmail))
             {
@@ -44,7 +44,7 @@ namespace VgAuto.Core.Domain
                 this.offers.Add(offer); 
             }
 
-            offer.Issue(purchaseTax, issuer, showVehicleOnPricing, currency);
+            offer.Issue(taxes, issuer, showVehicleOnPricing, currency);
 
             if (sendClientEmail)
             {
@@ -103,12 +103,12 @@ namespace VgAuto.Core.Domain
             } 
         }
          
-        public virtual void GenerateInvoice(ISequnceNumberProviderFactory numberProvider, int purchaseTax, PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
+        public virtual void GenerateInvoice(ISequnceNumberProviderFactory numberProvider, Taxes taxes, PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
         {
             var number = numberProvider.
                 GetNumberProvider<Invoice>();
 
-            this.Invoice = Invoice.CreateFor(this,  number,purchaseTax, paymentType, dueDays, issuer, currency); 
+            this.Invoice = Invoice.CreateFor(this,  number,taxes, paymentType, dueDays, issuer, currency); 
         }
   
         public virtual void WithNotes(string description)

@@ -4,13 +4,20 @@ import { httpPut } from "@/_lib/server/query-api";
 import {  pushToast } from "@/_lib/server/pushToast";
 import { redirect } from "next/navigation"; 
 import { IUserOptions } from "./model";
+import { taxesFromForm } from "@/_lib/shared/taxes";
 
 
 export async function createOrUpdate(
     formData: FormData
     ) {
        
-    const vatRate = +(formData.get('vatRate')?.toString()??'0');
+    const parsed = taxesFromForm(formData);
+    if ('error' in parsed) {
+      await pushToast(parsed.error, true);
+      redirect('/home/settings/edit');
+    }
+    const taxes = parsed.taxes;
+    const vatRate = Math.round(taxes.tax1Rate + taxes.tax2Rate);
     const signatureLine = formData.get('signatureLine') == 'on';
     const body = {
       requisites: {
@@ -33,7 +40,8 @@ export async function createOrUpdate(
         estimate: {
           emailContent: formData.get('estimateEmailContent')
         },
-        currency: formData.get('currency')?.toString() || null
+        currency: formData.get('currency')?.toString() || null,
+        taxes,
       }
     }  as IUserOptions;
    

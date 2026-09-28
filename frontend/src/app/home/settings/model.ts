@@ -1,3 +1,5 @@
+import type { ITaxOptions } from '@/_lib/shared/taxes';
+
 export interface IUserOptions {
     requisites: Requisites;
     pricing:    Pricing;
@@ -7,6 +9,7 @@ export interface Pricing {
     invoice:  Invoice;
     estimate: Estimate;
     currency: string;
+    taxes:    ITaxOptions | null;
 }
 
 export interface ICurrency {

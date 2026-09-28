@@ -6,12 +6,17 @@ import Link from "next/link";
 import { DescriptionItem } from "@/_components/DescriptionItem";
 import { sendTestEmail } from "./testEmail";
 import { currentAccount } from "@/_lib/server/account";
+import { describeTaxes, ITaxCountry } from "@/_lib/shared/taxes";
 
 export default async function Page() {
 
     const data = await httpGet('options');
     const options = await data.json() as IUserOptions;
     const { isAdmin } = await currentAccount();
+    const countries = await (await httpGet('options/taxregions')).json() as ITaxCountry[];
+    const taxes = options.pricing.taxes;
+    const country = countries.find(c => c.code === taxes?.country);
+    const region = country?.regions.find(r => r.code === taxes?.region);
  
     return (
 
@@ -40,7 +45,8 @@ export default async function Page() {
             <div className="mt-6 border-t border-gray-100">
                 <dl className="divide-y divide-gray-100">
                     <DescriptionItem label='Currency' value={options.pricing.currency}></DescriptionItem>
-                    <DescriptionItem label='VAT Rate' value={options.pricing.invoice.vatRate}></DescriptionItem>
+                    <DescriptionItem label='Registered in' value={[region?.name ?? taxes?.region, country?.name].filter(Boolean).join(', ') || '—'}></DescriptionItem>
+                    <DescriptionItem label='Taxes' value={describeTaxes(taxes) + ' (prices are before tax)'}></DescriptionItem>
                     <DescriptionItem label='Surcharge' value={options.pricing.invoice.surCharge}></DescriptionItem>
                     <DescriptionItem label='Disclaimer' className="whitespace-pre-line" value={options.pricing.invoice.disclaimer}></DescriptionItem>
                     <DescriptionItem label='Signature line' value={(options.pricing.invoice.signatureLine?'Yes':'No')}></DescriptionItem>

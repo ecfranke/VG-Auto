@@ -26,7 +26,7 @@ export default async function Page(
     },
     {
       dataField: 'name',
-      headerText: 'Nimi',
+      headerText: 'Name',
       dataFormatter: ({ name }: { name: string }) => {
         return <p title={name} className="truncate" style={{ maxWidth: '500px', marginBottom: "-5px" }} >
           {name}
@@ -35,7 +35,7 @@ export default async function Page(
     },
     {
       dataField: 'price',
-      headerText: 'Price',
+      headerText: 'Price (before tax)',
       dataFormatter: ({ price }: { price?: number }) => {
         return (
           <Fragment>

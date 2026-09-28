@@ -2,7 +2,6 @@
 'use client';
 
 import { PaperClipIcon } from '@heroicons/react/20/solid'; 
-import { downloadPricing } from '../../actions/downloadPricing';
 import { useState } from 'react';
 import Spinner from '@/_components/Spinner';
 import { ArrowDownTrayIcon } from "@heroicons/react/20/solid";
@@ -10,25 +9,27 @@ import Link from 'next/link';
 import PrintPricingLink from './PrintPricingLink';
 
 
-const handleFileDownload = async (pricingId:string, pricingName: string,fileName: string) => {
-    try {
-      const blob = await downloadPricing({
-        pricingId,pricingName
-      });
-     // Create a temporary anchor element to trigger the download
-     const url = window.URL.createObjectURL(new Blob([blob]));
-     const link = document.createElement("a");
-     link.href = url;
-     // Setting filename received in response
-     link.setAttribute("download", fileName);
-     document.body.appendChild(link);
-     link.click();
-     document.body.removeChild(link);
-
-    } catch (error) {
-      console.log("Error", error)
+/** Downloads the PDF; returns an error message when it could not be created. */
+const handleFileDownload = async (pricingId: string, pricingName: string, fileName: string): Promise<string | null> => {
+  try {
+    const response = await fetch(`/home/pdf/${pricingName.toLowerCase()}/${pricingId}`, { cache: 'no-store' })
+    if (!response.ok) {
+      const json = await response.json().catch(() => null)
+      return json?.error ?? `The PDF could not be created (error ${response.status}).`
     }
+    const url = window.URL.createObjectURL(await response.blob())
+    const link = document.createElement("a")
+    link.href = url
+    link.setAttribute("download", fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    return null
+  } catch {
+    return 'The PDF could not be downloaded. Check the connection and try again.'
   }
+}
 
 export default function PricingDownloadLink({
     id,
@@ -49,6 +50,7 @@ export default function PricingDownloadLink({
 }) {
     
     const [isDownloading,setIsDownloading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileName = `${name.toLowerCase()}_nr_${number}.pdf`;
 
     
@@ -61,18 +63,18 @@ export default function PricingDownloadLink({
                 <Link href="#"  onClick={async (e)=>{
                    e.preventDefault();
                     setIsDownloading(true);
-                    const promise =  handleFileDownload(id,name,fileName);
-                    
-                    promise.finally(()=>{
-                        //scroll stuff
+                    setError(null);
+                    try {
+                        setError(await handleFileDownload(id,name,fileName));
+                    } finally {
                         setIsDownloading(false);
-                    })
-                    await promise; 
+                    }
                     
                 }} className="font-medium text-indigo-600 hover:text-indigo-500">
                     {!isDownloading&&clickableElement} {isDownloading&& downloadingElement}
                 </Link>
             </div>
+            {error && <span role="alert" className="text-xs/6 text-red-600">{error}</span>}
             <div className=" text-sm/6 text-gray-500">
                <PrintPricingLink id={id} pricingName={name}></PrintPricingLink>
             </div>

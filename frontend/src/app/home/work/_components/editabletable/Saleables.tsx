@@ -50,7 +50,7 @@ export default function Saleables({
                                         Name
                                     </th>
                                     <th className="px-2 py-3.5 text-end  text-sm font-semibold whitespace-nowrap text-gray-900">
-                                        Price
+                                        Price <span className="font-normal text-gray-500">(before tax)</span>
                                     </th>
                                     <th className="px-2 py-3.5 text-end   text-sm font-semibold whitespace-nowrap text-gray-900">
                                         Quantity
@@ -87,16 +87,17 @@ export default function Saleables({
                             {!edit && priceSummary && <tfoot>
                                 <tr>
                                     <th colSpan={6}>
-                                        <div className="grid grid-rows-3 gap-0">
+                                        <div className="grid gap-0">
                                             <div className="flex flex-row-reverse " >
 
                                                 <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0 w-25">{moneyFormatter.format(priceSummary.totalWithoutVat)}</div>
                                                 <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">Subtotal</div>
                                             </div>
-                                            <div className="flex flex-row-reverse " >
-                                                <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0 w-25">{moneyFormatter.format(priceSummary.totalWithVat - priceSummary.totalWithoutVat)}</div>
-                                                <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">Tax</div>
-                                            </div>
+                                            {(priceSummary.taxes?.length ? priceSummary.taxes : [{ name: 'Tax', rate: 0, amount: priceSummary.totalWithVat - priceSummary.totalWithoutVat }]).map(tax => (
+                                            <div key={tax.name} className="flex flex-row-reverse " >
+                                                <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0 w-25">{moneyFormatter.format(tax.amount)}</div>
+                                                <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{tax.name}{tax.rate ? ` (${tax.rate}%)` : ''}</div>
+                                            </div>))}
                                             <div className="flex flex-row-reverse  " >
 
                                                 <div className="hidden pt-4 pr-3 pl-4 text-right text-sm font-semibold text-gray-900 sm:table-cell sm:pl-0 w-25">{moneyFormatter.format(priceSummary.totalWithVat)}</div>

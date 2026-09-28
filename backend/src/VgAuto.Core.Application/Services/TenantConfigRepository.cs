@@ -44,13 +44,15 @@ namespace VgAuto.Core.Persistence.Repositories
             {
                 // Create default if none exists
                 pricing = new TenantPricing(
-                    20,
-                    "Default Surcharge",
-                    "Default Disclaimer",
+                    5,
+                    "",
+                    "",
                     true,
                     "Thank you for your business. Please find your invoice attached.",
                     "Thank you for your interest. Please find your estimate attached."
                 );
+                // new companies start in Canada with GST; the administrator chooses the province
+                pricing.UseTaxes(VgAuto.Core.Domain.Taxes.Of("GST", 5m), "CA", null, changeRegion: true);
                 await session.SaveAsync(pricing);
                 await session.FlushAsync();
             }

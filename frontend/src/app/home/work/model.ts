@@ -68,7 +68,9 @@ export interface IActivities
 
 export interface IPriceSummary{
     totalWithVat: number,
-    totalWithoutVat:number
+    totalWithoutVat:number,
+    /** each tax on the subtotal (GST, PST ...) */
+    taxes?: { name: string, rate: number, amount: number }[]
 }
 
 export interface IInvoice {

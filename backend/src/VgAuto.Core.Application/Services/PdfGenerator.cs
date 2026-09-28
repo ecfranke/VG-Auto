@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
@@ -94,7 +95,8 @@ namespace VgAuto.Core.Application.Services
             {
                 Pricing = pricing,
                 RequisitesOptions = requisites,
-                PricingOptions = pricingOptions
+                PricingOptions = pricingOptions,
+                TaxIdLabel = TaxRegions.TaxIdLabel(pricingOptions.Taxes?.Country, pricingOptions.Taxes?.Region),
             };
 
             return model;
@@ -185,15 +187,79 @@ namespace VgAuto.Core.Application.Services
                 var downloadPath = configuration["PuppeteerPath"];
                 if (string.IsNullOrWhiteSpace(downloadPath))
                     downloadPath = Path.Combine(AppContext.BaseDirectory, "puppeteer");
+
+                // a browser downloaded before (by the installer or an earlier request)
                 var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions { Path = downloadPath });
-                var stableVersion = await browserFetcher.DownloadAsync(BrowserTag.Stable);
-                _executablePath = browserFetcher.GetExecutablePath(stableVersion.BuildId);
-                logger.LogInformation("Puppeteer browser: {path}", _executablePath);
+                var downloaded = browserFetcher.GetInstalledBrowsers().FirstOrDefault();
+                if (downloaded != null)
+                {
+                    _executablePath = browserFetcher.GetExecutablePath(downloaded.BuildId);
+                    return;
+                }
+
+                // a browser installed on the server
+                var local = InstalledBrowsers().FirstOrDefault(File.Exists);
+                if (local != null)
+                {
+                    _executablePath = local;
+                    logger.LogInformation("Pdf browser: {path}", local);
+                    return;
+                }
+
+                try
+                {
+                    var stableVersion = await browserFetcher.DownloadAsync(BrowserTag.Stable);
+                    _executablePath = browserFetcher.GetExecutablePath(stableVersion.BuildId);
+                    logger.LogInformation("Puppeteer browser: {path}", _executablePath);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Downloading Chrome for the PDF renderer into {path} failed", downloadPath);
+                    throw new UserException(PdfUnavailable);
+                }
             }
             finally
             {
                 browserGate.Release();
             }
+        }
+
+        private const string PdfUnavailable =
+            "The PDF could not be created: no browser is available on the server. " +
+            "Run \"vgauto pdf-setup\" on the server, or set PuppeteerExecutablePath to an installed Chrome or Chromium.";
+
+        /// <summary>Usual locations of Chrome, Chromium and Edge.</summary>
+        private static IEnumerable<string> InstalledBrowsers()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                foreach (var root in new[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
+                {
+                    if (string.IsNullOrEmpty(root)) continue;
+                    yield return Path.Combine(root, @"Google\Chrome\Application\chrome.exe");
+                    yield return Path.Combine(root, @"Microsoft\Edge\Application\msedge.exe");
+                }
+                yield break;
+            }
+            if (OperatingSystem.IsMacOS())
+            {
+                yield return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+                yield return "/Applications/Chromium.app/Contents/MacOS/Chromium";
+                yield return "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge";
+                yield break;
+            }
+            yield return "/usr/bin/google-chrome-stable";
+            yield return "/usr/bin/google-chrome";
+            yield return "/usr/bin/chromium";
+            yield return "/usr/bin/chromium-browser";
+            yield return "/usr/bin/microsoft-edge";
+        }
+
+        /// <summary>Makes sure a browser is available (used by the installer: "--pdf-setup").</summary>
+        public async Task<string> EnsureBrowserAsync()
+        {
+            await PreparePuppeteerAsync();
+            return _executablePath;
         }
 
         private async Task<MemoryStream> Print(Pricing pricing )
@@ -203,21 +269,38 @@ namespace VgAuto.Core.Application.Services
 
             await PreparePuppeteerAsync();
 
-            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            IBrowser launched;
+            try
             {
-                Headless = true,
-                Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" },
-                ExecutablePath = _executablePath
-            });
+                launched = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage" },
+                    ExecutablePath = _executablePath
+                });
+            }
+            catch (Exception ex)
+            {
+                // usually missing system libraries (libnss3, libgbm1 ...) on a minimal server
+                logger.LogError(ex, "Starting the PDF browser {path} failed", _executablePath);
+                throw new UserException("The PDF could not be created: the browser on the server does not start (missing system libraries?). " +
+                    "Run \"vgauto pdf-setup\" on the server. Details are in the server log.");
+            }
+            await using var browser = launched;
              
             var page = await browser.NewPageAsync(); 
 
             await page.SetViewportAsync(new ViewPortOptions() { DeviceScaleFactor = 1, Width = 1440, Height = 2880, IsMobile = false, HasTouch = false });
             await page.SetContentAsync(html, options: new NavigationOptions() { WaitUntil = new [] { WaitUntilNavigation.Load  } });
-            var tailWindCss = $"{serverUri.Scheme}://localhost:{serverUri.Port}/tailwind.css";
-            var printCss = $"{serverUri.Scheme}://localhost:{serverUri.Port}/print.css";
-            await page.AddStyleTagAsync(tailWindCss);
-            await page.AddStyleTagAsync(printCss);
+            // the styles are read from wwwroot directly (no request to the API itself, which may sit behind a proxy)
+            foreach (var css in new[] { "tailwind.css", "print.css" })
+            {
+                var file = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), css);
+                if (File.Exists(file))
+                    await page.AddStyleTagAsync(new AddTagOptions { Content = await File.ReadAllTextAsync(file) });
+                else
+                    await page.AddStyleTagAsync($"{serverUri.Scheme}://localhost:{serverUri.Port}/{css}");
+            }
            
              
             var pdfContent = await page.PdfStreamAsync(new PdfOptions

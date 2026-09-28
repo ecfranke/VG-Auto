@@ -75,7 +75,13 @@ namespace VgAuto.Http.Api.Controllers
                         RegNr = current.Requisites.RegNr,
                         KMKR = current.Requisites.KMKR,
                     },
-                    Pricing = appOptions.Pricing with { Currency = null }, // null keeps the current currency
+                    Pricing = appOptions.Pricing with
+                    {
+                        Currency = null, // null keeps the current currency
+                        // the place of registration is set by an administrator; tax names and rates stay editable
+                        Taxes = appOptions.Pricing.Taxes == null ? null
+                            : appOptions.Pricing.Taxes with { Country = current.Pricing.Taxes?.Country, Region = current.Pricing.Taxes?.Region },
+                    },
                 };
             }
             try
@@ -100,6 +106,10 @@ namespace VgAuto.Http.Api.Controllers
         [HttpGet("currencies")]
         public IActionResult Currencies() =>
             Ok(VgAuto.Core.Domain.Currencies.All.Select(c => new { c.Code, c.Name, Decimals = VgAuto.Core.Domain.Currencies.Decimals(c.Code), c.Culture }));
+
+        /// <summary>Countries and provinces/states with their sales taxes (the settings fill in the taxes from them).</summary>
+        [HttpGet("taxregions")]
+        public IActionResult TaxRegions() => Ok(VgAuto.Core.Application.Configuration.TaxRegions.All);
 
         public record TestEmailDto(string To);
 

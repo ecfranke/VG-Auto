@@ -95,6 +95,7 @@ sudo certbot --nginx -d app.example.com -d api.example.com
 | `sudo vgauto upgrade` | 先自动备份，再 `git pull`，然后重新安装（配置保留，数据库迁移自动执行） |
 | `sudo vgauto backup` | 把数据库、PDF 和配置打包成一个 `.tar.gz`，默认放在 `/var/backups/vg-auto` |
 | `sudo vgauto restore <文件>` | 从备份恢复数据库和 PDF（要输入 `yes` 确认，恢复前会自动再备份一次当前状态） |
+| `sudo vgauto pdf-setup` | 安装 PDF 需要的系统库和中文字体，准备浏览器（下载或发送报价单/发票 PDF 失败时运行） |
 | `sudo vgauto help` | 全部命令和选项 |
 
 - 备份：`--dir <目录>` 指定目录，`--keep 14` 只保留最近 14 份（更早的会被删除）。
@@ -223,6 +224,15 @@ sudo deploy/vgauto.sh baota \
   内容是 `/usr/local/bin/vgauto backup --keep 14`，每天执行一次。
 
 ---
+
+### 1.7 PDF 下载或发送失败
+
+报价单和发票的 PDF 由服务器上的无头 Chrome 生成。安装时会自动准备浏览器：优先用系统里已经安装的 Chrome / Chromium / Edge，没有的话从 `storage.googleapis.com` 下载一份 Chrome 到 `/var/lib/vg-auto/puppeteer`。
+
+- 页面上提示 “no browser is available on the server”：服务器无法下载 Chrome（例如网络访问不到 Google）。运行 `sudo vgauto pdf-setup`；仍然失败时先手动安装 Google Chrome 或 Chromium，再运行一次，或在 `appsettings.Secrets.json` 里设置 `PuppeteerExecutablePath` 指向浏览器。
+- 提示 “the browser on the server does not start”：缺少系统库。运行 `sudo vgauto pdf-setup` 安装。
+- PDF 里的中文显示成方框：缺少中文字体，`sudo vgauto pdf-setup` 会安装 `fonts-noto-cjk`。
+- 详细错误在 `sudo vgauto logs api` 里。
 
 ## 2. macOS
 

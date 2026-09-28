@@ -77,13 +77,13 @@ When a vehicle changes hands, just change the owner. The ownership history is ke
 After saving, the estimate opens in edit mode. Each row is a part or a labour item:
 
 - **Code**: type a part code or name; matching parts from the inventory are listed. Picking one fills in name and price.
-- **Name / Price / Quantity / Unit / Discount**: discount is in %. Labour can be entered by hand, for example code `LAB` with unit `h`.
+- **Name / Price / Quantity / Unit / Discount**: the price is **before tax**; discount is in %. Labour can be entered by hand, for example code `LAB` with unit `h`.
 - **Add row** adds a row, ✕ removes one, and dragging ≡ on the left reorders rows.
 - **Apply discount** in the drop-down on the right applies a discount to all rows.
 
 ![Edit the estimate](docs/screenshots/offer-edit.png)
 
-Click **Save**. Subtotal, tax and total are shown below the rows; the tax rate is set in the settings.
+Click **Save**. The subtotal before tax, each tax (for example GST and PST on separate lines) and the total are shown below the rows; the taxes are set in the settings (section 12).
 
 ![Estimate](docs/screenshots/offer.png)
 
@@ -149,7 +149,7 @@ Work that ends without an invoice (for example the client decided against the re
 
 ### 11. Inventory
 
-**Inventory → Add new**: enter the part code, name, price and quantity, and choose a storage **Location** (**New** creates one). The **Code** column in estimates and repair jobs autocompletes from here.
+**Inventory → Add new**: enter the part code, name, price before tax and quantity, and choose a storage **Location** (**New** creates one). The **Code** column in estimates and repair jobs autocompletes from here.
 
 ![New part](docs/screenshots/inventory-new.png)
 
@@ -157,11 +157,17 @@ Work that ends without an invoice (for example the client decided against the re
 
 ### 12. Settings
 
-**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, Reg No, Tax ID), the VAT rate, and the email texts for invoices and estimates. Click **Edit** to change them:
+**Settings → Invoice Options** holds the company details printed on the PDFs (name, address, bank account, Reg No, Tax ID), the taxes, and the email texts for invoices and estimates. Click **Edit** to change them:
 
 - Everybody can change phone, address, email, bank account, the invoice options and the offer options.
 - **Company name, Reg No, Tax ID and currency** can only be changed by an administrator on the **Companies** page of the administration (section 14); in the app they are shown greyed out.
 - These are the settings of **your own company**; with several companies, each has its own settings.
+
+**Taxes**: all prices are entered **before tax**; the taxes are added to the subtotal, and each tax is a separate line on estimates and invoices.
+- The **place of registration** (country + province/state) is set by an administrator. Choosing the province fills in its taxes: GST 5% (AB, NT, NU, YT), GST 5% + PST 7% (BC), GST 5% + RST 7% (MB), GST 5% + PST 6% (SK), GST 5% + QST 9.975% (QC), HST 13% (ON), HST 14% (NS), HST 15% (NB, NL, PE). For the US and other countries enter the tax name and rate.
+- Tax names and rates can be changed afterwards (by everybody; the place of registration only by administrators). Up to two taxes.
+- For companies registered in Canada the Tax ID is printed as **GST/HST No.**
+- Issued estimates and invoices keep the taxes they were issued with; documents issued before the upgrade keep the old tax-included display (one VAT line).
 
 The **currency** is set here too: one currency per company, Canadian dollar (CAD) by default, with common alternatives such as USD, EUR, CNY, GBP, HKD and JPY. Amounts are formatted the way the currency is written (`$1,234.50`, `1.234,50 €`, `¥1,234.50`); only the label changes, there is no conversion. Estimates and invoices keep the currency they were issued in, so changing the setting does not affect documents already issued.
 
@@ -257,6 +263,7 @@ After installation `sudo vgauto` works from any directory (no sudo on macOS). Wi
 | `sudo vgauto upgrade` | Back up → `git pull` → reinstall |
 | `sudo vgauto backup [--keep 14]` | Database + PDFs + configuration in one archive |
 | `sudo vgauto restore <file>` | Restore a backup (asks for confirmation, backs up the current state first) |
+| `sudo vgauto pdf-setup` | Installs what PDFs need (system libraries, CJK fonts, browser). Run it when downloading or emailing PDFs fails |
 
 ### macOS
 
@@ -358,7 +365,7 @@ The API reads `appsettings.json`; secrets go in `appsettings.Secrets.json` (in `
 | `Errors:IncludeDetails` | Include error details in responses (debugging only) |
 | `ForwardedHeaders:KnownProxies` | Reverse proxy IPs, used to get the real client IP |
 | `PdfDirectory` | Where PDFs are stored |
-| `PuppeteerExecutablePath` | Path to Chrome/Chromium |
+| `PuppeteerExecutablePath` | Path to Chrome/Chromium. When empty: a Chrome already downloaded into `PuppeteerPath`, then an installed Chrome/Chromium/Edge, and only then a download |
 
 The web app reads `frontend/.env` (`/etc/vg-auto/web.env` after installation):
 

@@ -77,13 +77,13 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 保存工单后会直接进入报价的编辑界面。每一行是一项配件或工时：
 
 - **Code**：输入配件编号或名称，下拉列表会显示库存里匹配的配件。选中后自动带出名称和价格。
-- **Name / Price / Quantity / Unit / Discount**：名称、单价、数量、单位、折扣（%）。工时可以直接手填，比如 Code 填 `LAB`，单位填 `h`。
+- **Name / Price / Quantity / Unit / Discount**：名称、单价（**税前**）、数量、单位、折扣（%）。工时可以直接手填，比如 Code 填 `LAB`，单位填 `h`。
 - **Add row** 添加一行；右侧的 ✕ 删除一行；拖动左侧的 ≡ 调整顺序。
 - 右侧下拉菜单里的 **Apply discount** 可以给所有行统一打折。
 
 ![编辑报价](docs/screenshots/offer-edit.png)
 
-点 **Save** 保存。页面下方会显示小计、税额和总计，税率在设置里配置。
+点 **Save** 保存。页面下方会显示税前小计、每一种税（如 GST、PST 分行显示）和总计；税在设置里配置（见第 12 节）。
 
 ![报价](docs/screenshots/offer.png)
 
@@ -149,7 +149,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 11. 配件库存
 
-**Inventory → Add new**：填写配件编号、名称、价格、数量，在 **Location** 里选择库位（点 **New** 新建库位）。录入工单时，**Code** 列会从这里自动补全。
+**Inventory → Add new**：填写配件编号、名称、税前价格、数量，在 **Location** 里选择库位（点 **New** 新建库位）。录入工单时，**Code** 列会从这里自动补全。
 
 ![新建配件](docs/screenshots/inventory-new.png)
 
@@ -157,11 +157,17 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 12. 设置
 
-**Settings → Invoice Options** 里是公司信息（名称、地址、银行账户、Reg No、Tax ID，会打印在 PDF 上）、增值税率、发票和报价单的邮件正文等。点右下角 **Edit** 修改：
+**Settings → Invoice Options** 里是公司信息（名称、地址、银行账户、Reg No、Tax ID，会打印在 PDF 上）、税、发票和报价单的邮件正文等。点右下角 **Edit** 修改：
 
 - 所有人都可以修改电话、地址、邮箱、银行账户，以及发票设置（Invoice options）和报价单设置（Offer options）。
 - **公司名称、Reg No、Tax ID 和币种**只能由管理员在后台的 **公司** 页面修改（见第 14 节），前台显示为灰色不可编辑。
 - 这里改的是**自己所属公司**的设置；系统支持多个公司，每个公司的设置互不影响。
+
+**税**（Taxes）：所有价格都按**税前**录入，开单时在小计上加税，报价单和发票上每一种税单独一行。
+- **注册地**（国家 + 省/州）由管理员在后台设置。选择省份后自动填入当地的税：AB/NT/NU/YT 为 GST 5%，BC 为 GST 5% + PST 7%，MB 为 GST 5% + RST 7%，SK 为 GST 5% + PST 6%，QC 为 GST 5% + QST 9.975%，ON 为 HST 13%，NS 为 HST 14%，NB/NL/PE 为 HST 15%。美国和其他国家的税名和税率自己填。
+- 税的名称和税率之后仍可修改（所有人都可以改，注册地只有管理员能改）。最多两种税。
+- 注册在加拿大时，PDF 上的 Tax ID 显示为 **GST/HST No.**。
+- 已经开出的报价单和发票保留开单时的税；升级前开出的单据仍按原来的含税方式显示（一行 VAT）。
 
 **币种**（Currency）：每个公司一个币种，默认加元 CAD，可选美元、欧元、人民币、英镑、港币、日元等常用币种。金额按该币种的习惯格式显示（如 `$1,234.50`、`1.234,50 €`、`¥1,234.50`），只换符号，不做汇率换算。报价单和发票在出具时记下当时的币种，以后改设置不会影响已经开出的单据。
 
@@ -257,6 +263,7 @@ sudo deploy/vgauto.sh baota --app-url https://app.example.com --api-url https://
 | `sudo vgauto upgrade` | 自动备份 → `git pull` → 重新安装 |
 | `sudo vgauto backup [--keep 14]` | 数据库 + PDF + 配置打包备份 |
 | `sudo vgauto restore <文件>` | 从备份恢复（需要确认，恢复前自动备份当前状态） |
+| `sudo vgauto pdf-setup` | 安装生成 PDF 需要的系统库、中文字体和浏览器。下载或发送 PDF 失败时运行 |
 
 ### macOS
 
@@ -358,7 +365,7 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `Errors:IncludeDetails` | 错误响应中是否包含详细信息（仅用于调试） |
 | `ForwardedHeaders:KnownProxies` | 反向代理的 IP，用于获取真实客户端 IP |
 | `PdfDirectory` | PDF 保存目录 |
-| `PuppeteerExecutablePath` | Chrome/Chromium 的路径 |
+| `PuppeteerExecutablePath` | Chrome/Chromium 的路径。不填时依次使用：已下载到 `PuppeteerPath` 的 Chrome、系统里安装的 Chrome/Chromium/Edge，都没有才在线下载 |
 
 前端配置在 `frontend/.env`（安装后位于 `/etc/vg-auto/web.env`）：
 

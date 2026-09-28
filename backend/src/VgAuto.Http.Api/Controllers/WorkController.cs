@@ -129,6 +129,10 @@ namespace VgAuto.Http.Api.Controllers
                     session.QueryOver<ProductInstalled>().Where(x => x.Job.Id == current.Id).List().Cast<Product>() :
                      session.QueryOver<ProductOffered>().Where(x => x.Offer.Id == current.Id).List().Cast<Product>();
              
+            // an issued document keeps the currency and taxes it was issued with
+            Pricing document = isRepairJob ? session.Get<Work>(id)?.Invoice : session.Get<Offer>(current.Id)?.Estimate;
+            var currency = document?.Currency ?? await GetCurrencyAsync();
+            var taxes = !string.IsNullOrWhiteSpace(document?.Tax1Name) ? document.GetTaxRates() : await GetTaxesAsync();
             return new
             {
                 Items = activities,
@@ -138,19 +142,16 @@ namespace VgAuto.Http.Api.Controllers
                     Notes = current.Notes,
                     IsVehicleLinesOnPricing = current.IsVehicleLinesOnPricing,
                     Products = products.OrderBy(x => x.Jnr).Select(ToDto).ToArray(),
-                    PriceSummary = PriceSummary.CalculatePriceSummary(await GetVatRateaAsync(), products),
-                    // an issued document keeps the currency it was issued in
-                    Currency = (isRepairJob
-                        ? session.Get<Work>(id)?.Invoice?.Currency
-                        : session.Get<Offer>(current.Id)?.Estimate?.Currency) ?? await GetCurrencyAsync(),
+                    PriceSummary = PriceSummary.CalculatePriceSummary(taxes, products, Currencies.Decimals(currency)),
+                    Currency = currency,
                 }
             };
 
         }
-        private async Task<int> GetVatRateaAsync()
+        private async Task<Taxes> GetTaxesAsync()
         {
-            var pricingOptions = await tenantConfigService.GetPricingAsync();
-            return pricingOptions.Invoice.VatRate;
+            var t = (await tenantConfigService.GetPricingAsync()).Taxes;
+            return t == null ? Taxes.None : Taxes.Of(t.Tax1Name, t.Tax1Rate, t.Tax2Name, t.Tax2Rate);
         }
 
         /// <summary>Offers and repair jobs have no company of their own: loading their work checks it.</summary>
@@ -561,7 +562,7 @@ order by page.sortkey desc").ToResult();
             var work = session.Get<Work>(id);
             var issuer = this.Employee();
 
-            work.GenerateInvoice(numberProviderFactory, await GetVatRateaAsync(), model.PaymentType, model.DueDays, issuer, await GetCurrencyAsync());
+            work.GenerateInvoice(numberProviderFactory, await GetTaxesAsync(), model.PaymentType, model.DueDays, issuer, await GetCurrencyAsync());
 
             session.Save(work.Invoice);
 
@@ -591,7 +592,7 @@ order by page.sortkey desc").ToResult();
             var offer = work.Offers.Single(x => x.OrderNr == offerNumber);
             var issuer = this.Employee();
               
-            var offerIssued = await work.Issue(offer,pricingSender, await GetVatRateaAsync(), issuer,model.ShowVehicleOnPricing, model.SendClientEmail, model.ClientEmail, await GetCurrencyAsync());
+            var offerIssued = await work.Issue(offer,pricingSender, await GetTaxesAsync(), issuer,model.ShowVehicleOnPricing, model.SendClientEmail, model.ClientEmail, await GetCurrencyAsync());
 
             work.Changed();
             session.Update(work);

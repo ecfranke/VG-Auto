@@ -29,7 +29,7 @@ export default async function Page({
                     <DescriptionItem label='Product code' value={sparepart.code}></DescriptionItem> 
                     <DescriptionItem label='Product name' value={sparepart.name}></DescriptionItem>   
                     <DescriptionItem label='Quantity' value={sparepart.quantity}></DescriptionItem>  
-                    <DescriptionItem label='Price' value={sparepart.price}></DescriptionItem> 
+                    <DescriptionItem label='Price (before tax)' value={sparepart.price}></DescriptionItem> 
                     <DescriptionItem label='Location' value={sparepart.storageName}></DescriptionItem> 
                     <DescriptionItem label='About' value={sparepart.description}></DescriptionItem> 
                 </dl>

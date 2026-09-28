@@ -51,6 +51,16 @@ namespace VgAuto.Core.Domain
             return amount.ToString("C", culture);
         }
 
+        /// <summary>Formats a number the way the currency's country writes it, without the symbol ("1,234.50", "1.234,50").</summary>
+        public static string FormatNumber(decimal amount, string code)
+        {
+            var currency = All.First(c => c.Code == Normalize(code));
+            return amount.ToString("N" + Decimals(currency.Code), CultureInfo.GetCultureInfo(currency.Culture));
+        }
+
+        /// <summary>Culture whose number format the currency uses.</summary>
+        public static CultureInfo CultureOf(string code) => CultureInfo.GetCultureInfo(All.First(c => c.Code == Normalize(code)).Culture);
+
         /// <summary>Number of minor units shown (0 for yen and won, otherwise 2).</summary>
         public static int Decimals(string code) => Normalize(code) is "JPY" or "KRW" ? 0 : 2;
     }

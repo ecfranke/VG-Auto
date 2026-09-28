@@ -44,7 +44,10 @@ namespace VgAuto.Core.Application.Services
                 pricing.EstimateEmailContent
             );
 
-            return new PricingOptions(invoiceOptions, estimateOptions, VgAuto.Core.Domain.Currencies.Normalize(pricing.Currency));
+            var taxes = pricing.GetTaxes();
+            var taxOptions = new TaxOptions(pricing.TaxCountry, pricing.TaxRegion,
+                taxes.First?.Name, taxes.First?.Rate ?? 0, taxes.Second?.Name, taxes.Second?.Rate ?? 0);
+            return new PricingOptions(invoiceOptions, estimateOptions, VgAuto.Core.Domain.Currencies.Normalize(pricing.Currency), taxOptions);
         }
 
         public async Task<AppOptions> GetAppOptionsAsync()
@@ -75,6 +78,7 @@ namespace VgAuto.Core.Application.Services
         public async Task SavePricingAsync(PricingOptions pricingOptions)
         {
             var pricing = await repository.GetPricingAsync();
+            var vatRateBefore = pricing.VatRate;
 
             pricing.Update(
                 pricingOptions.Invoice.VatRate,
@@ -85,6 +89,18 @@ namespace VgAuto.Core.Application.Services
                 pricingOptions.Estimate.EmailContent,
                 pricingOptions.Currency
             );
+            var t = pricingOptions.Taxes;
+            if (t != null)
+            {
+                pricing.UseTaxes(VgAuto.Core.Domain.Taxes.Of(t.Tax1Name, t.Tax1Rate, t.Tax2Name, t.Tax2Rate), t.Country, t.Region, changeRegion: true);
+            }
+            else if (pricingOptions.Invoice.VatRate != vatRateBefore)
+            {
+                // older clients only send the VAT rate: it becomes the rate of the first tax
+                var current = pricing.GetTaxes();
+                pricing.UseTaxes(VgAuto.Core.Domain.Taxes.Of(current.First?.Name ?? "Tax", pricingOptions.Invoice.VatRate,
+                    current.Second?.Name, current.Second?.Rate ?? 0));
+            }
 
             await repository.SavePricingAsync(pricing);
         }

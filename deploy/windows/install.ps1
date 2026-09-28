@@ -161,6 +161,16 @@ try {
     try { Invoke-Checked { dotnet DbUp.dll } "Database migration" } finally { Pop-Location; Remove-Item Env:\DefaultAdmin__Password }
   }
 
+  if (-not $SkipApi) {
+    Log "Preparing the PDF renderer"
+    # uses an installed Chrome or Edge, otherwise downloads Chrome into data\puppeteer once
+    Push-Location (Join-Path $InstallDir "api")
+    try {
+      dotnet VgAuto.Http.Api.dll --pdf-setup
+      if ($LASTEXITCODE -ne 0) { Write-Warning "No browser for the PDF renderer. Install Google Chrome or Microsoft Edge." }
+    } finally { Pop-Location }
+  }
+
   if (-not $SkipApi -and -not $ApiUnderPm2) {
     Log "Registering Windows service $ServiceName"
     $exe = Join-Path $InstallDir "api\VgAuto.Http.Api.exe"

@@ -11,7 +11,12 @@
     var hasDiscounts = pricing.Lines.Any(x => x.Discount != 0);
     // documents issued before currencies existed use the company currency
     var currency = Currencies.Normalize(pricing.Currency ?? pricingOptions.Currency);
-    var amountFormat = Currencies.Decimals(currency) == 0 ? "#,##0" : "#,##0.00";
+    // "$" is used by several currencies: add the code to the total so it is clear which dollar
+    var showCode = Currencies.Format(0, currency).Contains('$');
+    string Money(decimal amount) => Currencies.Format(amount, currency);
+    string Number(decimal amount) => Currencies.FormatNumber(amount, currency);
+    string Unit(string unit) => unit == "tk" ? "pcs" : unit; // Estonian unit of older lines
+    string Rate(decimal rate) => rate.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 }
   
 <div class="grid grid-cols-2">
@@ -66,14 +71,14 @@
 
             <tr>
                 <td class="w-full text-start pl-0 pr-2 py-1 text-sm text-gray-900">@item.Description</td>
-                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Quantity</td>
-                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@item.Unit</td>
-                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@(item.UnitPrice.ToString(amountFormat))</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@(item.Quantity?.ToString("0.###", Currencies.CultureOf(currency)))</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@Unit(item.Unit)</td>
+                <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@Number(item.UnitPrice)</td>
                 @if (hasDiscounts)
                 {
                     <td class="w-15 text-end px-2 py-1 text-sm whitespace-nowrap text-gray-900">@((item.Discount != null && item.Discount != 0) ? $"{item.Discount} %" : String.Empty)</td>
                 }
-                <td class="w-15 text-end pl-2 pr-0 py-1 text-sm whitespace-nowrap text-gray-900">@item.Total.ToString(amountFormat)</td>
+                <td class="w-15 text-end pl-2 pr-0 py-1 text-sm whitespace-nowrap text-gray-900">@Number(item.Total)</td>
             </tr>
         }
     </tbody>
@@ -101,32 +106,23 @@
         </div>
     </div>
     <div class="text-right">
-        <div class="grid grid-rows-3 gap-2 pt-2 pr-0">
-            <div class="flex flex-row-reverse ">
-                <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
-                    @Currencies.Format(pricing.GetTotal(false), currency)
-                </div>
-                <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
-                    Total
-                </div>
-            </div>
-            <div class="flex flex-row-reverse ">
-                <div class="pt-2 pl-4 text-end text-sm font-light text-gray-500 pl-0 w-35">
-                    @Currencies.Format(pricing.GetTotal(true) - pricing.GetTotal(false), currency)
-                </div>
-                <div class="pt-2 pr-3 pl-4 text-right text-sm font-light text-gray-500 pl-0">
-                    VAT
-                </div>
-            </div>
-            <div class="flex flex-row-reverse ">
-                <div class="pt-2 pl-4 text-end text-sm font-semibold text-gray-900 pl-0 w-35">
-                    @Currencies.Format(pricing.GetTotal(true), currency) @currency
-                </div>
-                <div class="pt-2 pr-3 pl-4 text-right text-sm font-semibold text-gray-900 t pl-0">
-                    To pay
-                </div>
-            </div>
-        </div>
+        <table class="text-sm" style="margin-left:auto;margin-top:0.5rem">
+            <tr>
+                <td class="text-right font-light text-gray-500" style="padding:0.25rem 1rem 0 0">Subtotal</td>
+                <td class="text-right font-light text-gray-500 whitespace-nowrap" style="padding-top:0.25rem">@Money(pricing.GetTotal(false))</td>
+            </tr>
+            @foreach (var tax in pricing.GetTaxes())
+            {
+                <tr>
+                    <td class="text-right font-light text-gray-500" style="padding:0.25rem 1rem 0 0">@tax.Name@(tax.Rate > 0 ? $" ({Rate(tax.Rate)}%)" : "")</td>
+                    <td class="text-right font-light text-gray-500 whitespace-nowrap" style="padding-top:0.25rem">@Money(tax.Amount)</td>
+                </tr>
+            }
+            <tr>
+                <td class="text-right font-semibold text-gray-900" style="padding:0.5rem 1rem 0 0">@(isInvoice ? "Total due" : "Total")</td>
+                <td class="text-right font-semibold text-gray-900 whitespace-nowrap" style="padding-top:0.5rem">@Money(pricing.GetTotal(true))@(showCode ? " " + currency : "")</td>
+            </tr>
+        </table>
     </div>
 </div>
 <div class="grid grid-cols-2 mt-2 ">
@@ -149,15 +145,14 @@
     <div>
         @if (isInvoice && pricingOptions.Invoice.SignatureLine == true)
         {
-            <p class="text-sm text-gray-500">Signature:</p>
+            <p class="mt-8 text-sm text-gray-500">Signature: ____________________</p>
         }
 
     </div>
     <div class="float-right">
         @if (isInvoice && pricingOptions.Invoice.SignatureLine == true)
         {
-
-            <p class="text-sm text-gray-500">Signature:</p>
+            <p class="mt-8 text-sm text-gray-500">Customer signature: ____________________</p>
         }
     </div>
 </div>
@@ -175,15 +170,18 @@
     </div>
     <div class="mt-2 text-right">
         <div>
-            <p class="text-xs">
-                @requisitesOptions.BankAccount
-            </p>
-            <p class="text-xs">
-                Registration code: @requisitesOptions.RegNr
-            </p>
-            <p class="text-xs">
-                VAT no: @requisitesOptions.KMKR
-            </p>
+            @if (!string.IsNullOrWhiteSpace(requisitesOptions.BankAccount))
+            {
+                <p class="text-xs">Bank account: @requisitesOptions.BankAccount</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(requisitesOptions.RegNr))
+            {
+                <p class="text-xs">Reg No: @requisitesOptions.RegNr</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(requisitesOptions.KMKR))
+            {
+                <p class="text-xs">@Model.TaxIdLabel: @requisitesOptions.KMKR</p>
+            }
         </div>
     </div>
 </footer>
