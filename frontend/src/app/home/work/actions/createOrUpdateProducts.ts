@@ -23,6 +23,11 @@ export async function createOrUpdateProducts(formData: FormData) {
     const quantities = formData.getAll('quantity');
     const units = formData.getAll('unit');
     const discount = formData.getAll('discount');
+    // empty or missing cells (e.g. a discount never typed) are sent as 0, never as NaN/null
+    const num = (value: FormDataEntryValue | undefined, fallback = 0) => {
+        const n = Number(value?.toString().replace(',', '.').trim() || NaN);
+        return Number.isFinite(n) ? n : fallback;
+    };
     const body = ids.map((id,index)=>{
         if(id.toString().startsWith('-')){
             //unsaved value
@@ -32,10 +37,10 @@ export async function createOrUpdateProducts(formData: FormData) {
             id:id,
             code:codes[index],
             name:names[index],
-            price:+prices[index],
-            quantity:+quantities[index],
+            price:num(prices[index]),
+            quantity:num(quantities[index], 1),
             unit:units[index],
-            discount:+discount[index],
+            discount:num(discount[index]),
         } as IProduct
     })
 

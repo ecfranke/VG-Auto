@@ -122,7 +122,7 @@ namespace VgAuto.Core.Domain
         protected PricingLine ToLine(Taxes taxes,Saleable saleable,short jnr)
         {
             var priceSummary = new PriceSummary(saleable, taxes ?? Taxes.None);
-            return new PricingLine(this, jnr, saleable.Name, saleable.Quantity, saleable.Price, saleable.Unit, saleable.Discount, priceSummary.TotalWithoutVat, priceSummary.TotalWithVat);
+            return new PricingLine(this, jnr, saleable.Name, saleable.Quantity, saleable.Price, saleable.Unit, saleable.Discount ?? 0, priceSummary.TotalWithoutVat, priceSummary.TotalWithVat);
         }
 
 
