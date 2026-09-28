@@ -119,10 +119,10 @@ export default async function Page(
     {
       dataField: 'vehicleId',
       headerText: 'Vehicle',
-      dataFormatter: ({ regNr, vehicleId }: { regNr: string, vehicleId: string }) => {
+      dataFormatter: ({ licensePlate, vehicleId }: { licensePlate: string, vehicleId: string }) => {
         return (
           <a href={'/home/vehicles/' + vehicleId} >
-            <h5 className="mb-0 fs--1">{regNr}</h5>
+            <h5 className="mb-0 fs--1">{licensePlate}</h5>
           </a>
         );
       }
@@ -170,7 +170,7 @@ export default async function Page(
                  <div className="  grid grid-cols-1  md:grid-cols-12 md:grid-flow-row md:gap-x-2 3xl:grid-flow-col  3xl:grid-cols-24   p-0 3xl:gap-x-2  gap-y-2  "> 
                       <div className="3xl:col-span-6 md:col-span-7 "   >
                         <SearchStatusFilter issued={options.issued === 'on'} status={options.status}></SearchStatusFilter>
-                        <SearchInput searchParams={searchParams} placeholder="number, client, vehicle vin or reg nr." ></SearchInput> 
+                        <SearchInput searchParams={searchParams} placeholder="number, client, VIN or license plate" ></SearchInput> 
                       </div> 
                       <div className="3xl:col-span-4  md:col-span-5 ">
                          <FormInput name="saleable" label="Product or service" placeholder="code or name ..." defaultValue={options.saleable}  ></FormInput>

@@ -23,8 +23,8 @@ namespace VgAuto.Core.Domain
                 this.VehicleLine1 = this.VehicleLine2 = this.VehicleLine3 = this.VehicleLine4 = String.Empty;
                 return this;
             }
-            this.VehicleLine1 = "Vehicle: " + vehicle.Producer + " " + vehicle.Model;
-            this.VehicleLine2 = "Plate: " + vehicle.RegNr;
+            this.VehicleLine1 = "Vehicle: " + vehicle.Title;
+            this.VehicleLine2 = "License plate: " + vehicle.LicensePlate;
             this.VehicleLine3 = "Odometer: " + vehicle.Odo;
             this.VehicleLine4 = "VIN: " + vehicle.Vin;
             return this;

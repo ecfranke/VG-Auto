@@ -2,26 +2,28 @@
 
 namespace VgAuto.Http.Api.Models
 {
-    public record VehiclePageDto(string Producer, string Model, string RegNr, string Vin, string Body, string Engine, DateTime? ProductionDate, string Region, string Series, string Transmission, Guid Id, string OwnerName, Guid? OwnerId)
+    public record VehiclePageDto(string Manufacturer, string Model, string LicensePlate, string Vin, string Body, string Engine, DateTime? ProductionDate, string Region, string Series, string Transmission, Guid Id, string OwnerName, Guid? OwnerId, int? Year = null)
     {
-        public VehiclePageDto() : this(default, default, default, default, default,default,default,default,default,default,default,default,default) { }
+        public VehiclePageDto() : this(default, default, default, default, default,default,default,default,default,default,default,default,default,default) { }
     }
 
     public class ClientVehicleDto
     {
         public Guid Id { get; set; } 
         public Guid? OwnerId { get; set; }
-        public string Producer { get; set; }
+        public string Manufacturer { get; set; }
         public string Model { get; set; }
-        public string RegNr { get; set; }
+        public int? Year { get; set; }
+        public string LicensePlate { get; set; }
         public string Vin { get; set; }
       
     }
     public class VehicleDto
     {
-        public string Producer { get; set; }
+        public string Manufacturer { get; set; }
         public string Model { get; set; }
-        public string RegNr { get; set; }
+        public int? Year { get; set; }
+        public string LicensePlate { get; set; }
         public string Vin { get; set; }
         public int Odo { get; set; }
 

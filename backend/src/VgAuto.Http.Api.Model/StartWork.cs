@@ -29,7 +29,7 @@ namespace VgAuto.Http.Api.Models
         Guid ClientId, 
         string ClientName, 
         Guid VehicleId, 
-        string RegNr, 
+        string LicensePlate, 
         string MechanicNames, 
         string Notes,  
         bool hasRepairs,

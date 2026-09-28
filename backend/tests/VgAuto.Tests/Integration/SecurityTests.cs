@@ -21,7 +21,7 @@ namespace VgAuto.Tests.Integration
                 var response = await client.GetAsync(url);
                 Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             }
-            var post = await client.PostAsJsonAsync("/api/vehicles", new { regNr = "X" });
+            var post = await client.PostAsJsonAsync("/api/vehicles", new { licensePlate = "X" });
             Assert.Equal(HttpStatusCode.Unauthorized, post.StatusCode);
         }
 
@@ -55,7 +55,7 @@ namespace VgAuto.Tests.Integration
             var (_, browser, _) = await AdminSession.LoginAsync(api);
             Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/api/vehicles/page?limit=5")).StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, (await browser.GetAsync("/api/work/page?limit=5")).StatusCode);
-            Assert.Equal(HttpStatusCode.Forbidden, (await browser.PostAsJsonAsync("/api/vehicles", new { regNr = "X" })).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await browser.PostAsJsonAsync("/api/vehicles", new { licensePlate = "X" })).StatusCode);
         }
 
         [DbTheory]

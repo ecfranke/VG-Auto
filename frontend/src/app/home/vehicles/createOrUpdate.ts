@@ -13,21 +13,27 @@ export async function createOrUpdate(
     let odo = formData.get('odo');
     if(!odo) odo = '0';
 
-    debugger;
     let ownerId = formData.get('ownerId[value]');
     if(!ownerId) ownerId = null;
 
+    const yearText = (formData.get('year')?.toString() ?? '').trim();
+    const year = yearText ? Number(yearText) : null;
+    if (year !== null && (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear() + 1)) {
+        await pushToast(`Year must be between 1900 and ${new Date().getFullYear() + 1}.`, true);
+        redirect(id ? `/home/vehicles/edit/${id}` : '/home/vehicles/new');
+    }
+
     const body = {
         model: formData.get('model'),
-        producer: formData.get('producer[name]'),
+        year,
+        manufacturer: formData.get('manufacturer[name]'),
         vin: formData.get('vin'),
-        regNr: formData.get('regNr'),
+        licensePlate: formData.get('licensePlate'),
         odo: odo,
         description: formData.get('about'),
         ownerId:ownerId
     };
  
-    debugger;
     const url = "vehicles";
      
     const isUpdating = !!id;

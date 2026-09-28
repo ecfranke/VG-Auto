@@ -58,9 +58,10 @@ namespace VgAuto.Tests.Integration
 
             var vehicleId = (await Json(await server.PostAsJsonAsync("/api/vehicles", new
             {
-                regNr = "REG" + suffix,
-                producer = "Toyota",
+                licensePlate = "REG" + suffix,
+                manufacturer = "Toyota",
                 model = "Corolla",
+                year = 2020,
                 vin = "VIN" + suffix,
                 odo = 12000,
                 productionDate = new DateTime(2020, 5, 1),
@@ -80,7 +81,9 @@ namespace VgAuto.Tests.Integration
 
             // read back master data
             var vehicle = await Json(await server.GetAsync($"/api/vehicles/{vehicleId}"));
-            Assert.Equal("REG" + suffix, vehicle.GetProperty("regNr").GetString());
+            Assert.Equal("REG" + suffix, vehicle.GetProperty("licensePlate").GetString());
+            Assert.Equal("Toyota", vehicle.GetProperty("manufacturer").GetString());
+            Assert.Equal(2020, vehicle.GetProperty("year").GetInt32());
             var client = await Json(await server.GetAsync($"/api/privateclients/{clientId}"));
             Assert.Equal("Doe" + suffix, client.GetProperty("lastName").GetString());
             var part = await Json(await server.GetAsync($"/api/spareparts/{partId}"));
@@ -90,6 +93,8 @@ namespace VgAuto.Tests.Integration
             var vehicles = await Json(await browser.GetAsync($"/api/vehicles/page?limit=10&searchText=corolla%20REG{suffix}"));
             var vehicleRow = vehicles.GetProperty("items").EnumerateArray().Single();
             Assert.StartsWith("2020-05", vehicleRow.GetProperty("productionDate").GetString());
+            Assert.Equal("REG" + suffix, vehicleRow.GetProperty("licensePlate").GetString());
+            Assert.Equal(2020, vehicleRow.GetProperty("year").GetInt32());
             var clientVehicles = await Json(await browser.GetAsync($"/api/vehicles/client/{clientId}"));
             Assert.Single(clientVehicles.EnumerateArray());
             var parts = await Json(await browser.GetAsync($"/api/spareparts/page?limit=10&searchText=OF-{suffix}&orderby=name&desc=true"));

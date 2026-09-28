@@ -1,6 +1,7 @@
 'use client'
 
 import { dataPage } from "@/_lib/client/query-api";
+import { vehicleLabel } from '@/_lib/shared/vehicle';
 import TypeAheadCombobox, { ISearchComboboxOnItemChange } from "./TypeAheadCombobox"
 import { useState } from "react";
 import { IVehicleData } from "../vehicles/model";
@@ -25,10 +26,10 @@ export function VehiclesCombobox( {
         defaultValue={defaultValue} 
         className={className}  
         displayFormatter={(item:IVehicleData)=>{
-            return [item.producer,item.model].filter(x=>x).join(' ')+ (!item.regNr?'':` (${item.regNr})`)
+            return vehicleLabel(item)
         }}
         resourceName="vehicles"
-        placeholder="vin, reg nr., owner or make ..." ></SearchCombobox>)
+        placeholder="VIN, license plate, owner or manufacturer ..." ></SearchCombobox>)
 }
 
 export function ClientsCombobox( {

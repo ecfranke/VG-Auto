@@ -19,17 +19,17 @@ export default async function Page(
       columns={[
 
         {
-          dataField: 'producer',
-          headerText: 'Producer',
+          dataField: 'manufacturer',
+          headerText: 'Manufacturer',
           dataClasses: () => {
             return "pl-4 font-medium gray-900 whitespace-nowrap";
           },
-          dataFormatter: ({ producer }) => {
-            const producerName = producer.trim().replace(" ", "-").toLowerCase();
+          dataFormatter: ({ manufacturer }) => {
+            const producerName = (manufacturer ?? '').trim().replace(" ", "-").toLowerCase();
             return (
               <div className="flex items-center " >
                 <i className={clsx("pr-2 text-2xl", "car-" + producerName)}>  </i>
-                <span className="text-sm">{producer}</span>
+                <span className="text-sm">{manufacturer}</span>
               </div>
             );
           }
@@ -39,12 +39,16 @@ export default async function Page(
           headerText: 'Model',
         },
         {
-          dataField: 'regNr',
-          headerText: 'RegNr',
-          dataFormatter: ({ regNr, id }) => {
+          dataField: 'year',
+          headerText: 'Year',
+        },
+        {
+          dataField: 'licensePlate',
+          headerText: 'License plate',
+          dataFormatter: ({ licensePlate, id }) => {
             return (
               <a href={'/home/vehicles/' + id} >
-                <h5 className="font-semibold"> {regNr}</h5>
+                <h5 className="font-semibold"> {licensePlate}</h5>
               </a>
             );
           }
@@ -73,7 +77,7 @@ export default async function Page(
           }
         }
       ]}>
-        <SimpleSearchBar searchParams={searchParams} placeholder="vin, reg nr., owner or make ..."></SimpleSearchBar> 
+        <SimpleSearchBar searchParams={searchParams} placeholder="VIN, license plate, owner or manufacturer ..."></SimpleSearchBar> 
         </Search></form>
    
   </Main>

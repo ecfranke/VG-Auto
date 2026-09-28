@@ -69,10 +69,11 @@ namespace VgAuto.Http.Api.Controllers
                 ClientEmail = work.Client?.CurrentEmail,
                 ClientPhone = work.Client?.Phone,
                 VehicleId = work.Vehicle?.Id,
-                VehicleProducer = work.Vehicle?.Producer,
+                VehicleManufacturer = work.Vehicle?.Manufacturer,
                 VehicleModel = work.Vehicle?.Model,
+                VehicleYear = work.Vehicle?.Year,
                 VehicleVin = work.Vehicle?.Vin,
-                VehicleRegNr = work.Vehicle?.RegNr,
+                VehicleLicensePlate = work.Vehicle?.LicensePlate,
                 work.Notes,
                 work.Odo,
                 Mechanics = work.Mechanics.ToList().Select(x => new { x.Id, x.Name }).ToArray(),
@@ -395,7 +396,7 @@ from (
     w.clientid,
     concat_ws(' ',p.firstname,p.lastname,l.name) as clientname,
     w.vehicleid,
-    v.regnr, 
+    v.regnr as licenseplate, 
 	(select {d.StringAgg("concat_ws(' ',m.firstname, m.lastname)", "/ ")}
 	   from domain.assignment a 
 		inner join domain.employee m on a.mechanicid = m.id and a.workid = w.id

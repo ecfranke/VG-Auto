@@ -26,7 +26,15 @@ namespace VgAuto.Core.Application.Email
             var smtp = options.Smtp;
             if (string.IsNullOrWhiteSpace(smtp.Host)) throw new EmailDeliveryException("Email:Smtp:Host is not configured.");
 
-            var mime = BuildMime(message);
+            MimeMessage mime;
+            try
+            {
+                mime = BuildMime(message);
+            }
+            catch (Exception ex) when (ex is not EmailDeliveryException)
+            {
+                throw new EmailDeliveryException($"The email could not be prepared: {ex.Message}", ex);
+            }
 
             using var client = new MailKit.Net.Smtp.SmtpClient { Timeout = smtp.TimeoutSeconds * 1000 };
             if (smtp.AllowInvalidCertificate)
@@ -60,8 +68,9 @@ namespace VgAuto.Core.Application.Email
 
             var mime = new MimeMessage();
             mime.From.Add(new MailboxAddress(message.FromName ?? options.FromName ?? string.Empty, fromAddress));
-            mime.To.Add(MailboxAddress.Parse(message.To));
-            if (!string.IsNullOrWhiteSpace(message.ReplyTo) &&
+            foreach (var to in message.Recipients) mime.To.Add(MailboxAddress.Parse(to));
+            // an invalid reply-to (the company email in the settings) is left out instead of failing the message
+            if (EmailAddresses.IsValid(message.ReplyTo) &&
                 !string.Equals(message.ReplyTo, fromAddress, StringComparison.OrdinalIgnoreCase))
             {
                 mime.ReplyTo.Add(MailboxAddress.Parse(message.ReplyTo));

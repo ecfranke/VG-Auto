@@ -54,7 +54,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 3. 登记车辆
 
-**Vehicles → Add new**。填写品牌、型号、VIN、车牌号和里程，在 **Owner** 里输入客户名并从下拉列表中选择车主。
+**Vehicles → Add new**。填写制造商（Manufacturer）、型号（Model）、年份（Year，选填，会显示成 “2019 Honda Civic”，也打印在报价单和发票上）、VIN、车牌号（License plate）和里程，在 **Owner** 里输入客户名并从下拉列表中选择车主。
 
 ![新建车辆](docs/screenshots/vehicle-new.png)
 

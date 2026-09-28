@@ -30,6 +30,15 @@ namespace VgAuto.Core.Application.Services
             if (string.IsNullOrWhiteSpace(pricing.Email))
                 throw new UserException("Cannot send an email, recipient email not provided.");
 
+            try
+            {
+                EmailAddresses.Parse(pricing.Email); // check the addresses before the PDF is made
+            }
+            catch (EmailDeliveryException ex)
+            {
+                throw new UserException(ex.Message);
+            }
+
             var requisites = await tenantConfigService.GetRequisitesAsync();
             var pricingConfig = await tenantConfigService.GetPricingAsync();
 

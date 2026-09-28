@@ -26,9 +26,11 @@ export default async function Page({
                 <DisplayOptionsMenu id={id} pageName='vehicles'></DisplayOptionsMenu>
             </CardHeader>}>
             <dl className="divide-y divide-gray-100"> 
-                <DescriptionItem label='Car make and model' value={[vehicle.producer, vehicle.model].join(' ')}></DescriptionItem>
+                <DescriptionItem label='Manufacturer' value={vehicle.manufacturer}></DescriptionItem>
+                <DescriptionItem label='Model' value={vehicle.model}></DescriptionItem>
+                <DescriptionItem label='Year' value={vehicle.year ?? ''}></DescriptionItem>
                 <DescriptionItem label='VIN' value={vehicle.vin}></DescriptionItem>
-                <DescriptionItem label='Reg nr' value={vehicle.regNr}></DescriptionItem>
+                <DescriptionItem label='License plate' value={vehicle.licensePlate}></DescriptionItem>
                 <DescriptionItem label='Odometer' value={vehicle.odo}></DescriptionItem>
                 <DescriptionItem label='Owner' value={vehicle.ownerName}></DescriptionItem>
                 <DescriptionItem label='About' value={vehicle.description}></DescriptionItem>

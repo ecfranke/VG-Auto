@@ -12,9 +12,9 @@ namespace VgAuto.Core.Domain
         IList<VehicleRegistration> registrations = new List<VehicleRegistration>();
         protected Vehicle() { }
         public    Vehicle(
-            string regNr,
+            string licensePlate,
             DateTime introducedAt,
-            string producer = null,
+            string manufacturer = null,
             string model = null, 
             string vin = null,
             int? odo = null,
@@ -26,16 +26,17 @@ namespace VgAuto.Core.Domain
             string series = null,
             string transmission = null,
             string description = null,
-            Guid? id = null)
+            Guid? id = null,
+            int? year = null)
         {  
             IntroducedAt = introducedAt; 
-            SetValues(regNr, producer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description);
+            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description, year);
             this.Id = id.GetValueOrDefault();
         }
 
 
-        private void SetValues(string regNr,
-                               string producer,
+        private void SetValues(string licensePlate,
+                               string manufacturer,
                                string model,
                                string vin,
                                int? odo,
@@ -46,16 +47,22 @@ namespace VgAuto.Core.Domain
                                string region,
                                string series,
                                string transmission,
-                               string description)
+                               string description,
+                               int? year)
         {
-            if (string.IsNullOrWhiteSpace(regNr)&& string.IsNullOrWhiteSpace(vin))
+            if (string.IsNullOrWhiteSpace(licensePlate)&& string.IsNullOrWhiteSpace(vin))
             {
-                throw new UserException("Vehicle registration number or VIN code is required.");
+                throw new UserException("License plate or VIN is required.");
+            }
+            if (year != null && (year < 1900 || year > DateTime.UtcNow.Year + 1))
+            {
+                throw new UserException($"Year must be between 1900 and {DateTime.UtcNow.Year + 1}.");
             }
             Description = description;
-            Producer = producer;
+            Manufacturer = manufacturer;
             Model = model;
-            RegNr = regNr;
+            Year = year;
+            LicensePlate = licensePlate;
             Vin = vin;
             Odo = odo;
             Body = body;
@@ -67,9 +74,14 @@ namespace VgAuto.Core.Domain
             Transmission = transmission;
         }
          
-        public  virtual string Producer { get; protected set; }
+        public  virtual string Manufacturer { get; protected set; }
         public  virtual string Model { get; protected set; }
-        public  virtual string RegNr { get; protected set; }
+        /// <summary>Model year, e.g. 2019 (optional).</summary>
+        public  virtual int? Year { get; protected set; }
+        public  virtual string LicensePlate { get; protected set; }
+
+        /// <summary>"2019 Honda Civic"</summary>
+        public virtual string Title => string.Join(" ", new[] { Year?.ToString(), Manufacturer, Model }.Where(x => !string.IsNullOrWhiteSpace(x)));
         public  virtual string Vin { get; protected set; }
         public  virtual int? Odo { get; protected set; }
         public  virtual string Body { get; protected set; }
@@ -88,8 +100,8 @@ namespace VgAuto.Core.Domain
 
         public  virtual IReadOnlyCollection<VehicleRegistration> Registrations { get => registrations.ToList().AsReadOnly(); }
 
-        public  virtual void Edit(string regNr,
-            string producer = null,
+        public  virtual void Edit(string licensePlate,
+            string manufacturer = null,
             string model = null,
             string vin = null,
             int odo = 0,
@@ -100,9 +112,10 @@ namespace VgAuto.Core.Domain
             string region = null,
             string series = null,
             string transmission = null,
-            string description = null)
+            string description = null,
+            int? year = null)
         {
-            SetValues(regNr, producer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description);
+            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description, year);
         }
 
 

@@ -17,7 +17,11 @@ namespace VgAuto.Core.Application.Email
             TextBody = textBody ?? string.Empty;
         }
 
+        /// <summary>One or more addresses separated by comma or semicolon.</summary>
         public string To { get; }
+
+        /// <summary>The recipients; throws <see cref="EmailDeliveryException"/> for an invalid address.</summary>
+        public IReadOnlyList<string> Recipients => EmailAddresses.Parse(To);
         public string Subject { get; }
         public string TextBody { get; }
         public string HtmlBody { get; init; }
@@ -28,6 +32,28 @@ namespace VgAuto.Core.Application.Email
         /// <summary>Only used when Email:FromAddress is not configured (legacy behaviour).</summary>
         public string FallbackFromAddress { get; init; }
         public IList<EmailAttachment> Attachments { get; } = new List<EmailAttachment>();
+    }
+
+    public static class EmailAddresses
+    {
+        private static readonly System.Text.RegularExpressions.Regex Simple =
+            new(@"^[^@\s,;<>""]+@[^@\s,;<>""]+\.[^@\s,;<>""]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        public static bool IsValid(string address) =>
+            !string.IsNullOrWhiteSpace(address) && Simple.IsMatch(address.Trim()) && MimeKit.MailboxAddress.TryParse(address.Trim(), out _);
+
+        /// <summary>Splits "a@x.com; b@y.com" into addresses and checks each one.</summary>
+        public static IReadOnlyList<string> Parse(string addresses)
+        {
+            var list = new List<string>();
+            foreach (var part in (addresses ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (!IsValid(part)) throw new EmailDeliveryException($"\"{part}\" is not a valid email address.");
+                list.Add(part);
+            }
+            if (list.Count == 0) throw new EmailDeliveryException("No recipient email address.");
+            return list;
+        }
     }
 
     public interface IEmailSender

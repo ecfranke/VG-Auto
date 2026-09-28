@@ -35,7 +35,7 @@ namespace VgAuto.Http.Api.Controllers
         public ClientVehicleDto[] ClientVehicles(Guid clientId)
         {
             var vehicles = repository.GetConnection()
-               .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer,v.model,v.regnr,v.vin,v.id,r.ownerid from domain.vehicleregistration r
+               .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer as manufacturer,v.model,v.year,v.regnr as licenseplate,v.vin,v.id,r.ownerid from domain.vehicleregistration r
 										    inner join domain.vehicle v on v.id = r.vehicleid
 											  where r.ownerid = @ownerid  
 												  and r.datetimeto is null and v.company_id = @companyId"), new { ownerid = clientId, companyId = this.CompanyId() })
@@ -59,10 +59,11 @@ namespace VgAuto.Http.Api.Controllers
                 Odo = entity.Odo.GetValueOrDefault(),
                 OwnerId = entity.Owner?.Id,
                 OwnerName = entity.Owner?.Name,
-                Producer = entity.Producer,
+                Manufacturer = entity.Manufacturer,
+                Year = entity.Year,
                 ProductionDate = entity.ProductionDate,
                 Region = entity.Region,
-                RegNr = entity.RegNr,
+                LicensePlate = entity.LicensePlate,
                 Series = entity.Series,
                 Transmission = entity.Transmission,
                 Vin = entity.Vin
@@ -72,9 +73,9 @@ namespace VgAuto.Http.Api.Controllers
 
         protected override Vehicle CreateFrom(VehicleDto model)
         {
-            var vehicle = new Vehicle(model.RegNr,
+            var vehicle = new Vehicle(model.LicensePlate,
                         model.IntroducedAt,
-                        model.Producer,
+                        model.Manufacturer,
                         model.Model,
                         model.Vin,
                         model.Odo,
@@ -85,7 +86,8 @@ namespace VgAuto.Http.Api.Controllers
                         model.Region,
                         model.Series,
                         model.Transmission,
-                        model.Description);
+                        model.Description,
+                        year: model.Year);
             if (model.OwnerId != null)
             {
                 vehicle.RegisterTo(repository.Get<Client>(model.OwnerId.GetValueOrDefault()));
@@ -95,8 +97,8 @@ namespace VgAuto.Http.Api.Controllers
 
         protected override void Edit(Vehicle entity, VehicleDto model)
         {
-            entity.Edit(model.RegNr,
-                        model.Producer,
+            entity.Edit(model.LicensePlate,
+                        model.Manufacturer,
                         model.Model,
                         model.Vin,
                         model.Odo,
@@ -107,7 +109,8 @@ namespace VgAuto.Http.Api.Controllers
                         model.Region,
                         model.Series,
                         model.Transmission,
-                        model.Description);
+                        model.Description,
+                        model.Year);
             if (model.OwnerId != null)
             {
                 if (entity.Owner?.Id != model.OwnerId.GetValueOrDefault()) 
@@ -123,6 +126,9 @@ namespace VgAuto.Http.Api.Controllers
         {
             ["id"] = "v.id",
             ["regnr"] = "v.regnr",
+            ["licenseplate"] = "v.regnr",
+            ["manufacturer"] = "v.producer",
+            ["year"] = "v.year",
             ["vin"] = "v.vin",
             ["producer"] = "v.producer",
             ["model"] = "v.model",
@@ -141,7 +147,7 @@ namespace VgAuto.Http.Api.Controllers
                   .Sortable(SortColumns, "v.id")
                   .SelectSql($@"SELECT 
                         v.id, 
-                        v.regnr,vin, producer,model,body,drivingside,engine,{SqlDialect.Current.FormatMonthYear("productiondate")} as productiondate,region,series,transmission,
+                        v.regnr as licenseplate,vin, producer as manufacturer,model,v.year,body,drivingside,engine,{SqlDialect.Current.FormatMonthYear("productiondate")} as productiondate,region,series,transmission,
                         concat_ws(' ',p.firstname,p.lastname,l.name)  as ownername,
                         v0.ownerid as ownerid
                         FROM domain.vehicle AS v

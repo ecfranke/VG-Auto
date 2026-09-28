@@ -50,6 +50,19 @@ namespace VgAuto.Core.Application.Email
             }
 
             var payload = BuildPayload(message);
+            try
+            {
+                await SendPayloadAsync(graph, payload, message, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not EmailDeliveryException and not OperationCanceledException || ex is TaskCanceledException { InnerException: TimeoutException })
+            {
+                logger.LogError(ex, "Microsoft Graph sendMail failed");
+                throw new EmailDeliveryException($"Sending email through Microsoft Graph failed: {ex.Message}", ex);
+            }
+        }
+
+        private async Task SendPayloadAsync(EmailOptions.GraphSettings graph, object payload, EmailMessage message, CancellationToken cancellationToken)
+        {
             var client = httpClientFactory.CreateClient(HttpClientName);
             var url = $"{graph.GraphEndpoint.TrimEnd('/')}/users/{Uri.EscapeDataString(graph.Sender)}/sendMail";
 
@@ -87,7 +100,7 @@ namespace VgAuto.Core.Application.Email
         internal object BuildPayload(EmailMessage message)
         {
             var from = !string.IsNullOrWhiteSpace(options.FromAddress) ? options.FromAddress : options.Graph.Sender;
-            var replyTo = !string.IsNullOrWhiteSpace(message.ReplyTo) && !string.Equals(message.ReplyTo, from, StringComparison.OrdinalIgnoreCase)
+            var replyTo = EmailAddresses.IsValid(message.ReplyTo) && !string.Equals(message.ReplyTo, from, StringComparison.OrdinalIgnoreCase)
                 ? new[] { new { emailAddress = new { address = message.ReplyTo } } }
                 : Array.Empty<object>();
 
@@ -100,7 +113,7 @@ namespace VgAuto.Core.Application.Email
                         ? new { contentType = "Text", content = message.TextBody }
                         : new { contentType = "HTML", content = message.HtmlBody },
                     from = new { emailAddress = new { address = from, name = message.FromName ?? options.FromName } },
-                    toRecipients = new[] { new { emailAddress = new { address = message.To } } },
+                    toRecipients = message.Recipients.Select(to => new { emailAddress = new { address = to } }).ToArray(),
                     replyTo,
                     attachments = message.Attachments.Select(a => new Dictionary<string, object>
                     {

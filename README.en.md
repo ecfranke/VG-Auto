@@ -54,7 +54,7 @@ The client list can be searched by name, phone or email. Click a client to see d
 
 ### 3. Register a vehicle
 
-**Vehicles → Add new**. Enter make, model, VIN, registration number and odometer, then type the client's name in **Owner** and pick the owner from the list.
+**Vehicles → Add new**. Enter manufacturer, model, year (optional; shown as "2019 Honda Civic" and printed on estimates and invoices), VIN, license plate and odometer, then type the client's name in **Owner** and pick the owner from the list.
 
 ![New vehicle](docs/screenshots/vehicle-new.png)
 

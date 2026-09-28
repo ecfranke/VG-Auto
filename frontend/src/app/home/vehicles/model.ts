@@ -1,7 +1,8 @@
 export interface IVehicleData{
-    producer: string
+    manufacturer: string
     model: string
-    regNr: string
+    year: number | null
+    licensePlate: string
     vin: string
     odo: string
     body: string

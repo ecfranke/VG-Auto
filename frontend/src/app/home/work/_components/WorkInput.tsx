@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
+import { vehicleLabel } from '@/_lib/shared/vehicle';
 import FormTextArea from '@/_components/FormTextArea';
 import PrimaryButton from '@/_components/PrimaryButton';
 import SecondaryButton from '@/_components/SecondaryButton';
@@ -134,13 +135,13 @@ export default function WorkInput({
                                                     setSelectedClientVehicleId(e.currentTarget.value);
                                                 }} >
                                                 {clientVehicles?.map((item, index) => {
-                                                    return (<option key={index} value={item.id}>{[item?.producer, item?.model].filter(x => x).join(' ') + (!item?.regNr ? '' : ` (${item.regNr})`)}</option>)
+                                                    return (<option key={index} value={item.id}>{vehicleLabel(item)}</option>)
                                                 })}
                                             </Select> :
                                             <VehiclesCombobox name='vehicleId'
 
                                                 defaultValue={{
-                                                    text: [work?.vehicleProducer, work?.vehicleModel].filter(x => x).join(' ') + (!work?.vehicleRegNr ? '' : `(${work?.vehicleRegNr})`),
+                                                    text: vehicleLabel({ year: work?.vehicleYear, manufacturer: work?.vehicleManufacturer, model: work?.vehicleModel, licensePlate: work?.vehicleLicensePlate }),
                                                     value: work?.vehicleId ?? '',
                                                 }}>
                                             </VehiclesCombobox>}

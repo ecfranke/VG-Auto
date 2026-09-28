@@ -464,9 +464,10 @@ namespace VgAuto.Core.Persistence.Repositories
             .GeneratedBy
              .DefaultGeneratedBy();
 
-            Map(x => x.Producer).Column("producer").Access.BackingField();
+            Map(x => x.Manufacturer).Column("producer").Access.BackingField();
+            Map(x => x.Year).Column("year").Access.BackingField();
             Map(x => x.Model).Column("model").Access.BackingField();
-            Map(x => x.RegNr).Column("regnr").Access.BackingField();
+            Map(x => x.LicensePlate).Column("regnr").Access.BackingField();
             Map(x => x.Vin).Column("vin").Access.BackingField();
             Map(x => x.Odo).Column("odo").Access.BackingField();
             Map(x => x.Body).Column("body").Access.BackingField();

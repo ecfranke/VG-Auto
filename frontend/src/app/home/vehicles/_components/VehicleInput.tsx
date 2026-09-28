@@ -27,7 +27,7 @@ export default function VehicleInput({
 
     const router = useRouter()
      
-    const [producer,setProducer] = useState<ICarProducer |null>(!vehicle?null:{name:vehicle.producer})
+    const [manufacturer,setManufacturer] = useState<ICarProducer |null>(!vehicle?null:{name:vehicle.manufacturer})
     return (
         <>
             <div className="space-y-12">
@@ -35,16 +35,16 @@ export default function VehicleInput({
                     
                     <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div className="sm:col-span-2">
-                        <FormLabel name='producer' label='Car make'></FormLabel>
+                        <FormLabel name='manufacturer' label='Manufacturer'></FormLabel>
                         <TypeAheadCombobox 
-                          name="producer" 
-                          defaultValue={producer} 
+                          name="manufacturer" 
+                          defaultValue={manufacturer} 
                           displayFormatter={(item)=>!item?'':item?.name} 
                           optionFormatter={(item)=>!item?'':item?.name} 
-                          placeholder="Enter car make" 
+                          placeholder="Enter manufacturer" 
                           onItemChange={(item)=>{
                               
-                            setProducer(item);
+                            setManufacturer(item);
                           }} 
                           onSearch={(e,dataTarget)=>{
                              const inputValue = e.currentTarget.value;
@@ -59,9 +59,10 @@ export default function VehicleInput({
                           }}
                           ></TypeAheadCombobox> 
                        </div> 
-                        <div className="sm:col-span-2">  <FormInput name='model' defaultValue={vehicle?.model} label='Vehicle model'></FormInput></div>
+                        <div className="sm:col-span-2">  <FormInput name='model' defaultValue={vehicle?.model} label='Model'></FormInput></div>
+                        <div className="sm:col-span-2">  <FormInput name='year' type='number' defaultValue={vehicle?.year ?? undefined} label='Year' placeholder='e.g. 2019'></FormInput></div>
                         <div className="sm:col-span-2">  <FormInput name='vin' defaultValue={vehicle?.vin} label='VIN Code'></FormInput></div>
-                        <div className="sm:col-span-2">  <FormInput name='regNr' defaultValue={vehicle?.regNr} label='Registration nr'></FormInput></div>
+                        <div className="sm:col-span-2">  <FormInput name='licensePlate' defaultValue={vehicle?.licensePlate} label='License plate'></FormInput></div>
                         <div className="sm:col-span-2">  <FormInput name='odo' defaultValue={vehicle?.odo} label='Odometer'></FormInput> </div>
                         <div className="col-span-full">
                             <FormLabel name='ownerId' label='Owner'></FormLabel>

@@ -149,14 +149,35 @@ namespace VgAuto.Core.Application.Services
             var stream = default(MemoryStream);
             var pdfDirectory = configuration["PdfDirectory"];
             if (string.IsNullOrWhiteSpace(pdfDirectory)) pdfDirectory = Path.Combine(AppContext.BaseDirectory, "pdf");
-            Directory.CreateDirectory(pdfDirectory);
+            try { Directory.CreateDirectory(pdfDirectory); }
+            catch (Exception ex) { logger.LogWarning(ex, "PdfDirectory {dir} cannot be created", pdfDirectory); }
             var pdfLocalFile = new FileInfo(Path.Combine(pdfDirectory, pricing.GetFileName()));
-            stream = await Print(pricing);
+            try
+            {
+                stream = await Print(pricing);
+            }
+            catch (UserException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Creating the PDF {file} failed", pricing.GetFileName());
+                throw new UserException($"The PDF could not be created: {ex.Message}");
+            }
             using (stream)
             {
                 var pdfBytes = stream.ToArray();
-                if (pdfLocalFile.Exists) pdfLocalFile.Delete();
-                File.WriteAllBytes(pdfLocalFile.FullName, pdfBytes);
+                try
+                {
+                    // the copy on disk is only kept for reference: a write error must not stop the document
+                    if (pdfLocalFile.Exists) pdfLocalFile.Delete();
+                    File.WriteAllBytes(pdfLocalFile.FullName, pdfBytes);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Saving {file} failed", pdfLocalFile.FullName);
+                }
                 return pdfBytes;
             }
         }
