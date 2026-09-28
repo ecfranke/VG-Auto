@@ -230,7 +230,7 @@ sudo deploy/vgauto.sh baota \
 报价单和发票的 PDF 由服务器上的无头 Chrome 生成。安装时会自动准备浏览器：优先用系统里已经安装的 Chrome / Chromium / Edge，没有的话从 `storage.googleapis.com` 下载一份 Chrome 到 `/var/lib/vg-auto/puppeteer`。
 
 - 页面上提示 “no browser is available on the server”：服务器无法下载 Chrome（例如网络访问不到 Google）。运行 `sudo vgauto pdf-setup`；仍然失败时先手动安装 Google Chrome 或 Chromium，再运行一次，或在 `appsettings.Secrets.json` 里设置 `PuppeteerExecutablePath` 指向浏览器。
-- 提示 “the browser on the server does not start”：缺少系统库。运行 `sudo vgauto pdf-setup` 安装。
+- 提示 “the browser on the server does not start (…)”：括号里是浏览器自己的报错。先运行 `sudo vgauto pdf-setup`：它会安装系统库和字体，优先下载专为服务器设计的 chrome-headless-shell，并**以服务的用户和限制条件**打印一张测试页；失败时会显示完整原因，把输出发给维护人员即可。
 - PDF 里的中文显示成方框：缺少中文字体，`sudo vgauto pdf-setup` 会安装 `fonts-noto-cjk`。
 - 详细错误在 `sudo vgauto logs api` 里。
 

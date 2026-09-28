@@ -347,12 +347,23 @@ cmd_pdf_setup() {
       || "$pm" install -y -q google-noto-sans-cjk-fonts >/dev/null 2>&1 \
       || "$pm" install -y -q wqy-microhei-fonts >/dev/null 2>&1 || warn "no CJK font package found (Chinese text in PDFs may not show)"
   fi
-  log "Preparing the PDF browser (an installed Chrome/Chromium, otherwise Chrome is downloaded once)"
+  log "Preparing the PDF browser and printing a test page"
   mkdir -p "$DATA_DIR/pdf" "$DATA_DIR/puppeteer"; chown -R "$RUN_USER" "$DATA_DIR" 2>/dev/null || true
-  (cd "$PREFIX/api" && as_user env DOTNET_NOLOGO=1 ASPNETCORE_ENVIRONMENT=Production \
-      "PdfDirectory=$DATA_DIR/pdf" "PuppeteerPath=$DATA_DIR/puppeteer" dotnet VgAuto.Http.Api.dll --pdf-setup) \
-    || die "no browser for the PDF renderer. Install Google Chrome or Chromium (or allow downloads from storage.googleapis.com) and run this again"
-  ok "PDF renderer ready"
+  local setup_env=(DOTNET_NOLOGO=1 ASPNETCORE_ENVIRONMENT=Production "PdfDirectory=$DATA_DIR/pdf" "PuppeteerPath=$DATA_DIR/puppeteer")
+  if [[ "$SERVICE_MODE" == "systemd" ]] && command -v systemd-run >/dev/null; then
+    # same user and restrictions as the vg-auto-api service, so the test shows what the service will see
+    local props=(-p "User=$RUN_USER" -p "Group=$RUN_USER" -p "WorkingDirectory=$PREFIX/api"
+      -p NoNewPrivileges=true -p PrivateTmp=true -p ProtectSystem=strict -p ProtectHome=read-only
+      -p "ReadWritePaths=$DATA_DIR" -p ProtectKernelTunables=true -p ProtectKernelModules=true
+      -p ProtectControlGroups=true -p RestrictSUIDSGID=true -p LockPersonality=true)
+    local envs=(); for e in "${setup_env[@]}"; do envs+=(-E "$e"); done
+    systemd-run --quiet --wait --pipe --collect "${props[@]}" "${envs[@]}" "$(command -v dotnet)" "$PREFIX/api/VgAuto.Http.Api.dll" --pdf-setup \
+      || die "the PDF browser does not work as the service user (see the output above). Send this output to support"
+  else
+    (cd "$PREFIX/api" && as_user env "${setup_env[@]}" dotnet VgAuto.Http.Api.dll --pdf-setup) \
+      || die "the PDF browser does not work (see the output above). Install Google Chrome or Chromium (or allow downloads from storage.googleapis.com) and run this again"
+  fi
+  ok "PDF renderer ready (test page printed)"
   api_ctl restart
 }
 

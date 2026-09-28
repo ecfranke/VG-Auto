@@ -189,16 +189,23 @@ namespace VgAuto.Core.Application.Services
         /// Uses PuppeteerExecutablePath (an installed Chrome/Chromium/Edge) when configured,
         /// otherwise downloads Chrome once into PuppeteerPath.
         /// </summary>
-        private async Task PreparePuppeteerAsync()
+        private static System.Collections.Generic.IEnumerable<PuppeteerSharp.BrowserData.InstalledBrowser> SafeInstalled(BrowserFetcher fetcher)
         {
-            if (!string.IsNullOrWhiteSpace(_executablePath)) return;
+            try { return fetcher.GetInstalledBrowsers().ToList(); }
+            catch { return Array.Empty<PuppeteerSharp.BrowserData.InstalledBrowser>(); }
+        }
+
+        /// <param name="forceShell">use (or download) chrome-headless-shell even when another browser is there (fallback after a failed start)</param>
+        private async Task PreparePuppeteerAsync(bool forceShell = false)
+        {
+            if (!forceShell && !string.IsNullOrWhiteSpace(_executablePath)) return;
             await browserGate.WaitAsync();
             try
             {
-                if (!string.IsNullOrWhiteSpace(_executablePath)) return;
+                if (!forceShell && !string.IsNullOrWhiteSpace(_executablePath)) return;
 
                 var installed = configuration["PuppeteerExecutablePath"];
-                if (!string.IsNullOrWhiteSpace(installed))
+                if (!forceShell && !string.IsNullOrWhiteSpace(installed))
                 {
                     if (!File.Exists(installed)) throw new FileNotFoundException($"PuppeteerExecutablePath '{installed}' does not exist.");
                     _executablePath = installed;
@@ -209,9 +216,33 @@ namespace VgAuto.Core.Application.Services
                 if (string.IsNullOrWhiteSpace(downloadPath))
                     downloadPath = Path.Combine(AppContext.BaseDirectory, "puppeteer");
 
-                // a browser downloaded before (by the installer or an earlier request)
+                // a browser downloaded before (by the installer or an earlier request);
+                // chrome-headless-shell is preferred: it is made for servers and needs fewer system libraries
+                var shellFetcher = new BrowserFetcher(new BrowserFetcherOptions { Path = downloadPath, Browser = SupportedBrowser.ChromeHeadlessShell });
                 var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions { Path = downloadPath });
-                var downloaded = browserFetcher.GetInstalledBrowsers().FirstOrDefault();
+                var shell = SafeInstalled(shellFetcher).FirstOrDefault(b => b.Browser == SupportedBrowser.ChromeHeadlessShell);
+                if (shell != null)
+                {
+                    _executablePath = shellFetcher.GetExecutablePath(shell.BuildId);
+                    return;
+                }
+
+                // the version PuppeteerSharp is tested with (a much newer "stable" Chrome may not start with it)
+                var buildId = PuppeteerSharp.BrowserData.Chrome.DefaultBuildId;
+                try
+                {
+                    var shellVersion = await shellFetcher.DownloadAsync(buildId);
+                    _executablePath = shellFetcher.GetExecutablePath(shellVersion.BuildId);
+                    logger.LogInformation("Puppeteer browser (headless shell {version}): {path}", buildId, _executablePath);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Downloading chrome-headless-shell {version} into {path} failed", buildId, downloadPath);
+                }
+                if (forceShell) throw new UserException(PdfUnavailable);
+
+                var downloaded = SafeInstalled(browserFetcher).FirstOrDefault();
                 if (downloaded != null)
                 {
                     _executablePath = browserFetcher.GetExecutablePath(downloaded.BuildId);
@@ -229,9 +260,9 @@ namespace VgAuto.Core.Application.Services
 
                 try
                 {
-                    var stableVersion = await browserFetcher.DownloadAsync(BrowserTag.Stable);
-                    _executablePath = browserFetcher.GetExecutablePath(stableVersion.BuildId);
-                    logger.LogInformation("Puppeteer browser: {path}", _executablePath);
+                    var chromeVersion = await browserFetcher.DownloadAsync(buildId);
+                    _executablePath = browserFetcher.GetExecutablePath(chromeVersion.BuildId);
+                    logger.LogInformation("Puppeteer browser {version}: {path}", buildId, _executablePath);
                 }
                 catch (Exception ex)
                 {
@@ -276,10 +307,120 @@ namespace VgAuto.Core.Application.Services
             yield return "/usr/bin/microsoft-edge";
         }
 
+        /// <summary>A writable home for the browser: the service runs with a read-only home directory.</summary>
+        private string BrowserHome()
+        {
+            var root = configuration["PuppeteerPath"];
+            if (string.IsNullOrWhiteSpace(root)) root = Path.Combine(Path.GetTempPath(), "vg-auto-browser");
+            var home = Path.Combine(root, "home");
+            try { Directory.CreateDirectory(Path.Combine(home, "crashes")); }
+            catch (Exception ex) { logger.LogWarning(ex, "Browser home {dir} cannot be created", home); home = Path.GetTempPath(); }
+            return home;
+        }
+
+        private Task<IBrowser> LaunchAsync()
+        {
+            var home = BrowserHome();
+            return Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                ExecutablePath = _executablePath,
+                Args = BrowserArgs.Append("--crash-dumps-dir=" + Path.Combine(home, "crashes")).ToArray(),
+                Env =
+                {
+                    ["HOME"] = home,
+                    ["XDG_CONFIG_HOME"] = Path.Combine(home, ".config"),
+                    ["XDG_CACHE_HOME"] = Path.Combine(home, ".cache"),
+                },
+                Timeout = 60000,
+            });
+        }
+
+        private static readonly string[] BrowserArgs =
+        {
+            "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu",
+            "--no-zygote", "--no-first-run", "--disable-crash-reporter", "--disable-breakpad",
+        };
+
+        /// <summary>
+        /// Runs the browser directly once to get its error output (the launcher only reports "Failed to launch browser"),
+        /// logs all of it and returns the line that explains the problem.
+        /// </summary>
+        private async Task<string> DiagnoseAsync(string executable, Exception launchError)
+        {
+            try
+            {
+                var home = BrowserHome();
+                var psi = new System.Diagnostics.ProcessStartInfo(executable)
+                {
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                };
+                psi.ArgumentList.Add("--headless");
+                foreach (var arg in BrowserArgs) psi.ArgumentList.Add(arg);
+                psi.ArgumentList.Add("--crash-dumps-dir=" + Path.Combine(home, "crashes"));
+                psi.ArgumentList.Add("--dump-dom");
+                psi.ArgumentList.Add("about:blank");
+                psi.Environment["HOME"] = home;
+                psi.Environment["XDG_CONFIG_HOME"] = Path.Combine(home, ".config");
+                psi.Environment["XDG_CACHE_HOME"] = Path.Combine(home, ".cache");
+                using var process = System.Diagnostics.Process.Start(psi);
+                var stderr = process.StandardError.ReadToEndAsync();
+                var stdout = process.StandardOutput.ReadToEndAsync();
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                try { await process.WaitForExitAsync(timeout.Token); }
+                catch (OperationCanceledException) { try { process.Kill(true); } catch { } return "the browser did not answer within 30 seconds"; }
+                var output = (await stderr) + "\n" + (await stdout);
+                logger.LogError("PDF browser test run of {path} exited with {code}:\n{output}", executable, process.ExitCode, output);
+                if (process.ExitCode == 0) return LaunchFailure(launchError) + "; the browser itself starts, see the server log";
+                return LaunchFailure(new Exception(output)) + $" (exit code {process.ExitCode})";
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "PDF browser test run of {path} failed", executable);
+                return ex.Message.Length > 300 ? ex.Message[..300] : ex.Message;
+            }
+        }
+
+        /// <summary>The useful part of the browser's error output (not the crash reporter or D-Bus noise).</summary>
+        private static string LaunchFailure(Exception ex)
+        {
+            var text = ex.InnerException?.Message ?? ex.Message;
+            var lines = text.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+            static bool Noise(string l) => l.Contains("crashpad", StringComparison.OrdinalIgnoreCase) || l.Contains("dbus", StringComparison.OrdinalIgnoreCase)
+                || l.Contains("Fontconfig", StringComparison.OrdinalIgnoreCase) || l.StartsWith("Failed to launch browser", StringComparison.OrdinalIgnoreCase);
+            var reason = lines.FirstOrDefault(l => l.Contains(".so") || l.Contains("error while loading", StringComparison.OrdinalIgnoreCase))
+                ?? lines.FirstOrDefault(l => !Noise(l) && (l.Contains("FATAL") || l.Contains("ERROR") || l.Contains("Check failed") || l.Contains("Timed out", StringComparison.OrdinalIgnoreCase)))
+                ?? lines.FirstOrDefault(l => !Noise(l))
+                ?? lines.FirstOrDefault()
+                ?? ex.GetType().Name;
+            return reason.Length > 300 ? reason[..300] : reason;
+        }
+
         /// <summary>Makes sure a browser is available (used by the installer: "--pdf-setup").</summary>
         public async Task<string> EnsureBrowserAsync()
         {
             await PreparePuppeteerAsync();
+            // start it once and print a test page, so problems show up here and not when the first invoice is sent
+            IBrowser browser;
+            try
+            {
+                browser = await LaunchAsync();
+            }
+            catch (Exception first) when (first is not UserException)
+            {
+                Console.Error.WriteLine($"Starting {_executablePath} failed: {await DiagnoseAsync(_executablePath, first)}\nTrying chrome-headless-shell ...");
+                await PreparePuppeteerAsync(forceShell: true);
+                browser = await LaunchAsync();
+            }
+            await using (browser)
+            {
+                var page = await browser.NewPageAsync();
+                await page.SetContentAsync("<p>VG Auto PDF test</p>");
+                var pdf = await page.PdfDataAsync(new PdfOptions { Format = PaperFormat.A4 });
+                if (pdf.Length < 100) throw new InvalidOperationException("The test PDF is empty.");
+            }
             return _executablePath;
         }
 
@@ -293,23 +434,26 @@ namespace VgAuto.Core.Application.Services
             IBrowser launched;
             try
             {
-                launched = await Puppeteer.LaunchAsync(new LaunchOptions
-                {
-                    Headless = true,
-                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage" },
-                    ExecutablePath = _executablePath
-                });
+                launched = await LaunchAsync();
             }
-            catch (Exception ex)
+            catch (Exception first) when (first is not UserException)
             {
-                // usually missing system libraries (libnss3, libgbm1 ...) on a minimal server
-                logger.LogError(ex, "Starting the PDF browser {path} failed", _executablePath);
-                // the first line usually names the missing library ("libnss3.so: cannot open shared object file")
-                var reason = (ex.InnerException?.Message ?? ex.Message).Split('\n').Select(l => l.Trim())
-                    .FirstOrDefault(l => l.Contains(".so") || l.Contains("error", StringComparison.OrdinalIgnoreCase)) ?? ex.Message;
-                if (reason.Length > 300) reason = reason[..300];
-                throw new UserException("The PDF could not be created: the browser on the server does not start (" + reason + "). " +
-                    "Run \"sudo vgauto pdf-setup\" on the server.");
+                logger.LogError(first, "Starting the PDF browser {path} failed", _executablePath);
+                // a full Chrome may not run on a minimal or locked down server: try chrome-headless-shell once
+                var failed = _executablePath;
+                try
+                {
+                    await PreparePuppeteerAsync(forceShell: true);
+                    if (_executablePath == failed) throw;
+                    launched = await LaunchAsync();
+                }
+                catch (Exception second)
+                {
+                    if (second != first) logger.LogError(second, "Starting the PDF browser {path} failed", _executablePath);
+                    _executablePath = failed;
+                    throw new UserException("The PDF could not be created: the browser on the server does not start (" + await DiagnoseAsync(failed, first) + "). " +
+                        "Run \"sudo vgauto pdf-setup\" on the server; the full output is in \"sudo vgauto logs api\".");
+                }
             }
             await using var browser = launched;
              
