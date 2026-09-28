@@ -44,10 +44,11 @@ jobs:
           sudo systemctl start mysql.service
           mysql -uroot -proot -e "CREATE USER 'vgauto'@'%' IDENTIFIED BY 'ci-password'; GRANT ALL ON *.* TO 'vgauto'@'%'; FLUSH PRIVILEGES;"
 
+      # the secrets file must exist for the build and be valid JSON for the API (an empty file is not)
       - name: Build
         working-directory: backend/src
         run: |
-          touch VgAuto.Http.Api/appsettings.Secrets.json
+          echo '{}' > VgAuto.Http.Api/appsettings.Secrets.json
           dotnet build VgAuto.sln -c Release --nologo
 
       - name: Test
