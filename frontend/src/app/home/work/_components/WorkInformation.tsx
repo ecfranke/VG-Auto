@@ -169,10 +169,10 @@ export function WorkInformation({
                         </dt>
                         <dd className="text-sm/6 text-gray-500 whitespace-pre-line">{work.notes}</dd>
                     </div>}
-                    <div className="mt-6 flex gap-x-2 xl:px-6   ">  
+                    <div className="mt-6 flex flex-wrap gap-x-2 gap-y-1 xl:px-6   ">  
                         {work.issuance && <>
                             
-                        <PricingDownloadLink name='Invoice' id={work.id} hidePaperClip={false} number={work.issuance.invoiceNumber}></PricingDownloadLink>
+                        <PricingDownloadLink name='Invoice' id={work.id} hidePaperClip={false} code={work.issuance.code}></PricingDownloadLink>
                         <IssuanceBadges issueance={work.issuance}   ></IssuanceBadges></> } 
                     </div>
 

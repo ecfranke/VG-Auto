@@ -34,7 +34,8 @@ export default async function Page(
             <div>  <PricingDownloadLink
               name='Invoice'
               id={id}
-              number={issuance.invoiceNumber}
+              code={issuance.code}
+              hideCode={true}
               downloadingElement={<Spinner></Spinner>}
               hidePaperClip={true}
               clickableElement={<ArrowDownTrayIcon aria-hidden="true" className="h-6 w-5 text-gray-400" ></ArrowDownTrayIcon>} >
@@ -58,10 +59,11 @@ export default async function Page(
                   <div>  <PricingDownloadLink
                     name='Offer'
                     id={offerIssuance.id}
-                    number={offerIssuance.number}
+                    code={offerIssuance.code}
                     downloadingElement={<Spinner></Spinner>}
                     hidePaperClip={true}
                     hideLabel={false}
+                    hideCode={true}
                     clickableElement={<ArrowDownTrayIcon aria-hidden="true" className="h-6 w-5 text-gray-400" ></ArrowDownTrayIcon>} >
                   </PricingDownloadLink> </div>
                   <div> <h5><EmailSentBadge issueance={offerIssuance}></EmailSentBadge></h5></div>

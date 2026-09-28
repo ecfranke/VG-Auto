@@ -34,31 +34,35 @@ const handleFileDownload = async (pricingId: string, pricingName: string, fileNa
 export default function PricingDownloadLink({
     id,
     name,
-    number,
+    code,
     downloadingElement= <>{<Spinner></Spinner>}</>,
     hidePaperClip = true,
     hideLabel,
+    hideCode,
     clickableElement=<>{<ArrowDownTrayIcon aria-hidden="true" className="h-6 w-5 text-gray-400" ></ArrowDownTrayIcon>}</>, 
 }:{
     id:string,
     name:string,
-    number:string | number ,
+    /** the document, named like the work: RP_TF_2019_HC_2026_09_28_15 */
+    code:string,
     clickableElement?: React.ReactNode,
     downloadingElement?: React.ReactNode,
     hidePaperClip?: boolean,
-    hideLabel?:boolean
+    hideLabel?:boolean,
+    /** only the name (the code is in the tooltip), where the row already shows the work code */
+    hideCode?:boolean
 }) {
     
     const [isDownloading,setIsDownloading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const fileName = `${name.toLowerCase()}_nr_${number}.pdf`;
+    const fileName = `${name.toLowerCase()}_${code}.pdf`;
 
     
     return (
-        <div className="flex  ">
+        <div className={hideLabel ? "flex" : "flex min-w-0"}>
        {!hidePaperClip&&   <PaperClipIcon aria-hidden="true" className="h-6 w-5 text-gray-400 mr-4" />}
         <div className=" flex min-w-0 flex-1 gap-2">
-          {!hideLabel&& <span className="truncate text-sm/6 font-bold">{  `${name} nr. ${number}`}</span> }
+          {!hideLabel&& <span className="truncate text-sm/6 font-bold" title={`${name} ${code}`}>{name}{!hideCode && <> <span className="font-mono font-medium">{code}</span></>}</span> }
             <div className=" text-sm/6 text-gray-500">
                 <Link href="#"  onClick={async (e)=>{
                    e.preventDefault();

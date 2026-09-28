@@ -58,8 +58,13 @@ namespace VgAuto.Core.Domain
            
         }
 
-        public abstract string GetFileName();
-        public abstract string GetDisplayName();
+        /// <summary>Invoice / Estimate.</summary>
+        public abstract string GetTitle();
+
+        /// <summary>"Invoice RP_TF_2019_HC_2026_09_28_15" (PDF, email subject).</summary>
+        public virtual string GetDisplayName() => $"{GetTitle()} {GetNumber()}";
+
+        public virtual string GetFileName() => $"{GetTitle().ToLowerInvariant()}_{GetNumber()}.pdf";
 
 
         public virtual async Task Send(IPricingSender sender, string receipient)
@@ -127,7 +132,14 @@ namespace VgAuto.Core.Domain
             IssuedOn = DateTime.UtcNow;
         }
 
+        /// <summary>The code of the document; the old number for documents issued before codes existed.</summary>
         public abstract string GetNumber();
+
+        /// <summary>
+        /// Readable number of the document, named like the work (see <see cref="WorkCode"/>): an invoice RP_TF_2019_HC_2026_09_28_15,
+        /// an estimate OF_TF_2019_HC_2026_09_28_15 (a later offer of the same work …_15-1). Fixed when the document is issued.
+        /// </summary>
+        public virtual string Code { get; protected set; }
 
         /// <summary>Currency of the document, fixed when it is issued (null for documents issued before currencies existed: the company currency applies).</summary>
         public virtual string Currency { get; protected set; }

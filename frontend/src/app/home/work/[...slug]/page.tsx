@@ -42,7 +42,7 @@ export default async function Page({
     const issueances = await data.json() as IOfferIssuance[]; 
     const issuance = issueances.find(x => x.id === activity?.id)
  
-    const activityDisplayName = getActivityDisplayName(activityName,activityNumber,issuance?.number);
+    const activityDisplayName = getActivityDisplayName(activityName,activityNumber,issuance?.code);
 
 
     return (
@@ -62,9 +62,9 @@ export default async function Page({
                                             <h3 className={clsx(activities.items.length>1 && "hidden", "text-base  2xl:block font-semibold text-gray-900")}>{activityDisplayName}</h3>
                                             </div>
                                             <div  className='my-1' > 
-                                                {issuance && <PricingDownloadLink name="Offer" hideLabel={!!issuance.number} id={issuance.id} number={issuance.number} ></PricingDownloadLink>}
+                                                {issuance && <PricingDownloadLink name="Offer" hideLabel={!!issuance.code} id={issuance.id} code={issuance.code} ></PricingDownloadLink>}
                                                 </div>
-                                            <div className='flex gap-x-2 my-1'>
+                                            <div className='flex items-start gap-x-2 my-1'>
                                                 {issuance && <IssuanceBadges issueance={issuance}   ></IssuanceBadges>} </div>
                                         </div> 
                                     </div>  

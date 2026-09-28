@@ -44,7 +44,7 @@ export default function Activities({
         {items.length>1 &&items.map((item) => { //do not list if only single activity
           const id = item.id;
           const issuance =  issueances.find(x=>x.id === item.id);
-          const name = getActivityDisplayName(item.name,item.number,issuance?.number);
+          const name = getActivityDisplayName(item.name,item.number,issuance?.code);
           const isSelected = item.id === activities.current.id;
           const href = `/home/work/${ work.id}/${item.id}`;
           const editRef = href + '/edit';
@@ -68,12 +68,12 @@ export default function Activities({
                
               <div className="min-w-0  py-5">
                 <div className="flex gap-x-1 xl:gap-x-2 ">
-                  <p className={clsx(isSelected && "font-semibold", "truncate text-sm/6  text-gray-900")}>
+                  <p className={clsx(isSelected && "font-semibold", "truncate text-sm/6  text-gray-900")} title={name}>
                     <Link href={href}>
                       {name} 
                     </Link>
                   </p> 
-                  {issuance&& <PricingDownloadLink name="Offer"  hideLabel={true} id={issuance.id} number={issuance.number} ></PricingDownloadLink>}
+                  {issuance&& <PricingDownloadLink name="Offer"  hideLabel={true} id={issuance.id} code={issuance.code} ></PricingDownloadLink>}
                   {issuance&& <IssuanceBadges issueance={issuance}   ></IssuanceBadges>}
                 </div>
                  <ActivityCreatedBy activity={item}></ActivityCreatedBy>  

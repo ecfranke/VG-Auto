@@ -185,8 +185,8 @@ namespace VgAuto.Core.Application.Services
                     new { Id = mechanic2Id });
 
                 // Create works with offers and jobs
-                await CreateSampleWork(connection, companyClientId, vehicleId1, adminEmployeeId, mechanic1Id, mechanic2Id);
-                await CreateSampleWork(connection, privateClientId, vehicleId2, adminEmployeeId, mechanic1Id, null);
+                await CreateSampleWork(connection, companyClientId, vehicleId1, adminEmployeeId, mechanic1Id, mechanic2Id, (companyName, "Toyota", "Corolla"));
+                await CreateSampleWork(connection, privateClientId, vehicleId2, adminEmployeeId, mechanic1Id, null, ("John Doe", "Honda", "Civic"));
             }
 
 
@@ -198,7 +198,8 @@ namespace VgAuto.Core.Application.Services
           Guid vehicleId,
           Guid adminEmployeeId,
           Guid? mechanic1Id,
-          Guid? mechanic2Id)
+          Guid? mechanic2Id,
+          (string Client, string Manufacturer, string Model) names)
         {
             // Create a work record
             var workId = Guid.NewGuid();
@@ -365,12 +366,14 @@ namespace VgAuto.Core.Application.Services
             var estimateNumber = $"{workNumber}-1";
 
             await connection.ExecuteAsync(@"
-        INSERT INTO domain.pricing(id, issuedon, issuerid, partyname, vehicleline1, vehicleline2)
-        VALUES (@Id, CURRENT_TIMESTAMP, @IssuerId, @PartyName, @VehicleLine1, @VehicleLine2)",
+        INSERT INTO domain.pricing(id, issuedon, issuerid, partyname, vehicleline1, vehicleline2, code)
+        VALUES (@Id, CURRENT_TIMESTAMP, @IssuerId, @PartyName, @VehicleLine1, @VehicleLine2, @Code)",
                 new
                 {
                     Id = estimateId,
                     IssuerId = adminEmployeeId,
+                    // named like the work, see Estimate.CreateFor (offer 1 of the work)
+                    Code = WorkCode.Format(false, names.Client, null, names.Manufacturer, names.Model, DateTime.UtcNow, estimateNumber),
                     PartyName = "Demo Client",
                     VehicleLine1 = "Vehicle: Demo Vehicle",
                     VehicleLine2 = "Reg nr: ABC123"
