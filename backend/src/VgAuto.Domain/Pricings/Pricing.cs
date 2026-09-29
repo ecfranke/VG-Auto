@@ -16,6 +16,14 @@ namespace VgAuto.Core.Domain
         protected Pricing() { }
 
          
+        /// <summary>The vehicle under the document number ("2019 Honda Civic LX"), on every estimate and invoice.</summary>
+        protected Pricing ApplyVehicleTitle(Vehicle vehicle)
+        {
+            var title = vehicle?.Title;
+            VehicleTitle = string.IsNullOrWhiteSpace(title) ? null : title.Length > 200 ? title[..200] : title;
+            return this;
+        }
+
         protected Pricing ApplyVehicleInformation(Vehicle vehicle) 
         {
             if (vehicle == null) 
@@ -156,6 +164,8 @@ namespace VgAuto.Core.Domain
         public  virtual string VehicleLine2 { get; protected set; }
         public  virtual string VehicleLine3 { get; protected set; }
         public virtual string VehicleLine4 { get; protected set; }
+        /// <summary>"2019 Honda Civic LX" when the document was issued; null for documents issued before it was shown.</summary>
+        public virtual string VehicleTitle { get; protected set; }
         public  virtual DateTime IssuedOn { get; protected set; }
         public  virtual Employee Issuer { get; protected set; }
     }

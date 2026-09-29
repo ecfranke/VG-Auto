@@ -94,12 +94,12 @@ const DataItemRow = React.forwardRef<DataItemRowHandle<IProduct>, IDataItemRowPr
         <td className={clsx("min-w-50 w-50",tdStyle)} >
           
             <EditableCodeCell //todo auto complete 
-                placeholder="code ..."
+                placeholder="code (empty: CUSTOM)"
                 defaultValue={item.code}
                 isEditing={isEditing}
                 ref={codeRef}
                 id={item.id}
-                name='part'
+                name='code'
                 className={codeStyle}
                 nameRef={nameRef}
                 priceRef={priceRef}

@@ -40,8 +40,9 @@ namespace VgAuto.Core.Application.Services
     {
         public PricingFooterHtmlGenerator(
             ITemplateService templateService,
-            ITenantConfigService tenantConfigService)
-            : base(templateService, tenantConfigService)
+            ITenantConfigService tenantConfigService,
+            VgAuto.Core.Application.Signing.IEstimateSignatures signatures)
+            : base(templateService, tenantConfigService, signatures)
         {
         }
 
@@ -58,8 +59,9 @@ namespace VgAuto.Core.Application.Services
     {
         public PricingBodyHtmlGenerator(
             ITemplateService templateService,
-            ITenantConfigService tenantConfigService)
-            : base(templateService, tenantConfigService)
+            ITenantConfigService tenantConfigService,
+            VgAuto.Core.Application.Signing.IEstimateSignatures signatures)
+            : base(templateService, tenantConfigService, signatures)
         {
         }
 
@@ -77,13 +79,16 @@ namespace VgAuto.Core.Application.Services
     {
         protected readonly ITemplateService templateService;
         protected readonly ITenantConfigService tenantConfigService;
+        private readonly VgAuto.Core.Application.Signing.IEstimateSignatures signatures;
 
         public PricingHtmlBaseGenerator(
             ITemplateService templateService,
-            ITenantConfigService tenantConfigService)
+            ITenantConfigService tenantConfigService,
+            VgAuto.Core.Application.Signing.IEstimateSignatures signatures)
         {
             this.templateService = templateService;
             this.tenantConfigService = tenantConfigService;
+            this.signatures = signatures;
         }
 
         protected async Task<PricingPrintModel> CreatePricingModelAsync(Pricing pricing)
@@ -97,6 +102,8 @@ namespace VgAuto.Core.Application.Services
                 RequisitesOptions = requisites,
                 PricingOptions = pricingOptions,
                 TaxIdLabel = TaxRegions.TaxIdLabel(pricingOptions.Taxes?.Country, pricingOptions.Taxes?.Region),
+                // an estimate the client signed online is printed with the signature
+                Signature = pricing is Estimate && pricing.Id != Guid.Empty ? await signatures.GetAsync(pricing.Id) : null,
             };
 
             return model;

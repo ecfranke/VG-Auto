@@ -54,7 +54,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ### 3. 登记车辆
 
-**Vehicles → Add new**。填写制造商（Manufacturer）、型号（Model）、年份（Year，选填，会显示成 “2019 Honda Civic”，也打印在报价单和发票上）、VIN、车牌号（License plate）和里程，在 **Owner** 里输入客户名并从下拉列表中选择车主。
+**Vehicles → Add new**。先选**制造商**（Manufacturer），再从该制造商的**型号**（Model）列表里选择；列表里是目前在售和近年常见的车型，没有的制造商或型号可以直接输入（选 “Use …”）。再填写**配置**（Trim，如 LX、Touring，选填）、年份（Year，选填）、VIN、车牌号（License plate）和里程，在 **Owner** 里输入客户名并从下拉列表中选择车主。车辆显示为 “2019 Honda Civic LX”（年份 制造商 型号 配置），报价单和发票的编号下面也打印这一行。
 
 ![新建车辆](docs/screenshots/vehicle-new.png)
 
@@ -76,7 +76,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 保存工单后会直接进入报价的编辑界面。每一行是一项配件或工时：
 
-- **Code**：输入配件编号或名称，下拉列表会显示库存里匹配的配件。选中后自动带出名称和价格。
+- **Code**：输入配件编号或名称，下拉列表会显示库存里匹配的配件。选中后自动带出名称和价格。不填编号的行算作自定义项目，编号记为 `CUSTOM`。
 - **Name / Price / Quantity / Unit / Discount**：名称、单价（**税前**）、数量、单位、折扣（%）。工时可以直接手填，比如 Code 填 `LAB`，单位填 `h`。
 - **Add row** 添加一行；右侧的 ✕ 删除一行；拖动左侧的 ≡ 调整顺序。
 - 右侧下拉菜单里的 **Apply discount** 可以给所有行统一打折。
@@ -96,9 +96,22 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 ![出具报价](docs/screenshots/issue-offer.png)
 
-点 **OK** 后生成报价单编号（如 `OF_TF_2019_HC_2026_09_28_15`），标题旁出现 **Issued** 标记；邮件图标表示已发送。点下载或打印图标可以拿到 PDF。以后需要重发，在右下角的下拉菜单里选 **Resend offer**。
+点 **OK** 后生成报价单编号（如 `OF_TF_2019_HC_2026_09_28_15`），标题旁出现 **Issued** 标记；邮件图标表示已发送。点下载或打印图标可以拿到 PDF。以后需要重发，在右下角的下拉菜单里选 **Resend offer**。报价单和发票右上角的编号下面会显示车辆，例如 “2019 Honda Civic LX”。
 
 ![报价已出具](docs/screenshots/offer-issued.png)
+
+#### 客户在线确认并签名
+
+发给客户的报价邮件里带一个链接，客户**不需要登录**，打开后可以查看报价单，填写姓名、在框里用鼠标或手指签名、勾选“已阅读并接受”，点 **Sign estimate**。签名后：
+
+- 客户可以下载**带签名的报价单 PDF**；工单页面上该报价显示 **Signed** 标记（鼠标悬停显示签名人和时间），报价单的 PDF 和打印版也带上客户签名。
+- 客户签名后由车间点 **Client accepted** 开始维修（签名不会自动转成维修任务）。
+- 链接 30 天内有效（`Signing:LinkDays`），每份报价只能签一次；重新出具的报价是新的报价单，会发新的链接。
+- 链接地址用的是 `App:Url`（系统的访问地址）；没有设置时使用 `Cors:AllowedOrigins` 里的第一个地址（安装脚本已经把 App URL 写在那里）。两者都没有时邮件里不带链接。
+
+| 客户打开链接 | 签名后 |
+|---|---|
+| ![在线签名](docs/screenshots/sign-estimate.png) | ![已签名](docs/screenshots/sign-signed.png) |
 
 ### 7. 客户接受报价，开始维修
 
@@ -389,6 +402,8 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `DbOptions:MultiTenancy:Enabled` | 多租户，仅 PostgreSQL 支持 |
 | `DefaultAdmin:UserName` / `Email` / `Password` | 初始管理员，只在首次迁移时使用；密码留空则随机生成 |
 | `Email:Provider` | `Smtp` 或 `Graph`；这一节是系统邮箱的“服务器配置”，超级管理员在后台选了其他方式后不再使用 |
+| `App:Url` | 系统的访问地址（如 `https://shop.example.com`），用于报价邮件里的在线签名链接；不填时用 `Cors:AllowedOrigins` 的第一个地址 |
+| `Signing:LinkDays` | 在线签名链接的有效天数，默认 30 |
 | `Email:FromAddress` / `FromName` | 发件人 |
 | `Email:Smtp:Host` / `Port` / `User` / `Password` / `Security` | SMTP；`Security` 为 `Auto`、`SslOnConnect`、`StartTls` 或 `None` |
 | `Email:Graph:TenantId` / `ClientId` / `ClientSecret` / `Sender` | Microsoft Graph（应用权限 `Mail.Send`） |
@@ -427,6 +442,7 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆、配件、库位 |
 | `/api/employees` | 员工（技师）；创建登录账号需要管理员 |
 | `/api/admin/*` | 管理后台：`me`、`overview`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`、`company`）、`companies`（列表、新建、`{id}/options` 读取和修改、`{id}/email` 发信设置、`{id}/email/system` 开放系统邮箱、`{id}/email/test`）、`email/system`（系统邮箱、`test`）、`audit`（`companyId` 筛选） |
+| `/api/public/estimates/{token}/view`、`sign`、`pdf` | 客户在线签名（无需登录，由 Next.js 服务器带服务器密钥调用） |
 | `/api/options`（含 `testemail`） | 当前用户所属公司的设置、测试邮件 |
 | `/api/profile`（含 `changepassword`、`externallogins`） | 个人资料、改密码、Microsoft 账号绑定 |
 | `/api/query` | 列表查询 |

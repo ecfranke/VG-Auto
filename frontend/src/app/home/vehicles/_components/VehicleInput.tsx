@@ -7,15 +7,10 @@ import PrimaryButton from '@/_components/PrimaryButton';
 import SecondaryButton from '@/_components/SecondaryButton'; 
 import { IVehicleData } from '../model'; 
 import FormLabel from '@/_components/FormLabel';
-import TypeAheadCombobox from '../../_components/TypeAheadCombobox';
+import SuggestCombobox from '../../_components/SuggestCombobox';
 import  { ClientsCombobox } from '../../_components/SearchCombobox';
-import data from './car_brands.json'; 
+import { MANUFACTURERS, modelsOf } from '@/_lib/shared/vehicleModels';
 import { useState } from 'react';
-
-interface ICarProducer
-{
-    name:string
-}
 
 export default function VehicleInput({
     vehicle
@@ -27,7 +22,10 @@ export default function VehicleInput({
 
     const router = useRouter()
      
-    const [manufacturer,setManufacturer] = useState<ICarProducer |null>(!vehicle?null:{name:vehicle.manufacturer})
+    // the manufacturer first: its models are then suggested; both can also be typed in
+    const [manufacturer, setManufacturer] = useState(vehicle?.manufacturer ?? '')
+    const [model, setModel] = useState(vehicle?.model ?? '')
+    const models = modelsOf(manufacturer)
     return (
         <>
             <div className="space-y-12">
@@ -36,30 +34,16 @@ export default function VehicleInput({
                     <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div className="sm:col-span-2">
                         <FormLabel name='manufacturer' label='Manufacturer'></FormLabel>
-                        <TypeAheadCombobox 
-                          name="manufacturer" 
-                          defaultValue={manufacturer} 
-                          displayFormatter={(item)=>!item?'':item?.name} 
-                          optionFormatter={(item)=>!item?'':item?.name} 
-                          placeholder="Enter manufacturer" 
-                          onItemChange={(item)=>{
-                              
-                            setManufacturer(item);
-                          }} 
-                          onSearch={(e,dataTarget)=>{
-                             const inputValue = e.currentTarget.value;
-                             if(inputValue){
-                                //dataTarget()
-                                const makesFound = data.filter((make)=>{
-                                    return make.name.toLowerCase().startsWith(inputValue.toLowerCase());
-                                }) as ICarProducer[];
-                                dataTarget(makesFound);
-                             }
-                             
-                          }}
-                          ></TypeAheadCombobox> 
-                       </div> 
-                        <div className="sm:col-span-2">  <FormInput name='model' defaultValue={vehicle?.model} label='Model'></FormInput></div>
+                        <SuggestCombobox id='manufacturer' name='manufacturer' value={manufacturer} options={MANUFACTURERS}
+                          placeholder='e.g. Honda' onChange={setManufacturer} />
+                    </div>
+                    <div className="sm:col-span-2">
+                        <FormLabel name='model' label='Model'></FormLabel>
+                        <SuggestCombobox id='model' name='model' value={model} options={models} onChange={setModel}
+                          placeholder={manufacturer ? 'e.g. ' + (models[0] ?? 'model') : 'Choose the manufacturer first'}
+                          emptyHint={manufacturer ? 'Type the model' : 'Choose the manufacturer first'} />
+                    </div>
+                        <div className="sm:col-span-2">  <FormInput name='trim' defaultValue={vehicle?.trim ?? undefined} label='Trim' placeholder='e.g. LX, Touring'></FormInput></div>
                         <div className="sm:col-span-2">  <FormInput name='year' type='number' defaultValue={vehicle?.year ?? undefined} label='Year' placeholder='e.g. 2019'></FormInput></div>
                         <div className="sm:col-span-2">  <FormInput name='vin' defaultValue={vehicle?.vin} label='VIN Code'></FormInput></div>
                         <div className="sm:col-span-2">  <FormInput name='licensePlate' defaultValue={vehicle?.licensePlate} label='License plate'></FormInput></div>

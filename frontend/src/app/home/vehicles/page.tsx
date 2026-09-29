@@ -37,6 +37,7 @@ export default async function Page(
         {
           dataField: 'model',
           headerText: 'Model',
+          dataFormatter: ({ model, trim }) => [model, trim].filter(Boolean).join(' '),
         },
         {
           dataField: 'year',

@@ -48,6 +48,7 @@ namespace VgAuto.Core.Domain
             invoice.UseTaxes(taxes);
             
             invoice.ApplyClientInformation(work.Client);
+            invoice.ApplyVehicleTitle(work.Vehicle);
             invoice.ApplyVehicleInformation(null);
 
             int counter = 1;

@@ -45,6 +45,7 @@ builder.Services
     .AddScoped<PricingFooterHtmlGenerator>()
     .AddScoped<PricingBodyHtmlGenerator>()
     .AddScoped<IPricingSender, PricingPdfMailSender>()
+    .AddScoped<VgAuto.Core.Application.Signing.SignatureLinks>()
     .AddEmail(builder.Configuration)
     .AddDemoSetupServices()
     .AddCorsToApp(builder.Configuration)

@@ -73,6 +73,7 @@ namespace VgAuto.Http.Api.Controllers
                 VehicleManufacturer = work.Vehicle?.Manufacturer,
                 VehicleModel = work.Vehicle?.Model,
                 VehicleYear = work.Vehicle?.Year,
+                VehicleTrim = work.Vehicle?.Trim,
                 VehicleVin = work.Vehicle?.Vin,
                 VehicleLicensePlate = work.Vehicle?.LicensePlate,
                 work.Notes,
@@ -615,10 +616,21 @@ order by page.sortkey desc").ToResult();
             var offer = work.Offers.Single(x => x.OrderNr == offerNumber);
             var issuer = this.Employee();
               
-            var offerIssued = await work.Issue(offer,pricingSender, await GetTaxesAsync(), issuer,model.ShowVehicleOnPricing, model.SendClientEmail, model.ClientEmail, await GetCurrencyAsync());
+            if (model.SendClientEmail && string.IsNullOrWhiteSpace(model.ClientEmail))
+                throw new UserException("Cannot send an estimate, client email not provided.");
+
+            var offerIssued = await work.Issue(offer,pricingSender, await GetTaxesAsync(), issuer,model.ShowVehicleOnPricing, false, null, await GetCurrencyAsync());
 
             work.Changed();
             session.Update(work);
+
+            if (model.SendClientEmail)
+            {
+                // saved first: the email carries a link to sign this estimate, which refers to it by its id
+                session.Flush();
+                await offerIssued.Estimate.Send(pricingSender, model.ClientEmail);
+                session.Update(offerIssued.Estimate);
+            }
 
             return Ok(offerIssued.Id);
         }

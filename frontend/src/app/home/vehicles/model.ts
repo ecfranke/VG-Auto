@@ -10,7 +10,8 @@ export interface IVehicleData{
     engine: string
     productionDate: string
     region: string
-    series: string
+    /** trim or version, e.g. LX */
+    trim: string | null
     transmission: string
     id: string
     ownerId: string  

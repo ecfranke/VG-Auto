@@ -35,7 +35,7 @@ export function WorkInformation({
 
     const editPath = '/home/work/edit/' + work.id;
  
-    const vehicleSummary = [vehicleTitle({ year: work.vehicleYear, manufacturer: work.vehicleManufacturer, model: work.vehicleModel }), work.vehicleVin, work.vehicleLicensePlate].filter(x => x).join(', ');
+    const vehicleSummary = [vehicleTitle({ year: work.vehicleYear, manufacturer: work.vehicleManufacturer, model: work.vehicleModel, trim: work.vehicleTrim }), work.vehicleVin, work.vehicleLicensePlate].filter(x => x).join(', ');
     const clientSummary = [work.clientName, work.clientPhone, work.clientEmail].filter(x => x).join(', ');
 
     const deleteInvoiceRef = React.useRef<BaseDialogHandle>(null);

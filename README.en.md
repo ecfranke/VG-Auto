@@ -54,7 +54,7 @@ The client list can be searched by name, phone or email. Click a client to see d
 
 ### 3. Register a vehicle
 
-**Vehicles → Add new**. Enter manufacturer, model, year (optional; shown as "2019 Honda Civic" and printed on estimates and invoices), VIN, license plate and odometer, then type the client's name in **Owner** and pick the owner from the list.
+**Vehicles → Add new**. Choose the **manufacturer** first, then the **model** from that manufacturer's list (current models and the common ones of recent years); any other manufacturer or model can be typed in (choose "Use …"). Then the **trim** (e.g. LX, Touring; optional), year (optional), VIN, license plate and odometer, and type the client's name in **Owner** to pick the owner. The vehicle is shown as "2019 Honda Civic LX" (year, manufacturer, model, trim), also under the number of estimates and invoices.
 
 ![New vehicle](docs/screenshots/vehicle-new.png)
 
@@ -76,7 +76,7 @@ When a vehicle changes hands, just change the owner. The ownership history is ke
 
 After saving, the estimate opens in edit mode. Each row is a part or a labour item:
 
-- **Code**: type a part code or name; matching parts from the inventory are listed. Picking one fills in name and price.
+- **Code**: type a part code or name; matching parts from the inventory are listed. Picking one fills in name and price. A row without a code is a custom item and gets the code `CUSTOM`.
 - **Name / Price / Quantity / Unit / Discount**: the price is **before tax**; discount is in %. Labour can be entered by hand, for example code `LAB` with unit `h`.
 - **Add row** adds a row, ✕ removes one, and dragging ≡ on the left reorders rows.
 - **Apply discount** in the drop-down on the right applies a discount to all rows.
@@ -96,9 +96,22 @@ Click **Issue offer**:
 
 ![Issue the estimate](docs/screenshots/issue-offer.png)
 
-After **OK** the estimate gets its code (e.g. `OF_TF_2019_HC_2026_09_28_15`) and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right.
+After **OK** the estimate gets its code (e.g. `OF_TF_2019_HC_2026_09_28_15`) and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right. Estimates and invoices show the vehicle under their number, e.g. "2019 Honda Civic LX".
 
 ![Estimate issued](docs/screenshots/offer-issued.png)
+
+#### The client accepts and signs online
+
+The estimate email contains a link. Without signing in, the client reviews the estimate, enters their name, signs in the box with a mouse or a finger, ticks "I have read this estimate and accept it" and clicks **Sign estimate**. Then:
+
+- The client can download the **signed estimate as PDF**; the work page shows a **Signed** badge on that estimate (hover for who and when), and the estimate's PDF and printout carry the signature.
+- The workshop starts the repair with **Client accepted** as before (a signature does not turn the estimate into a repair job by itself).
+- The link is valid for 30 days (`Signing:LinkDays`) and an estimate is signed once; an estimate issued again is a new estimate with a new link.
+- The link uses `App:Url` (the address of the application), otherwise the first `Cors:AllowedOrigins` entry (the installers put the app URL there). Without either, the email has no link.
+
+| The client opens the link | Signed |
+|---|---|
+| ![Sign online](docs/screenshots/sign-estimate.png) | ![Signed](docs/screenshots/sign-signed.png) |
 
 ### 7. The client accepts, the repair starts
 
@@ -389,6 +402,8 @@ The API reads `appsettings.json`; secrets go in `appsettings.Secrets.json` (in `
 | `DbOptions:MultiTenancy:Enabled` | Multi-tenancy, PostgreSQL only |
 | `DefaultAdmin:UserName` / `Email` / `Password` | Initial administrator, used by the first migration only; an empty password is generated randomly |
 | `Email:Provider` | `Smtp` or `Graph`; this section is the "server configuration" of the built-in email, not used once a super administrator chooses another transport in the administration |
+| `App:Url` | The address of the application (e.g. `https://shop.example.com`), for the signing link in estimate emails; defaults to the first `Cors:AllowedOrigins` entry |
+| `Signing:LinkDays` | Days a signing link is valid, 30 by default |
 | `Email:FromAddress` / `FromName` | Sender |
 | `Email:Smtp:Host` / `Port` / `User` / `Password` / `Security` | SMTP; `Security` is `Auto`, `SslOnConnect`, `StartTls` or `None` |
 | `Email:Graph:TenantId` / `ClientId` / `ClientSecret` / `Sender` | Microsoft Graph (application permission `Mail.Send`) |
@@ -427,6 +442,7 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
 | `/api/employees` | Employees (mechanics); creating logins requires an administrator |
 | `/api/admin/*` | Administration: `me`, `overview`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`, email `{id}/email`, allow the built-in email `{id}/email/system`, `{id}/email/test`), `email/system` (built-in email, `test`), `audit` (`companyId` filter) |
+| `/api/public/estimates/{token}/view`, `sign`, `pdf` | Online signing by clients (no sign in; called by the Next.js server with the server secret) |
 | `/api/options` (with `testemail`) | Settings of the signed in user's company, test email |
 | `/api/profile` (with `changepassword`, `externallogins`) | Profile, password, Microsoft account link |
 | `/api/query` | List queries |

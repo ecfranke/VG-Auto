@@ -13,6 +13,7 @@ export interface IWorkData extends IActivity{
     vehicleManufacturer: string;
     vehicleModel:    string;
     vehicleYear:     number | null;
+    vehicleTrim?:    string | null;
     vehicleVin:      string;
     vehicleLicensePlate: string;
     notes:           string;
@@ -57,6 +58,9 @@ export interface IOfferIssuance extends IIssuance{
     code: string,
     acceptedOn?: Date;
     acceptedBy?: string;
+    /** the client signed the estimate online (link in the estimate email) */
+    signedOn?: Date;
+    signedBy?: string;
 }
 
 export interface IIssuance{

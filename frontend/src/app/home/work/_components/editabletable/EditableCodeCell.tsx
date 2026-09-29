@@ -32,14 +32,16 @@ const EditableCodeCell = React.forwardRef<EditableCellHandle<string>,IEditableCo
         },
     }));
  
-    if (!isEditing) return internalValue;
+    if (!isEditing) return internalValue || null;
  
-    return (
+    // one field per row, also when the code is empty or typed without choosing from the list
+    // (the combobox leaves out its fields when nothing is selected, which shifted the codes of the rows)
+    return (<>
+        <input type="hidden" name={name} value={internalValue ?? ''} />
         <TypeAheadCombobox
         id={id?.toString()}
         placeholder={placeholder}
         defaultValue={selectedItem}
-        name={name}
         className={className}
         comboboxOptionsAbsolute={true}
         comboboxOptionsWidth={100}
@@ -54,6 +56,7 @@ const EditableCodeCell = React.forwardRef<EditableCellHandle<string>,IEditableCo
         onSearch={(e,target)=>{
 
             const inputValue =e.currentTarget.value;
+            setInternalValue(inputValue);
             if(!inputValue) return;
             dataPage({
                 resourceName:'spareparts',
@@ -78,7 +81,7 @@ const EditableCodeCell = React.forwardRef<EditableCellHandle<string>,IEditableCo
         }}
         > 
         </TypeAheadCombobox>
-    )
+    </>)
 
 });
 EditableCodeCell.displayName = "EditableCodeCell";

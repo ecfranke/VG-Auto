@@ -46,12 +46,15 @@ namespace VgAuto.Http.Api.Controllers
                                         e.email as receiveremail,
                                         concat_ws(' ', i.firstname, i.lastname) as issuedby,
                                         o.acceptedon,
-                                        (select concat_ws(' ', firstname, lastname) from domain.employee where id = o.acceptorid) as acceptedby 
+                                        (select concat_ws(' ', firstname, lastname) from domain.employee where id = o.acceptorid) as acceptedby,
+                                        s.signer_name as signedby,
+                                        s.signed_at as signedon
                                     from domain.offer o
                                     inner join domain.pricing e on e.id = o.estimateid
                                     inner join domain.estimate est on est.id = o.estimateid
                                     inner join domain.employee i on i.id = e.issuerid
                                     inner join domain.work w on w.id = o.workid
+                                    left join domain.estimate_signature s on s.estimate_id = o.estimateid
                                     where o.workid = @workId and w.company_id = @companyId"), new { workId = workId, companyId = this.CompanyId() })
                                   .ToList();
              

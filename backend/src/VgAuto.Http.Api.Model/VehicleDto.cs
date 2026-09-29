@@ -2,7 +2,7 @@
 
 namespace VgAuto.Http.Api.Models
 {
-    public record VehiclePageDto(string Manufacturer, string Model, string LicensePlate, string Vin, string Body, string Engine, DateTime? ProductionDate, string Region, string Series, string Transmission, Guid Id, string OwnerName, Guid? OwnerId, int? Year = null)
+    public record VehiclePageDto(string Manufacturer, string Model, string LicensePlate, string Vin, string Body, string Engine, DateTime? ProductionDate, string Region, string Trim, string Transmission, Guid Id, string OwnerName, Guid? OwnerId, int? Year = null)
     {
         public VehiclePageDto() : this(default, default, default, default, default,default,default,default,default,default,default,default,default,default) { }
     }
@@ -14,6 +14,7 @@ namespace VgAuto.Http.Api.Models
         public string Manufacturer { get; set; }
         public string Model { get; set; }
         public int? Year { get; set; }
+        public string Trim { get; set; }
         public string LicensePlate { get; set; }
         public string Vin { get; set; }
       
@@ -32,7 +33,8 @@ namespace VgAuto.Http.Api.Models
         public string Engine { get; set; }
         public DateTime? ProductionDate { get; set; }
         public string Region { get; set; }
-        public string Series { get; set; }
+        /// <summary>Trim or version, e.g. LX.</summary>
+        public string Trim { get; set; }
         public string Transmission { get; set; }
         public Guid Id { get; set; }
 

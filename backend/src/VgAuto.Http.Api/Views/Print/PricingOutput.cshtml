@@ -29,6 +29,10 @@
             @(pricing.GetTitle())
         </p>
         <p class="text-lg font-medium text-gray-500">@(pricing.GetNumber())</p>
+        @if (!string.IsNullOrWhiteSpace(pricing.VehicleTitle))
+        {
+            <p class="text-base text-gray-900" id="vehicle">@pricing.VehicleTitle</p>
+        }
     </div>
 </div>
  
@@ -154,6 +158,15 @@
         @if (isInvoice && pricingOptions.Invoice.SignatureLine == true)
         {
             <p class="mt-8 text-sm text-gray-500">Customer signature: ____________________</p>
+        }
+        @if (Model.Signature != null)
+        {
+            <div class="mt-8 text-sm text-gray-900" id="customer-signature">
+                <p class="text-gray-500">Accepted and signed by the customer</p>
+                <img src="@Model.Signature.Image" alt="Signature of @Model.Signature.SignerName" style="height:64px;max-width:260px;display:block;margin:0.25rem 0" />
+                <p>@Model.Signature.SignerName</p>
+                <p class="text-gray-500">Signed online @Model.Signature.SignedAt.ToString("yyyy-MM-dd HH:mm") UTC</p>
+            </div>
         }
     </div>
 </div>

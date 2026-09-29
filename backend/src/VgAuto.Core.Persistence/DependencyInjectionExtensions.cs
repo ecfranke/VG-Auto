@@ -47,6 +47,8 @@ namespace VgAuto.Core.Persistence
             services.AddScoped<VgAuto.Core.Application.Authentication.IExternalLoginRepository, VgAuto.Core.Persistence.ExternalLoginRepository>();
             services.AddScoped<VgAuto.Core.Application.Authorization.IAdminAuditLog, VgAuto.Core.Persistence.AdminAuditLog>();
             services.AddSingleton<VgAuto.Core.Application.Email.IEmailSettingsRepository, VgAuto.Core.Persistence.EmailSettingsRepository>();
+            services.AddScoped<VgAuto.Core.Application.Signing.ISignatureLinkRepository, VgAuto.Core.Persistence.SignatureLinkRepository>();
+            services.AddScoped<VgAuto.Core.Application.Signing.IEstimateSignatures, VgAuto.Core.Persistence.EstimateSignatureRepository>();
             // company of the request: the signed in user's company (first company for anonymous requests)
             services.AddScoped<CompanyInterceptor>(x =>
             {
