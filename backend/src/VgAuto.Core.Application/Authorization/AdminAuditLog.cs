@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 namespace VgAuto.Core.Application.Authorization
 {
-    public record AuditEntry(long Id, DateTime CreatedAt, string TenantName, string Actor, string Action, string Target, string Details);
+    /// <summary>CompanyId: the company the entry is about; null for the whole system.</summary>
+    public record AuditEntry(long Id, DateTime CreatedAt, string TenantName, string Actor, string Action, string Target, string Details, Guid? CompanyId = null);
 
     /// <summary>What administrators did: accounts, roles, passwords and company settings.</summary>
     public interface IAdminAuditLog

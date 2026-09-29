@@ -1,9 +1,9 @@
 'use client'
 
-import { useActionState } from 'react'
-import { saveCompany, sendTestEmail, createCompany, ActionState } from '../actions'
+import { saveCompany, createCompany, ActionState } from '../actions'
 import type { Dictionary } from '../_i18n'
 import { Alert, Field, SubmitButton } from '../_components/Fields'
+import { useFormAction } from '../_components/useFormAction'
 import TaxFields from '@/_components/TaxFields'
 import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 
@@ -17,7 +17,7 @@ export interface ICompanyOptions {
   }
 }
 
-const areaClass = 'mt-1 block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600'
+const areaClass = 'mt-1 block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary'
 
 function Area({ label, name, defaultValue, rows = 4 }: { label: string, name: string, defaultValue?: string | null, rows?: number }) {
   return (
@@ -30,7 +30,7 @@ function Area({ label, name, defaultValue, rows = 4 }: { label: string, name: st
 
 function Section({ title, hint, children }: { title: string, hint?: string, children: React.ReactNode }) {
   return (
-    <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+    <section className="rounded-lg bg-surface p-6 shadow-sm ring-1 ring-gray-900/5">
       <h2 className="text-base font-semibold text-gray-900">{title}</h2>
       {hint && <p className="mt-1 text-sm text-gray-500">{hint}</p>}
       <div className="mt-4">{children}</div>
@@ -39,11 +39,11 @@ function Section({ title, hint, children }: { title: string, hint?: string, chil
 }
 
 export function CompanyForm({ t, companyId, options, currencies, countries }: { t: Dictionary, companyId: string, options: ICompanyOptions, currencies: { code: string, name: string }[], countries: ITaxCountry[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(saveCompany, {})
+  const [state, onSubmit, pending] = useFormAction<ActionState>(saveCompany, {})
   const r = options.requisites
   const inv = options.pricing.invoice
   return (
-    <form action={action} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="companyId" value={companyId} />
       {state.error && <Alert kind="error">{state.error}</Alert>}
       {state.ok && <Alert kind="success">{t.saved}</Alert>}
@@ -75,15 +75,15 @@ export function CompanyForm({ t, companyId, options, currencies, countries }: { 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t.surcharge} name="surCharge" defaultValue={inv.surCharge} />
           <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
-            <input type="checkbox" name="signatureLine" defaultChecked={inv.signatureLine} className="size-4 rounded border-gray-300 text-indigo-600" />
+            <input type="checkbox" name="signatureLine" defaultChecked={inv.signatureLine} className="size-4 rounded border-gray-300 accent-primary" />
             {t.signatureLine}
           </label>
           <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
-            <input type="checkbox" name="showBankAccount" defaultChecked={!!inv.showBankAccount} className="size-4 rounded border-gray-300 text-indigo-600" />
+            <input type="checkbox" name="showBankAccount" defaultChecked={!!inv.showBankAccount} className="size-4 rounded border-gray-300 accent-primary" />
             {t.showBankAccount}
           </label>
           <label className="flex items-center gap-x-2 text-sm font-medium text-gray-900 sm:col-span-2">
-            <input type="checkbox" name="showRegNo" defaultChecked={!!inv.showRegNo} className="size-4 rounded border-gray-300 text-indigo-600" />
+            <input type="checkbox" name="showRegNo" defaultChecked={!!inv.showRegNo} className="size-4 rounded border-gray-300 accent-primary" />
             {t.showRegNo}
           </label>
           <Area label={t.disclaimer} name="disclaimer" defaultValue={inv.disclaimer} />
@@ -102,27 +102,11 @@ export function CompanyForm({ t, companyId, options, currencies, countries }: { 
   )
 }
 
-export function TestEmailForm({ t, defaultTo }: { t: Dictionary, defaultTo: string }) {
-  const [state, action, pending] = useActionState<ActionState & { transport?: string }, FormData>(sendTestEmail, {})
-  return (
-    <Section title={t.emailDelivery} hint={t.emailDeliveryHint}>
-      <form action={action} className="space-y-3">
-        {state.error && <Alert kind="error">{state.error}</Alert>}
-        {state.ok && <Alert kind="success">{t.testEmailSent} {state.transport}</Alert>}
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label={t.email} name="to" type="email" defaultValue={defaultTo} required className="w-80" />
-          <SubmitButton pending={pending} secondary>{t.sendTestEmail}</SubmitButton>
-        </div>
-      </form>
-    </Section>
-  )
-}
-
 export function NewCompanyForm({ t, currencies }: { t: Dictionary, currencies: { code: string, name: string }[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(createCompany, {})
+  const [state, onSubmit, pending] = useFormAction<ActionState>(createCompany, {})
   return (
     <Section title={t.newCompany}>
-      <form action={action} className="space-y-3">
+      <form onSubmit={onSubmit} className="space-y-3">
         {state.error && <Alert kind="error">{state.error}</Alert>}
         <div className="flex flex-wrap items-end gap-3">
           <Field label={t.companyName} name="name" required className="w-80" />
@@ -134,6 +118,10 @@ export function NewCompanyForm({ t, currencies }: { t: Dictionary, currencies: {
           </div>
           <SubmitButton pending={pending}>{t.createCompany}</SubmitButton>
         </div>
+        <label className="flex items-start gap-x-2 text-sm text-gray-900">
+          <input type="checkbox" name="allowSystemEmail" defaultChecked className="mt-0.5 size-4 rounded border-gray-300 accent-primary" />
+          <span><span className="font-medium">{t.allowBuiltIn}</span><span className="block text-gray-500">{t.allowBuiltInHint}</span></span>
+        </label>
       </form>
     </Section>
   )

@@ -297,9 +297,18 @@ sudo deploy/vgauto.sh baota \
 
 ---
 
-## 5. 邮件：SMTP 或 Microsoft Graph
+## 5. 邮件：SMTP、Microsoft Graph 或 Gmail
 
-以下邮件都走同一套发信配置：报价单和发票（附 PDF）、登录验证码、找回密码验证码。设置页有“Send test email”按钮，可以用来测试。
+系统有两层发信设置：
+
+- **系统邮箱**：发送登录验证码、找回密码验证码，以及被允许使用它的公司的报价单和发票。默认使用下面 `Email` 节的配置（“服务器配置”）；上线后超级管理员也可以在后台 **系统邮箱**（`/admin/email`）里改用 SMTP、Microsoft 365 或 Gmail，并在那里开放或关闭各公司的使用权限。多个租户共用一台服务器时只能用 `Email` 节的配置。
+- **公司的发信设置**：每个公司在后台公司页面的 **发信设置** 标签里选择自己的 SMTP、Microsoft 365 或 Gmail 邮箱，或者（超级管理员开放后）使用系统邮箱。报价单和发票用公司的设置发出。
+
+后台保存的密码和客户端密码用 `JwtOptions:Secret` 派生的密钥加密保存；更换 `JwtOptions:Secret` 后需要重新输入。后台和设置页都可以发送测试邮件。
+
+Gmail 或 Google Workspace：在后台选 **Gmail**，填写邮箱地址和应用专用密码（Google 账号先开启两步验证，再到“安全性 → 应用专用密码”创建），系统通过 `smtp.gmail.com:587`（STARTTLS）发信。
+
+下面是 `Email` 节（服务器配置）的写法，后台的 SMTP 和 Microsoft 365 需要填写的内容相同。
 
 ### 5.1 SMTP
 

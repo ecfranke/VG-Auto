@@ -24,6 +24,7 @@ namespace VgAuto.Core.Persistence
             public string Action { get; set; }
             public string Target { get; set; }
             public string Details { get; set; }
+            public Guid? CompanyId { get; set; }
         }
 
         public async Task WriteAsync(string tenantName, string actor, string action, string target, string details = null, Guid? companyId = null)
@@ -51,10 +52,10 @@ namespace VgAuto.Core.Persistence
             await using var db = connections.Open(connections.UserListDatabase);
             var total = await db.ExecuteScalarAsync<long>(Sql($"SELECT COUNT(*) FROM public.admin_audit_log {where}"), new { tenantName, companyId });
             var rows = await db.QueryAsync<Row>(Sql(
-                "SELECT id, created_at as CreatedAt, tenantname as TenantName, actor, action, target, details FROM public.admin_audit_log " +
+                "SELECT id, created_at as CreatedAt, tenantname as TenantName, actor, action, target, details, company_id as CompanyId FROM public.admin_audit_log " +
                 $"{where} ORDER BY created_at DESC, id DESC " + SqlDialect.Current.Paging("@limit", "@offset")),
                 new { tenantName, companyId, limit, offset });
-            var items = rows.Select(r => new AuditEntry(r.Id, AuthChallengeRepository.AsUtc(r.CreatedAt), r.TenantName, r.Actor, r.Action, r.Target, r.Details)).ToList();
+            var items = rows.Select(r => new AuditEntry(r.Id, AuthChallengeRepository.AsUtc(r.CreatedAt), r.TenantName, r.Actor, r.Action, r.Target, r.Details, r.CompanyId)).ToList();
             return (items, (int)total);
         }
 

@@ -23,7 +23,7 @@ Create client → Register vehicle → Create work (estimate) → Add parts and 
         → Client accepts, a repair job is created → Work is done, issue the invoice → Mark as paid
 ```
 
-The main menu on the left has **Home**, **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. After signing in you land on **Home**: buttons for new work, client and vehicle, and the 10 most recently updated jobs (finished ones included). Work numbers look like `RP_TF_2019_HC_2026_09_28_15`: type (RP repair / OF offer only) _ client initials _ vehicle year _ manufacturer and model initials _ start date _ work number, X for missing parts; the code follows the current data (an accepted offer becomes RP). Estimates and invoices are named the same way: an estimate is `OF_TF_2019_HC_2026_09_28_15` (the second offer of the same work `…_15-1`), an invoice `RP_TF_2019_HC_2026_09_28_15`, the same as its work; a document keeps the code it got when it was issued, and the PDF file name and the email subject use it too, so there are no "nr. 12" numbers anywhere. Pasting a work, estimate or invoice code into the search finds the work. The **Work** list shows work number, type (repair job / offer), status, client, vehicle, mechanics, start date and note. The current user is shown at the bottom left; click it to open your profile or sign out.
+The main menu on the left has **Home**, **Work**, **Clients**, **Vehicles**, **Inventory** and **Settings**. After signing in you land on **Home**: buttons for new work, client and vehicle, and the 10 most recently updated jobs (finished ones included). Work numbers look like `RP_TF_2019_HC_2026_09_28_15`: type (RP repair / OF offer only) _ client initials _ vehicle year _ manufacturer and model initials _ start date _ work number, X for missing parts; the code follows the current data (an accepted offer becomes RP). Estimates and invoices are named the same way: an estimate is `OF_TF_2019_HC_2026_09_28_15` (the second offer of the same work `…_15-1`), an invoice `RP_TF_2019_HC_2026_09_28_15`, the same as its work; a document keeps the code it got when it was issued, and the PDF file name and the email subject use it too, so there are no "nr. 12" numbers anywhere. Pasting a work, estimate or invoice code into the search finds the work. The **Work** list shows work number, type (repair job / offer), status, client, vehicle, mechanics, start date and note. The current user is shown at the bottom left; click it to open your profile or sign out. The switch next to it chooses **light, dark or the system's setting**; the interface is black, white, blue and gray, and printouts and PDFs are always white.
 
 ### 1. Sign in
 
@@ -173,7 +173,7 @@ The **currency** is set here too: one currency per company, Canadian dollar (CAD
 
 ![Settings](docs/screenshots/settings.png)
 
-**Email delivery** at the bottom (visible to administrators only, also on the Companies page of the administration) checks the email setup: enter an address and click **Send test email**. The message tells you whether it went out through SMTP or Microsoft Graph.
+**Email delivery** at the bottom (visible to administrators only) checks the email of the company: enter an address and click **Send test email**. The message tells you how it went out. Which account a company sends with is set on its **Email** tab in the administration (see section 14).
 
 ![Test email](docs/screenshots/settings-test-email.png)
 
@@ -183,40 +183,75 @@ The **currency** is set here too: one currency per company, Canadian dollar (CAD
 
 ![Profile](docs/screenshots/profile.png)
 
-### 14. User administration (/admin)
+### 14. Administration (/admin)
 
-Administrators manage companies, employees and logins at `https://your-domain/admin`, also reachable through **Administration** in the user menu at the bottom left. The administration is available in English and Chinese (switch at the top right).
+Administrators manage companies, employees and email at `https://your-domain/admin`, also reachable through **Administration** in the user menu at the bottom left. The menu is on the left; the signed in account, the light/dark switch and the English/Chinese switch are at the bottom left.
 
 | Role | Can do |
 |---|---|
 | User | Works in the application (work, clients, vehicles, inventory); changes contact details, invoice and offer options, but not the company name, Reg No, Tax ID or currency; no access to the administration |
-| Administrator | Additionally creates companies, manages all settings of **every company** (including name, Reg No, Tax ID, currency) and sends test emails; moves employees to another company; creates normal accounts, edits details, resets passwords, unlocks, disables/enables normal users, unlinks Microsoft accounts |
-| Super administrator | Additionally creates administrators and super administrators, changes roles and manages administrator accounts |
+| Administrator (company administrator) | Manages **their own company**: its details (name, address, phone, Reg No, Tax ID, currency, taxes, invoice and offer options), its **email**, its employees (creates normal accounts, edits details, resets passwords, unlocks, disables/enables, unlinks Microsoft accounts) and its audit log; does not see other companies |
+| Super administrator | Manages **every company and every employee**: creates companies, changes the details and email of any company, moves employees to another company, creates administrators and super administrators, changes roles; sets the **built-in email** and decides which companies may use it |
+
+**The super administration**:
+
+- **Overview**: companies, employees, logins, administrators and disabled logins; what the built-in email sends with; how the companies send (built-in email / own account / cannot send); recent activity.
+- **Companies**: every company (Reg No, currency, employees, logins, email). A new company gets a name and a currency, and "Allow the built-in email" can be ticked.
+- **Employees**: the employees of every company, with a company filter.
+- **Built-in email**: the email of the system. It sends sign in codes and password resets, and the estimates and invoices of the companies allowed to use it. Choose how it sends with a click:
+  - **Server configuration**: the `Email` section of `appsettings.Secrets.json` or the environment (as before);
+  - **SMTP**: server, port, encryption, user name, password, sender address and name;
+  - **Microsoft 365**: Microsoft Graph with directory (tenant) ID, application (client) ID, client secret and the mailbox to send from (an app registered in Microsoft Entra ID with the application permission `Mail.Send`);
+  - **Gmail**: a Gmail or Google Workspace address with an app password (turn on 2-step verification, then create one under Security → App passwords).
+
+  Send a test email after saving. The companies are listed below with a switch to **allow or stop** the built-in email for each. When several tenants share the server, the built-in email comes from the server configuration only.
+- **Audit log**: the entries of every company, with a company filter.
+
+**The page of a company** (super administrators open it from **Companies**, company administrators from **My company**) has three tabs:
+
+- **Details**: name, Reg No, Tax ID, currency, phone, email, address, bank account, taxes, invoice and offer options.
+- **Email**: the account the estimates and invoices of the company are sent with: the company's own **SMTP**, **Microsoft 365** or **Gmail** account, or the **built-in email** when a super administrator allowed it for the company ("Not enabled" otherwise). The sender name is the company name and replies go to the company email. Super administrators also find the "Allow the built-in email" switch here. Send a test email after saving. A company without a working choice cannot send estimates and invoices; the page says so.
+- **Employees**: the employees of the company; add one right there.
+
+Passwords and client secrets are stored encrypted (with a key derived from `JwtOptions:Secret`) and never shown again; leave them empty to keep them when changing other settings. **Sign in codes always come from the built-in email.**
+
+Accounts:
 
 - The initial account `admin` is the **owner** (a super administrator): only its owner can change it, and it cannot be disabled or demoted.
 - Nobody changes their own role or status in the administration; your own password is changed in your profile.
-- **New user**: enter name and email, tick "Create a login for this employee", then username and role. Leave the password empty to get a temporary password, **shown only once**; it must be changed at the first sign in. Sign in codes go to the email address.
+- **Add employee**: enter name and email, tick "Create a login for this employee", then username and role. Leave the password empty to get a temporary password, **shown only once**; it must be changed at the first sign in. Sign in codes go to the email address. Company administrators add employees to their own company.
 - Mechanics who do not sign in: leave the login unticked (or add them with **New** next to **Mechanics** when creating work). A login can be added later.
 - **Disable account**: for employees who leave. They are signed out at once and cannot sign in again; work and history are kept. Employees with a login cannot be deleted, only disabled.
 - **Reset password**: sets a new temporary password and unlocks the account; it must be changed at the next sign in.
-- **Companies**: several companies (branches, workshops) can share one installation and one database:
-  - Every company has its own clients, vehicles, work, inventory, estimates and invoices, its own numbering (work, estimate and invoice numbers start at 1 per company), its own settings and currency.
+- **Several companies** (branches, workshops) share one installation and one database:
+  - Every company has its own clients, vehicles, work, inventory, estimates and invoices, its own numbering, settings, currency and email.
   - Every employee belongs to one company and only sees the data of that company.
-  - The **Companies** page lists all companies (Reg No, currency, employees, logins), creates new ones (name and currency), and **Edit** opens all details, currency, invoice and offer options of that company.
-  - Choose the company when creating a user. **Company** in the employee details of the user page moves an employee to another company when saved. They then work with the new company's data; work already done stays with the old company. You cannot move yourself.
-  - **Company details** further down the user page edit the name, Reg No, Tax ID, currency, phone, email, address and bank account of that user's company (for the whole company); invoice and offer options are under **All settings of this company**.
-  - Data that existed before the upgrade belongs to the first company.
-- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles, created companies, changed company settings, moved users to another company, sent test emails, and when.
+  - Super administrators move an employee with **Company** on the employee page. They then work with the new company's data; work already done stays with the old company. You cannot move yourself.
+  - **Company details** further down the employee page edit the details of that employee's company; the other settings are under **All settings of this company**.
+  - Data that existed before the upgrade belongs to the first company; companies that existed before the upgrade may use the built-in email, so nothing changes for them.
+- **Audit log**: who created accounts, changed details, reset passwords, disabled/enabled users, changed roles, created companies, changed company settings, moved users to another company, changed the built-in email or the email of a company, allowed or stopped the built-in email, sent test emails, and when.
+
+![Overview](docs/screenshots/admin-overview.png)
 
 ![Companies](docs/screenshots/admin-companies.png)
 
-![Edit company](docs/screenshots/admin-company.png)
+![Email of a company](docs/screenshots/admin-company-email.png)
 
-![Users](docs/screenshots/admin-users.png)
+![Built-in email](docs/screenshots/admin-system-email.png)
 
-| Temporary password after creating a user | User details |
+![Company details](docs/screenshots/admin-company.png)
+
+![Employees](docs/screenshots/admin-users.png)
+
+| Temporary password after adding an employee | Employee details |
 |---|---|
-| ![Temporary password](docs/screenshots/admin-user-created.png) | ![User details](docs/screenshots/admin-user.png) |
+| ![Temporary password](docs/screenshots/admin-user-created.png) | ![Employee details](docs/screenshots/admin-user.png) |
+
+Dark mode:
+
+| Administration | Application |
+|---|---|
+| ![Dark administration](docs/screenshots/dark-admin.png) | ![Dark settings](docs/screenshots/dark-settings.png) |
 
 ---
 
@@ -285,7 +320,7 @@ The API is installed as the Windows service `VGAutoApi`; the web app runs under 
 
 ### Required before going live
 
-1. **Email**: sign in codes depend on it. Configure SMTP or Microsoft Graph in the `Email` section of `appsettings.Secrets.json` and check it with **Send test email**.
+1. **Email**: sign in codes depend on it. Configure SMTP or Microsoft Graph in the `Email` section of `appsettings.Secrets.json`, or let a super administrator set the **Built-in email** in the administration (SMTP, Microsoft 365 or Gmail), and send a test email. The email of each company is set on its page in the administration.
 2. **HTTPS**: required in production (the session cookie is only sent over HTTPS).
 3. **Backups**: run `sudo vgauto backup --keep 14` regularly (crontab or a Baota scheduled task) and copy the backups to another machine.
 
@@ -353,7 +388,7 @@ The API reads `appsettings.json`; secrets go in `appsettings.Secrets.json` (in `
 | `DbOptions:Host` / `Port` / `UserId` / `Password` / `Name` | Database connection |
 | `DbOptions:MultiTenancy:Enabled` | Multi-tenancy, PostgreSQL only |
 | `DefaultAdmin:UserName` / `Email` / `Password` | Initial administrator, used by the first migration only; an empty password is generated randomly |
-| `Email:Provider` | `Smtp` or `Graph` |
+| `Email:Provider` | `Smtp` or `Graph`; this section is the "server configuration" of the built-in email, not used once a super administrator chooses another transport in the administration |
 | `Email:FromAddress` / `FromName` | Sender |
 | `Email:Smtp:Host` / `Port` / `User` / `Password` / `Security` | SMTP; `Security` is `Auto`, `SslOnConnect`, `StartTls` or `None` |
 | `Email:Graph:TenantId` / `ClientId` / `ClientSecret` / `Sender` | Microsoft Graph (application permission `Mail.Send`) |
@@ -391,7 +426,7 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `/api/clients`, `/api/privateclients`, `/api/legalclients` | Clients |
 | `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
 | `/api/employees` | Employees (mechanics); creating logins requires an administrator |
-| `/api/admin/*` | User administration: `me`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`), `audit` |
+| `/api/admin/*` | Administration: `me`, `overview`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`, email `{id}/email`, allow the built-in email `{id}/email/system`, `{id}/email/test`), `email/system` (built-in email, `test`), `audit` (`companyId` filter) |
 | `/api/options` (with `testemail`) | Settings of the signed in user's company, test email |
 | `/api/profile` (with `changepassword`, `externallogins`) | Profile, password, Microsoft account link |
 | `/api/query` | List queries |

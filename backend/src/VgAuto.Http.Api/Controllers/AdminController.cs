@@ -438,12 +438,15 @@ namespace VgAuto.Http.Api.Controllers
 
         public record AuditPageDto(IReadOnlyList<AuditEntry> Items, int Total);
 
+        /// <param name="limit">entries per page</param>
+        /// <param name="offset">entries to skip</param>
+        /// <param name="companyId">super administrators: only the entries of this company; administrators always see their own company</param>
         [RequireAdmin]
         [HttpGet("audit")]
-        public async Task<ActionResult<AuditPageDto>> Audit(int limit = 50, int offset = 0)
+        public async Task<ActionResult<AuditPageDto>> Audit(int limit = 50, int offset = 0, Guid? companyId = null)
         {
             var me = this.CurrentAccount();
-            var (items, total) = await audit.PageAsync(this.TenantName(), limit, offset, IsSuper(me) ? null : me.CompanyId);
+            var (items, total) = await audit.PageAsync(this.TenantName(), limit, offset, IsSuper(me) ? companyId : me.CompanyId);
             return new AuditPageDto(items, total);
         }
 

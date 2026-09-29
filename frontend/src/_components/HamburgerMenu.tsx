@@ -10,7 +10,7 @@ export default function HamburgerMenu({
 }){
      const menuItemClassName = "block px-3 py-1 text-sm/6 text-gray-900 data-focus:bg-gray-50 data-focus:outline-hidden";
      const redMenuItemClassName = "block px-3 py-1 text-sm/6 text-red-900 data-focus:bg-red-50 data-focus:outline-hidden";
-    const  className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md bg-white py-2 ring-1 shadow-lg ring-gray-900/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in";
+    const  className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md bg-surface py-2 ring-1 shadow-lg ring-gray-900/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in";
     if(options.length==0) return <></>
     return (
          <Menu as="div" className="relative flex-none">

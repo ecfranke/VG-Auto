@@ -37,7 +37,7 @@ export default function FormInputTags(
                 {
                     tags?.map((tag,index) => { 
                         return (
-                            <div key={index} className="flex items-center border border-indigo-200 focus:outline-hidden bg-indigo-100 font-sm text-gray-900 px-2 rounded-sm py-0.5 text-sm">
+                            <div key={index} className="flex items-center border border-blue-200 focus:outline-hidden bg-blue-100 font-sm text-gray-900 px-2 rounded-sm py-0.5 text-sm">
                                 <span>{tag}</span>
                                 <input type="hidden" value={tag} name={name} ></input>
                                 <button type="button" 

@@ -76,7 +76,7 @@ export default async function Page( ) {
              <div className="sm:col-span-2">
                 <FormLabel name="currency" label="Currency"></FormLabel>
                 <select id="currency" name="currency" defaultValue={options.pricing.currency} disabled={!isAdmin}
-                  className="mt-2 block w-full rounded-md bg-white disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                  className="mt-2 block w-full rounded-md bg-surface disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary">
                   {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
                 </select>
                 <p className="mt-1 text-xs text-gray-500">{isAdmin ? 'Used for new estimates and invoices. Issued documents keep their currency.' : 'Set by an administrator.'}</p>
@@ -122,7 +122,7 @@ export default async function Page( ) {
         
         <button
           type="submit"
-          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Save
         </button>

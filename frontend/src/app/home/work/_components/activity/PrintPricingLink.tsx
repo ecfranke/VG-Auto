@@ -13,7 +13,7 @@ export default function PrintPricingLink({
     
      
     return (
-      <Link href={`/print/${pricingName}/${id}`} target='_blank'  className="font-medium text-indigo-600 hover:text-indigo-500">
+      <Link href={`/print/${pricingName}/${id}`} target='_blank'  className="font-medium text-link hover:text-link-hover">
         <PrinterIcon aria-hidden="true" className="h-6 w-5 text-gray-400" ></PrinterIcon>
      </Link>
     )

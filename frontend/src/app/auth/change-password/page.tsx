@@ -3,13 +3,13 @@ import Image from 'next/image';
 import { useActionState } from 'react'
 import { changeInitialPassword } from './actions'
 
-const inputClass = "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 text-sm/6";
+const inputClass = "block w-full rounded-md bg-surface px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary text-sm/6";
 
 export default function ChangePasswordPage() {
   const [state, action, pending] = useActionState(changeInitialPassword, { error: '' });
 
   return (
-    <div className="bg-white flex min-h-full flex-1">
+    <div className="bg-surface flex min-h-full flex-1">
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <Image alt="Logo" width="50" height="50" className="h-10 w-auto" src="/logo.png" />
@@ -32,10 +32,10 @@ export default function ChangePasswordPage() {
               <input id="confirmPassword" name="confirmPassword" type="password" required minLength={10} autoComplete="new-password" className={"mt-2 " + inputClass} />
             </div>
             <button type="submit" disabled={pending}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 disabled:opacity-50">
+              className="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-hover disabled:opacity-50">
               Change password
             </button>
-            <p className="text-center text-sm"><a href="/home/logout" className="text-indigo-600 hover:text-indigo-500">Sign out</a></p>
+            <p className="text-center text-sm"><a href="/home/logout" className="text-link hover:text-link-hover">Sign out</a></p>
           </form>
         </div>
       </div>

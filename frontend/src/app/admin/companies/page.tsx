@@ -1,57 +1,58 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { httpGet } from '@/_lib/server/query-api'
 import { currentAccount } from '@/_lib/server/account'
 import { getDictionary } from '../_i18n'
-import { ICompany } from '../model'
-import { NewCompanyForm, TestEmailForm } from './CompanyForm'
+import { ICompany, ISystemEmail } from '../model'
+import { PageHeader, Table } from '../_components/Page'
+import { Badge } from '../_components/Badges'
+import { NewCompanyForm } from './CompanyForm'
 
+/** All companies (super administrators); administrators go to their own company. */
 export default async function CompaniesPage() {
   const me = await currentAccount()
   if (!me.isAdmin) return null
+  if (!me.isSuperAdmin) redirect(`/admin/companies/${me.companyId}`)
   const { t } = await getDictionary()
   const companies = await (await httpGet('admin/companies')).json() as ICompany[]
+  const email = await (await httpGet('admin/email/system')).json() as ISystemEmail
+  const emailOf = new Map(email.companies.map(c => [c.id, c]))
   const currencies = await (await httpGet('options/currencies')).json() as { code: string, name: string }[]
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">{t.companies}</h1>
-        <p className="mt-1 text-sm text-gray-500">{t.companiesHint}</p>
-      </div>
+      <PageHeader title={t.companies} hint={t.companiesHint} />
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-left text-gray-900">
-            <tr>
-              <th className="px-4 py-3 font-semibold">{t.companyName}</th>
-              <th className="px-4 py-3 font-semibold">{t.regNo}</th>
-              <th className="px-4 py-3 font-semibold">{t.currency}</th>
-              <th className="px-4 py-3 text-right font-semibold">{t.employees}</th>
-              <th className="px-4 py-3 text-right font-semibold">{t.logins}</th>
-              <th className="px-4 py-3"></th>
+      <Table head={[t.companyName, t.regNo, t.currency, { label: t.employees, right: true }, { label: t.logins, right: true }, t.tabEmail]}
+        empty={companies.length === 0} emptyText={t.empty}>
+        {companies.map(c => {
+          const mail = emailOf.get(c.id)
+          return (
+            <tr key={c.id} className="hover:bg-gray-50">
+              <td className="px-4 py-3">
+                <Link href={`/admin/companies/${c.id}`} className="font-medium text-link hover:text-link-hover">{c.name}</Link>
+                {c.id === me.companyId && <span className="ml-1 text-gray-400">({t.you})</span>}
+              </td>
+              <td className="px-4 py-3 text-gray-700">{c.regNo || '—'}</td>
+              <td className="px-4 py-3 text-gray-700">{c.currency}</td>
+              <td className="px-4 py-3 text-right text-gray-700">
+                <Link href={`/admin/companies/${c.id}/employees`} className="hover:text-link">{c.employees}</Link>
+              </td>
+              <td className="px-4 py-3 text-right text-gray-700">{c.users}</td>
+              <td className="px-4 py-3">
+                <Link href={`/admin/companies/${c.id}/email`}>
+                  {!mail ? '—'
+                    : mail.kind === 'smtp' || mail.kind === 'graph' || mail.kind === 'gmail'
+                      ? <Badge color="blue">{mail.description}</Badge>
+                      : mail.systemAllowed ? <Badge color="gray">{t.builtInEmail}</Badge> : <Badge color="yellow">{t.noEmailCompanies}</Badge>}
+                </Link>
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {companies.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <Link href={`/admin/companies/${c.id}`} className="font-medium text-indigo-600 hover:text-indigo-500">{c.name}</Link>
-                  {c.id === me.companyId && <span className="ml-1 text-gray-400">({t.you})</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-700">{c.regNo || '—'}</td>
-                <td className="px-4 py-3 text-gray-700">{c.currency}</td>
-                <td className="px-4 py-3 text-right text-gray-700">{c.employees}</td>
-                <td className="px-4 py-3 text-right text-gray-700">{c.users}</td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/admin/companies/${c.id}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">{t.editCompany}</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          )
+        })}
+      </Table>
 
       <NewCompanyForm t={t} currencies={currencies} />
-      <TestEmailForm t={t} defaultTo={me.email ?? ''} />
     </div>
   )
 }

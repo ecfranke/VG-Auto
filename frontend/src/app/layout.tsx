@@ -6,6 +6,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
 import '@/_styles/tailwind.css'
+import { currentTheme } from '@/_lib/server/theme'
   
 export const metadata: Metadata = {
   title: {
@@ -29,15 +30,17 @@ const lexend = Lexend({
   variable: '--font-lexend',
 })
 
-export default function DefaultLayout({
+export default async function DefaultLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
- 
+  // light / dark as chosen by the user; without a choice the CSS follows the system
+  const theme = await currentTheme()
   return (
     <html className={clsx(
-      'h-full xl:bg-gray-50  ',
+      'h-full bg-surface xl:bg-gray-50',
+      theme !== 'system' && theme,
       inter.variable,
       lexend.variable,
     )}>

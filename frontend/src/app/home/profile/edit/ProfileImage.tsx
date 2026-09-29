@@ -54,7 +54,7 @@ export default function ProfileImage({
                     onClick={() => {
                         document.getElementById('imageUpload')?.click();
                     }}
-                    className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50"
+                    className="rounded-md bg-surface px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50"
                 >
                     Change avatar
                 </button>

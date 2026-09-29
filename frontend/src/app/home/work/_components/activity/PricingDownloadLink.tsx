@@ -74,7 +74,7 @@ export default function PricingDownloadLink({
                         setIsDownloading(false);
                     }
                     
-                }} className="font-medium text-indigo-600 hover:text-indigo-500">
+                }} className="font-medium text-link hover:text-link-hover">
                     {!isDownloading&&clickableElement} {isDownloading&& downloadingElement}
                 </Link>
             </div>

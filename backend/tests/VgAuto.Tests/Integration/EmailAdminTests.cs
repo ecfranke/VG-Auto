@@ -101,8 +101,16 @@ namespace VgAuto.Tests.Integration
             var audit = (await Json(await adminB.GetAsync("/api/admin/audit?limit=200"))).GetProperty("items").EnumerateArray().ToList();
             Assert.Contains(audit, e => e.GetProperty("target").GetString() == "adminb" + suffix);
             Assert.DoesNotContain(audit, e => e.GetProperty("target").GetString() == "outsider" + suffix);
+            Assert.All(audit, e => Assert.Equal(companyB, e.GetProperty("companyId").GetGuid()));
+            // another company's filter does not widen it
+            var filtered = (await Json(await adminB.GetAsync($"/api/admin/audit?limit=200&companyId={companyA}"))).GetProperty("items").EnumerateArray().ToList();
+            Assert.All(filtered, e => Assert.Equal(companyB, e.GetProperty("companyId").GetGuid()));
             var all = (await Json(await owner.GetAsync("/api/admin/audit?limit=200"))).GetProperty("items").EnumerateArray().ToList();
             Assert.Contains(all, e => e.GetProperty("target").GetString() == "outsider" + suffix);
+            // super administrators filter by company
+            var ofB = (await Json(await owner.GetAsync($"/api/admin/audit?limit=200&companyId={companyB}"))).GetProperty("items").EnumerateArray().ToList();
+            Assert.Contains(ofB, e => e.GetProperty("target").GetString() == "adminb" + suffix);
+            Assert.All(ofB, e => Assert.Equal(companyB, e.GetProperty("companyId").GetGuid()));
 
             var overview = await Json(await owner.GetAsync("/api/admin/overview"));
             Assert.True(overview.GetProperty("companies").GetInt32() >= 2);

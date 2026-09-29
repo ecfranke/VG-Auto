@@ -5,6 +5,7 @@ import { accountAction, ActionState, changeRole, createAccount, editUser, resetP
 import type { Dictionary } from '../../_i18n'
 import type { IAdminUser } from '../../model'
 import { Alert, CompanySelect, Field, RoleSelect, SubmitButton, TemporaryPassword } from '../../_components/Fields'
+import { useFormAction } from '../../_components/useFormAction'
 import TaxFields from '@/_components/TaxFields'
 import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 
@@ -14,15 +15,16 @@ const can = (user: IAdminUser, action: string) => user.allowedActions.includes(a
 type Company = { id: string, name: string }
 
 export function ProfileForm({ user, t, companies }: Props & { companies: Company[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(editUser, {})
+  const [state, onSubmit, pending] = useFormAction<ActionState>(editUser, {})
   const editable = can(user, 'EditProfile')
   const movable = can(user, 'ChangeCompany')
   const confirmMove = (e: React.FormEvent<HTMLFormElement>) => {
     const selected = new FormData(e.currentTarget).get('companyId')
     if (movable && selected && selected !== user.companyId && !window.confirm(t.confirmMove)) e.preventDefault()
+    else onSubmit(e)
   }
   return (
-    <form action={action} onSubmit={confirmMove} className="space-y-4">
+    <form onSubmit={confirmMove} className="space-y-4">
       <input type="hidden" name="employeeId" value={user.employeeId} />
       {state.error && <Alert kind="error">{state.error}</Alert>}
       {state.ok && <Alert kind="success">{t.saved}</Alert>}
@@ -47,14 +49,14 @@ export function ProfileForm({ user, t, companies }: Props & { companies: Company
 }
 
 export function CreateAccountForm({ user, t, roles }: Props & { roles: string[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(createAccount, {})
+  const [state, onSubmit, pending] = useFormAction<ActionState>(createAccount, {})
   if (state.ok) {
     return state.temporaryPassword
       ? <TemporaryPassword password={state.temporaryPassword} title={t.temporaryPassword} hint={t.temporaryPasswordHint} />
       : <Alert kind="success">{t.saved}</Alert>
   }
   return (
-    <form action={action} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" name="employeeId" value={user.employeeId} />
       {state.error && <Alert kind="error">{state.error}</Alert>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -122,10 +124,10 @@ export interface ICompanyInfo {
 }
 
 export function CompanyInfoForm({ t, companyId, info, currencies, countries }: { t: Dictionary, companyId: string, info: ICompanyInfo, currencies: { code: string, name: string }[], countries: ITaxCountry[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(saveCompanyInfo, {})
+  const [state, onSubmit, pending] = useFormAction<ActionState>(saveCompanyInfo, {})
   const r = info.requisites
   return (
-    <form key={companyId} action={action} className="space-y-4">
+    <form key={companyId} onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" name="companyId" value={companyId} />
       {state.error && <Alert kind="error">{state.error}</Alert>}
       {state.ok && <Alert kind="success">{t.saved}</Alert>}
@@ -137,7 +139,7 @@ export function CompanyInfoForm({ t, companyId, info, currencies, countries }: {
         <div>
           <label htmlFor="companyCurrency" className="block text-sm/6 font-medium text-gray-900">{t.currency}</label>
           <select id="companyCurrency" name="currency" defaultValue={info.pricing.currency}
-            className="mt-1 block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+            className="mt-1 block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary">
             {currencies.map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
           </select>
         </div>

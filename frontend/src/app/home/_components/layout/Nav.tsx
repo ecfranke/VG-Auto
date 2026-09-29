@@ -10,6 +10,7 @@ import {
   } from '@heroicons/react/24/outline'
 import clsx from "clsx"; 
 import { usePathname } from 'next/navigation'
+import ThemeSwitch, { Theme } from "@/_components/ThemeSwitch";
  const navigationIconClass = "size-6 shrink-0";
 const navigation = [
     { name: 'Home', href: '/home', icon: <HomeIcon aria-hidden="true" className={navigationIconClass}></HomeIcon>},
@@ -26,11 +27,13 @@ export default   function Nav({
     fullName,
     imageUrl,
     isAdmin = false,
+    theme = 'system',
 }:{
     onSmallScreen:boolean, 
     fullName:string,
     imageUrl:string,
-    isAdmin?:boolean
+    isAdmin?:boolean,
+    theme?:Theme
 }) {
     const currentPath = usePathname() ; 
     return (
@@ -49,8 +52,8 @@ export default   function Nav({
                                         href={item.href}
                                         className={clsx(
                                                (item.href !=='/home'  &&currentPath?.startsWith(item.href) || item.href =='/home'&& currentPath === '/home') //home is ambigous
-                                                ? 'bg-gray-800 text-white'
-                                                : 'text-gray-400 hover:bg-gray-800 hover:text-white',
+                                                ? 'bg-white/10 text-white [&>svg]:text-blue-400'
+                                                : 'text-slate-400 hover:bg-white/5 hover:text-white',
                                             'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold',
                                         )}
                                     >
@@ -64,13 +67,16 @@ export default   function Nav({
                     {!onSmallScreen && <li className="mt-auto flex flex-col mb-5   ">
                         <a
                             href="/home/settings"
-                            className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                            className={clsx(currentPath?.startsWith('/home/settings') ? 'bg-white/10 text-white [&>svg]:text-blue-400' : 'text-slate-400 hover:bg-white/5 hover:text-white',
+                                "group -mx-2 flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold")}
                         >
                             <Cog6ToothIcon aria-hidden="true" className="size-6 shrink-0" />
                             Settings
                         </a>
+                        <ThemeSwitch initial={theme} className="my-3 self-start" />
                         <ProfileMenu  fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={false}></ProfileMenu>
                     </li>}
+                    {onSmallScreen && <li className="mt-auto mb-5"><ThemeSwitch initial={theme} /></li>}
                 </ul>
             </nav>
 

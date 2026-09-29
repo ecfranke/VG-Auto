@@ -27,7 +27,7 @@ export function CardHeader({
 
 export async function Card({   header, children }: {  header?: React.ReactNode, children: React.ReactNode }) {
     return ( 
-        <div className={clsx(  "xl:divide-y xl:divide-gray-100   overflow-hidden xl:rounded-lg bg-white xl:shadow-sm")}>
+        <div className={clsx(  "xl:divide-y xl:divide-gray-100   overflow-hidden xl:rounded-lg bg-surface xl:shadow-sm")}>
             {header}
             <div className="overflow-hidden xl:p-4 px-2 xl:p-6">{children}</div>
         </div>  

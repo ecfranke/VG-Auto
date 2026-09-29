@@ -28,6 +28,8 @@ function field(form: FormData, name: string): string {
   return (form.get(name)?.toString() ?? '').trim()
 }
 
+const isId = (id: string) => /^[0-9a-fA-F-]{36}$/.test(id)
+
 async function send(method: 'POST' | 'PUT' | 'DELETE', url: string, body: unknown, employeeId?: string): Promise<ActionState> {
   const response = await httpRaw(method, url, body)
   if (!response.ok) return { ok: false, error: await errorOf(response) }
@@ -105,7 +107,7 @@ export async function accountAction(_: ActionState, form: FormData): Promise<Act
 export async function setLanguage(form: FormData) {
   const lang = form.get('lang') === 'zh' ? 'zh' : 'en'
   ;(await cookies()).set(LANG_COOKIE, lang, { path: '/admin', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' })
-  redirect(form.get('returnTo')?.toString().startsWith('/admin') ? form.get('returnTo')!.toString() : '/admin/users')
+  redirect(form.get('returnTo')?.toString().startsWith('/admin') ? form.get('returnTo')!.toString() : '/admin')
 }
 
 function text(form: FormData, name: string): string {
@@ -115,7 +117,7 @@ function text(form: FormData, name: string): string {
 /** Full settings of any company (administrators only; the API enforces it). */
 export async function saveCompany(_: ActionState, form: FormData): Promise<ActionState> {
   const companyId = field(form, 'companyId')
-  if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
+  if (!isId(companyId)) return { ok: false, error: 'Unknown company.' }
   const parsed = taxesFromForm(form)
   if ('error' in parsed) return { ok: false, error: parsed.error }
   const taxes = parsed.taxes
@@ -147,15 +149,53 @@ export async function saveCompany(_: ActionState, form: FormData): Promise<Actio
   })
 }
 
+function emailInput(form: FormData) {
+  const port = field(form, 'smtpPort')
+  return {
+    kind: field(form, 'kind'),
+    fromAddress: field(form, 'fromAddress'),
+    fromName: field(form, 'fromName'),
+    smtpHost: field(form, 'smtpHost'),
+    smtpPort: port ? Number(port) : null,
+    smtpUser: field(form, 'smtpUser'),
+    smtpPassword: text(form, 'smtpPassword'),
+    smtpSecurity: field(form, 'smtpSecurity') || 'Auto',
+    graphTenantId: field(form, 'graphTenantId'),
+    graphClientId: field(form, 'graphClientId'),
+    graphClientSecret: text(form, 'graphClientSecret'),
+    graphSender: field(form, 'graphSender'),
+  }
+}
+
+/** The built-in email of the system (super administrators) or the email of a company (companyId in the form). */
+export async function saveEmail(_: ActionState, form: FormData): Promise<ActionState> {
+  const companyId = field(form, 'companyId')
+  if (companyId && !isId(companyId)) return { ok: false, error: 'Unknown company.' }
+  if (field(form, 'smtpPort') && !/^\d{1,5}$/.test(field(form, 'smtpPort'))) return { ok: false, error: 'The port must be a number.' }
+  return send('PUT', companyId ? `admin/companies/${companyId}/email` : 'admin/email/system', emailInput(form))
+}
+
 export async function sendTestEmail(_: ActionState, form: FormData): Promise<ActionState & { transport?: string }> {
-  const response = await httpRaw('POST', 'options/testemail', { to: field(form, 'to') })
+  const companyId = field(form, 'companyId')
+  if (companyId && !isId(companyId)) return { ok: false, error: 'Unknown company.' }
+  const response = await httpRaw('POST', companyId ? `admin/companies/${companyId}/email/test` : 'admin/email/system/test', { to: field(form, 'to') })
   if (!response.ok) return { ok: false, error: await errorOf(response) }
   const json = await response.json()
   return { ok: true, transport: json.transport }
 }
 
+/** Allows a company to send through the built-in email, or stops it (super administrators). */
+export async function allowBuiltInEmail(companyId: string, allowed: boolean): Promise<ActionState> {
+  if (!isId(companyId)) return { ok: false, error: 'Unknown company.' }
+  return send('PUT', `admin/companies/${companyId}/email/system`, { allowed })
+}
+
 export async function createCompany(_: ActionState, form: FormData): Promise<ActionState & { companyId?: string }> {
-  const response = await httpRaw('POST', 'admin/companies', { name: field(form, 'name'), currency: field(form, 'currency') })
+  const response = await httpRaw('POST', 'admin/companies', {
+    name: field(form, 'name'),
+    currency: field(form, 'currency'),
+    allowSystemEmail: form.get('allowSystemEmail') === 'on',
+  })
   if (!response.ok) return { ok: false, error: await errorOf(response) }
   const companyId = await response.json() as string
   revalidatePath('/admin', 'layout')
@@ -165,7 +205,7 @@ export async function createCompany(_: ActionState, form: FormData): Promise<Act
 /** Company details edited from the user page: merged into the full settings of that company. */
 export async function saveCompanyInfo(_: ActionState, form: FormData): Promise<ActionState> {
   const companyId = field(form, 'companyId')
-  if (!/^[0-9a-fA-F-]{36}$/.test(companyId)) return { ok: false, error: 'Unknown company.' }
+  if (!isId(companyId)) return { ok: false, error: 'Unknown company.' }
   const parsed = taxesFromForm(form)
   if ('error' in parsed) return { ok: false, error: parsed.error }
   const current = await httpRaw('GET', `admin/companies/${companyId}/options`)

@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-const inputClass = 'block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500'
+const inputClass = 'block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:bg-gray-50 disabled:text-gray-500'
 
 export function Field({ label, name, id = name, defaultValue, type = 'text', required, disabled, placeholder, className, autoComplete }: {
   label: string, name: string, id?: string, defaultValue?: string | null, type?: string, required?: boolean, disabled?: boolean,
@@ -65,8 +65,8 @@ export function SubmitButton({ children, pending, danger, secondary }: { childre
     <button type="submit" disabled={pending}
       className={clsx('rounded-md px-3 py-2 text-sm font-semibold shadow-xs disabled:opacity-50',
         danger ? 'bg-red-600 text-white hover:bg-red-500'
-          : secondary ? 'bg-white text-gray-900 ring-1 ring-gray-300 ring-inset hover:bg-gray-50'
-            : 'bg-indigo-600 text-white hover:bg-indigo-500')}>
+          : secondary ? 'bg-surface text-gray-900 ring-1 ring-gray-300 ring-inset hover:bg-gray-50'
+            : 'bg-primary text-white hover:bg-primary-hover')}>
       {children}
     </button>
   )

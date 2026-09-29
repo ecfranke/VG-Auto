@@ -30,7 +30,7 @@ export default function FormInputWithButton({
                                if(onInputChange)onInputChange(e);
                             }}
                             type="text"
-                            className="block w-full rounded-l-md bg-white px-3 py-1.5  text-base outline-1 -outline-offset-1 focus:outline-2 focus:-outline-offset-2 sm:pl-2 text-sm/6 text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-indigo-600"
+                            className="block w-full rounded-l-md bg-surface px-3 py-1.5  text-base outline-1 -outline-offset-1 focus:outline-2 focus:-outline-offset-2 sm:pl-2 text-sm/6 text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-primary"
                         />
                     </div> 
                     <button
@@ -38,7 +38,7 @@ export default function FormInputWithButton({
                         onClick={(e) => {
                             if(onButtonClick) onButtonClick(e)
                         }}
-                        className="flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white outline-1 -outline-offset-1 outline-indigo-300 hover:bg-indigo-500 focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                        className="flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-primary px-3 py-2 text-sm font-semibold text-white outline-1 -outline-offset-1 outline-blue-300 hover:bg-primary-hover focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                     >
                         {children}
                         Add
