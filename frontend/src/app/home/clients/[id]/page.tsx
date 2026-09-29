@@ -11,6 +11,7 @@ import { IClientData } from '../model';
 import BlueBadge from '@/_components/BlueBadge';
 import YellowBadge from '@/_components/YellowBadge'; 
 import { CardHeader } from '@/_components/Card';
+import { deleteClient } from '../deleteClient';
 
 
 export default async function Page({
@@ -29,7 +30,7 @@ export default async function Page({
                         <BlueBadge text={!client.isPrivate ? ' Company' : ' Private person'}  ></BlueBadge>{' '}
                         {client.isAsshole && <YellowBadge text='complicated' ></YellowBadge>}</h3> 
           
-                <DisplayOptionsMenu id={id} pageName='clients'></DisplayOptionsMenu>
+                <DisplayOptionsMenu id={id} pageName='clients' onDelete={deleteClient} deleteTitle='Delete client'></DisplayOptionsMenu>
         </CardHeader>}> 
                     <div className="  border-gray-100">
                         <dl className="divide-y divide-gray-100">

@@ -70,6 +70,25 @@ namespace VgAuto.Http.Api.Controllers.Clients
             return base.NotFound();
         }
 
+        /// <summary>A client is only deleted when nothing refers to it; otherwise the user is told why.</summary>
+        protected override void BeforeDelete(Client client) => EnsureCanDelete(HttpContext, client);
+
+        public static void EnsureCanDelete(Microsoft.AspNetCore.Http.HttpContext context, Client client)
+        {
+            // through the NHibernate session: it runs inside the request's transaction (MySQL requires that)
+            var session = (NHibernate.ISession)context.RequestServices.GetService(typeof(NHibernate.ISession));
+            long Count(string sql) => Convert.ToInt64(session.CreateSQLQuery(VgAuto.Core.Application.Database.SqlDialect.Current.Sql(sql))
+                .SetParameter("id", client.Id).UniqueResult());
+            var work = Count("select count(*) from domain.work where clientid = :id");
+            var vehicles = Count("select count(distinct vehicleid) from domain.vehicleregistration where ownerid = :id");
+            if (work == 0 && vehicles == 0) return;
+
+            var reasons = new System.Collections.Generic.List<string>();
+            if (work > 0) reasons.Add(work == 1 ? "1 work order" : $"{work} work orders");
+            if (vehicles > 0) reasons.Add(vehicles == 1 ? "1 vehicle" : $"{vehicles} vehicles");
+            throw new UserException($"Cannot delete the client: it has {string.Join(" and ", reasons)}. Delete those first, or keep the client.");
+        }
+
         public static AddressComponent CreateAddress(AddressDto addressDto)
         {
             return new AddressComponent(

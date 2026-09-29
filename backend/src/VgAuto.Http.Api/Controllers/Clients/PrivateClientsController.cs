@@ -19,6 +19,7 @@ namespace VgAuto.Http.Api.Controllers.Clients
         {
         }
 
+        protected override void BeforeDelete(Core.Domain.PrivateClient client) => ClientsController.EnsureCanDelete(HttpContext, client);
         protected override PrivateClientDto Map(Core.Domain.PrivateClient entity) => VgAuto.Http.Api.Model.DtoMapper.ToDto(entity);
 
         protected override Core.Domain.PrivateClient CreateFrom(PrivateClientDto model)

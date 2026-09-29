@@ -1,3 +1,5 @@
+'use client'
+
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { 
     ChevronDownIcon,
@@ -5,16 +7,26 @@ import {
     TrashIcon,
     PlusCircleIcon
 } from '@heroicons/react/20/solid' 
-import Link from 'next/link'; 
+import Link from 'next/link';
+import { useRef } from 'react';
+import ConfirmDialog, { ConfirmDialogHandle } from '@/_components/ConfirmDialog';
 
 export default function DisplayOptionsMenu({
     id,
     pageName,
+    onDelete,
+    deleteTitle = 'Delete',
 }:{
     id : string,
     pageName: string,
+    /** server action deleting the item; asked for confirmation first */
+    onDelete?: (id: string) => Promise<void>,
+    deleteTitle?: string,
 }){
+    const confirmRef = useRef<ConfirmDialogHandle>(null);
     return (
+        <>
+        {onDelete && <ConfirmDialog ref={confirmRef} onConfirm={async () => { await onDelete(id) }} />}
         <Menu as="div" className=" relative inline-block text-left">
         <div>
             <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
@@ -55,6 +67,11 @@ export default function DisplayOptionsMenu({
                 <MenuItem  >
                     <Link
                         href="#"
+                        onClick={e => {
+                            if (!onDelete) return;
+                            e.preventDefault();
+                            confirmRef.current?.open({ title: deleteTitle, description: 'Are you sure you want to delete it? This cannot be undone.', confirmObj: id });
+                        }}
                         className="group flex items-center px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden">
                         <TrashIcon aria-hidden="true" className="mr-3 size-5 text-gray-400 group-data-focus:text-gray-500" />
                         Delete
@@ -63,5 +80,6 @@ export default function DisplayOptionsMenu({
             </div>
         </MenuItems>
     </Menu>
+        </>
     )
 }

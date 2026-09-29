@@ -20,6 +20,7 @@ namespace VgAuto.Http.Api.Controllers.Clients
         {
         }
 
+        protected override void BeforeDelete(LegalClient client) => ClientsController.EnsureCanDelete(HttpContext, client);
         protected override LegalClientDto Map(LegalClient entity) => VgAuto.Http.Api.Model.DtoMapper.ToDto(entity);
 
         protected override LegalClient CreateFrom(LegalClientDto model)
