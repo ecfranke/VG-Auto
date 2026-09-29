@@ -30,7 +30,7 @@ export default function Activities({
   const items = activities.items??[];
   //todo fix bordering 
   return (
-    <aside className="2xl:fixed  pl-0 lg:pl-62 2xl:pl-0    bg-white  border-l-1  border-l-gray-200  overflow-y-auto overflow-x-hidden  inset-y-0 right-0    2xl:w-108    ">
+    <aside className="2xl:fixed  pl-0 lg:pl-62 2xl:pl-0    bg-surface  border-l-1  border-l-gray-200  overflow-y-auto overflow-x-hidden  inset-y-0 right-0    2xl:w-108    ">
       <ul role="list" className="  mb-0 pb-0   inset-y-0   2xl:w-108">
         <li className='  '>
           <div className="p-5 pb-10">

@@ -87,6 +87,16 @@ namespace VgAuto.Tests.Unit
             Assert.Throws<VgAuto.Core.Domain.UserException>(() => owner.Disable());
             Assert.Throws<VgAuto.Core.Domain.UserException>(() => owner.ChangeRole(UserRoles.Admin));
         }
+
+        [Fact]
+        public void Only_super_administrators_move_employees_to_another_company()
+        {
+            Assert.False(Can(Admin, User(), AdminAction.ChangeCompany));
+            Assert.False(Can(Admin, NoLogin, AdminAction.ChangeCompany));
+            Assert.True(Can(Super, User(), AdminAction.ChangeCompany));
+            Assert.True(Can(Super, NoLogin, AdminAction.ChangeCompany));
+            Assert.False(Can(Super, User(self: true), AdminAction.ChangeCompany));
+        }
     }
 }
 

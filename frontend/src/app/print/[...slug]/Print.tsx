@@ -22,5 +22,6 @@ export default function PrintPage({
        window.print(); 
     }, 
      []);
-    return <div dangerouslySetInnerHTML={markup} />
+    // a document looks like paper in the dark theme too
+    return <div className="force-light bg-white text-gray-900" dangerouslySetInnerHTML={markup} />
 }

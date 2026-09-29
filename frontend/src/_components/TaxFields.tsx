@@ -27,7 +27,7 @@ export const englishTaxLabels: ITaxLabels = {
   regionAdminOnly: 'The place of registration is set by an administrator.',
 }
 
-const inputClass = 'mt-1 block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500'
+const inputClass = 'mt-1 block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:bg-gray-50 disabled:text-gray-500'
 const labelClass = 'block text-sm/6 font-medium text-gray-900'
 
 const rateText = (rate: number | null | undefined) => (rate === null || rate === undefined ? '' : String(rate))

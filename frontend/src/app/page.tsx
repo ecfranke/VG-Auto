@@ -17,13 +17,13 @@ export default function Home() {
       <Header />
       <main>
         <Container className="pt-6 pb-12 text-center lg:pt-12">
-          <h1 className="mx-auto max-w-4xl font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+          <h1 className="mx-auto max-w-4xl font-display text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             VG Auto
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-xl tracking-tight text-indigo-600">
+          <p className="mx-auto mt-3 max-w-2xl text-xl tracking-tight text-link">
             Workshop management for your repair shop
           </p>
-          <p className="mx-auto mt-4 max-w-2xl text-base tracking-tight text-slate-700">
+          <p className="mx-auto mt-4 max-w-2xl text-base tracking-tight text-gray-700">
             Manage repairs, vehicles, clients, parts and invoices in one clean interface.
           </p>
           <div className="mt-8 flex justify-center gap-x-6">
@@ -35,7 +35,7 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4">
             {features.map((f) => (
               <div key={f.title} className="text-center">
-                <f.icon className="mx-auto mb-3 h-12 w-12 text-indigo-600" aria-hidden="true" />
+                <f.icon className="mx-auto mb-3 h-12 w-12 text-link" aria-hidden="true" />
                 <h3 className="text-lg font-semibold text-gray-900">{f.title}</h3>
                 <p className="mt-2 text-sm text-gray-600">{f.text}</p>
               </div>
@@ -43,8 +43,8 @@ export default function Home() {
           </div>
         </Container>
       </main>
-      <footer className="border-t border-slate-200 py-8">
-        <Container className="flex justify-center text-sm text-slate-500">
+      <footer className="border-t border-gray-200 py-8">
+        <Container className="flex justify-center text-sm text-gray-500">
           <p>&copy; {new Date().getFullYear()} V. G. Global Solution Canada Inc. All rights reserved.</p>
         </Container>
       </footer>

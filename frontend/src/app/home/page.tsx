@@ -52,7 +52,7 @@ export default async function Page() {
           <div className="flex flex-wrap gap-2">
             {quickActions.map(a => (
               <Link key={a.href} href={a.href}
-                className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
+                className="inline-flex items-center gap-x-1.5 rounded-md bg-surface px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
                 <PlusIcon className="-ml-0.5 size-5 text-gray-400" aria-hidden="true" />
                 {a.label}
               </Link>
@@ -62,10 +62,10 @@ export default async function Page() {
 
         <Card header={
           <CardHeader title="Recent work" description="The 10 most recently updated jobs, finished ones included.">
-            <Link href="/home/work" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">All work →</Link>
+            <Link href="/home/work" className="text-sm font-semibold text-link hover:text-link-hover">All work →</Link>
           </CardHeader>}>
           {recent.length === 0
-            ? <p className="px-6 py-8 text-center text-sm text-gray-500">No work yet. <Link href="/home/work/new" className="font-semibold text-indigo-600">Start the first one</Link>.</p>
+            ? <p className="px-6 py-8 text-center text-sm text-gray-500">No work yet. <Link href="/home/work/new" className="font-semibold text-link">Start the first one</Link>.</p>
             : <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="text-left text-gray-900">
@@ -86,7 +86,7 @@ export default async function Page() {
                       return (
                         <tr key={w.id} className={w.status === 'closed' ? 'line-through' : ''}>
                           <td className="whitespace-nowrap px-4 py-3 sm:pl-6">
-                            <Link href={`/home/work/${w.id}`} className="font-mono text-sm font-medium text-indigo-600 hover:text-indigo-500">{w.code}</Link>
+                            <Link href={`/home/work/${w.id}`} className="font-mono text-sm font-medium text-link hover:text-link-hover">{w.code}</Link>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
@@ -96,11 +96,11 @@ export default async function Page() {
                           </td>
                           <td className="px-4 py-3"><WorkStatusBadge status={w.status} /></td>
                           <td className="px-4 py-3">
-                            {w.clientId ? <Link href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-indigo-600">{w.clientName}</Link> : '—'}
+                            {w.clientId ? <Link href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-link">{w.clientName}</Link> : '—'}
                           </td>
                           <td className="px-4 py-3">
                             {w.vehicleId
-                              ? <Link href={`/home/vehicles/${w.vehicleId}`} className="text-gray-900 hover:text-indigo-600">
+                              ? <Link href={`/home/vehicles/${w.vehicleId}`} className="text-gray-900 hover:text-link">
                                   {w.licensePlate || title}
                                   {w.licensePlate && title && <span className="block text-xs text-gray-500">{title}</span>}
                                 </Link>

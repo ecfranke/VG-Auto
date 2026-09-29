@@ -7,7 +7,10 @@ export interface IAccount {
   role: 'user' | 'admin' | 'superadmin';
   isOwner: boolean;
   isAdmin: boolean;
+  /** manages every company; administrators manage only their own */
+  isSuperAdmin: boolean;
   companyId: string;
+  companyName: string | null;
   email: string | null;
 }
 

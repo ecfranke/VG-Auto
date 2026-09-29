@@ -23,7 +23,7 @@ export default function SettingsTabs() {
         <select
           defaultValue={tabs.find((tab) => currentPath.startsWith(tab.href) )?.href}
           aria-label="Select a tab"
-          className="col-start-1 row-start-1 w-full text-sm font-medium appearance-none rounded-md bg-white py-2 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+          className="col-start-1 row-start-1 w-full text-sm font-medium appearance-none rounded-md bg-surface py-2 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
           onChange={(e)=>{ 
             router.push(e.currentTarget.value)
           }}
@@ -46,7 +46,7 @@ export default function SettingsTabs() {
               href={tab.href}
               className={clsx(
                 currentPath.startsWith(tab.href) 
-                  ? 'border-indigo-500 text-indigo-600'
+                  ? 'border-primary text-link'
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                 'group inline-flex items-center border-b-2 px-1 py-4 text-sm font-medium',
               )}
@@ -54,7 +54,7 @@ export default function SettingsTabs() {
               <tab.icon
                 aria-hidden="true"
                 className={clsx(
-                  currentPath.startsWith(tab.href) ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500',
+                  currentPath.startsWith(tab.href) ? 'text-link-hover' : 'text-gray-400 group-hover:text-gray-500',
                   'mr-2 -ml-0.5 size-5',
                 )}
               />

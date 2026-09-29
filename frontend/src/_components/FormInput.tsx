@@ -58,8 +58,8 @@ export default function FormInput({
                     aria-describedby={name + '-error'}
                     className={clsx(className,
                         hasError ? "col-start-1 row-start-1 text-red-900 outline-red-300 placeholder:text-red-400 focus:outline-red-600"
-                            : "text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-indigo-600"
-                        , "block w-full   rounded-md bg-white disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2 text-sm/6")}
+                            : "text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-primary"
+                        , "block w-full   rounded-md bg-surface disabled:bg-gray-50 disabled:text-gray-500 px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2 text-sm/6")}
                 />
                 {hasError && <ExclamationCircleIcon
                     aria-hidden="true"
@@ -99,7 +99,7 @@ export function FormRadio({
         value={value}
         onChange={onChange}
         type="radio"
-        className="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden"
+        className="relative size-4 appearance-none rounded-full border border-gray-300 bg-surface before:absolute before:inset-1 before:rounded-full before:bg-surface not-checked:before:hidden checked:border-primary checked:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden"
       />
       <label htmlFor={name} className="block text-sm/6 text-nowrap font-medium text-gray-900">
       {label}

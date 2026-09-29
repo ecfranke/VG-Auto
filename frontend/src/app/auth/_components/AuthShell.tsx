@@ -3,7 +3,7 @@ import Image from 'next/image';
 /** Two column layout used by the sign in pages. */
 export default function AuthShell({ title, subtitle, children }: { title: string, subtitle?: React.ReactNode, children: React.ReactNode }) {
   return (
-    <div className="bg-white flex min-h-full flex-1">
+    <div className="bg-surface flex min-h-full flex-1">
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div>
@@ -21,6 +21,6 @@ export default function AuthShell({ title, subtitle, children }: { title: string
   );
 }
 
-export const inputClass = "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 text-sm/6";
-export const primaryButtonClass = "flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50";
-export const linkClass = "font-semibold text-indigo-600 hover:text-indigo-500";
+export const inputClass = "block w-full rounded-md bg-surface px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary text-sm/6";
+export const primaryButtonClass = "flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50";
+export const linkClass = "font-semibold text-link hover:text-link-hover";

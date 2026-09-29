@@ -98,7 +98,7 @@ namespace VgAuto.Http.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed to save configuration");
             }
             await audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), "settings.update", null,
-                isAdmin ? "company settings" : "company settings (contact details, invoice and offer options)");
+                isAdmin ? "company settings" : "company settings (contact details, invoice and offer options)", this.CompanyId());
             return Ok();
         }
 
@@ -113,31 +113,32 @@ namespace VgAuto.Http.Api.Controllers
 
         public record TestEmailDto(string To);
 
-        /// <summary>Sends a test message through the configured transport (SMTP or Microsoft Graph).</summary>
+        /// <summary>Sends a test message through the company's email transport (its own or the built-in one).</summary>
         [RequireAdmin]
         [HttpPost("testemail")]
         public async Task<ActionResult> SendTestEmail([FromBody] TestEmailDto model,
-            [FromServices] VgAuto.Core.Application.Email.IEmailSender emailSender,
+            [FromServices] VgAuto.Core.Application.Email.ICompanyEmailSender emailSender,
             [FromServices] VgAuto.Core.Application.Authorization.IAdminAuditLog audit)
         {
             if (string.IsNullOrWhiteSpace(model?.To)) throw new UserException("Recipient is required.");
             var requisites = await tenantConfigService.GetRequisitesAsync();
-            var message = new VgAuto.Core.Application.Email.EmailMessage(model.To, "Test email", $"This is a test email sent via {emailSender.Name}.")
+            var message = new VgAuto.Core.Application.Email.EmailMessage(model.To, "Test email", $"This is a test email of {requisites.Name} sent by VG Auto.")
             {
                 FromName = requisites.Name,
                 ReplyTo = requisites.Email,
                 FallbackFromAddress = requisites.Email,
             };
+            string transport;
             try
             {
-                await emailSender.SendAsync(message);
+                transport = await emailSender.SendAsync(message);
             }
             catch (VgAuto.Core.Application.Email.EmailDeliveryException ex)
             {
                 throw new UserException(ex.Message);
             }
-            await audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), "settings.test_email", null, $"{model.To} via {emailSender.Name}");
-            return Ok(new { transport = emailSender.Name });
+            await audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), "email.test", model.To, transport, this.CompanyId());
+            return Ok(new { transport });
         }
 
         [RequireAdmin]

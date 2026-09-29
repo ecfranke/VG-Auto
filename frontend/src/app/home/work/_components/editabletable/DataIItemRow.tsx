@@ -64,7 +64,7 @@ const DataItemRow = React.forwardRef<DataItemRowHandle<IProduct>, IDataItemRowPr
         }
     }));
  
-    const textSize = clsx(  "font-medium  text-sm/7  px-2  outline-1 -outline-offset-1 outline-gray-300   focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600  " );
+    const textSize = clsx(  "font-medium  text-sm/7  px-2  outline-1 -outline-offset-1 outline-gray-300   focus:outline-2 focus:-outline-offset-2 focus:outline-primary  " );
     const pricePropsClass = clsx(textSize, "text-right ");
     const codeStyle = clsx(textSize,   "w-full");
     const nameStyle = clsx( textSize, "w-full ");
@@ -84,7 +84,7 @@ const DataItemRow = React.forwardRef<DataItemRowHandle<IProduct>, IDataItemRowPr
             <input type="hidden" value={item.id} name="id"/>
             <button
                 type="button"
-                className=" bg-indigo-600 py-0 text-gray-700 bg-white shadow-xs hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                className=" bg-primary py-0 text-gray-700 bg-surface shadow-xs hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
             >
                 <Bars3Icon aria-hidden="true" className="size-4" />
             </button>

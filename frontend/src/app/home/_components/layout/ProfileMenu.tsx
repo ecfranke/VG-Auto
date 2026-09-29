@@ -47,7 +47,7 @@ export default function ProfileMenu({
                                <MenuItems
                                modal={false}
                                    transition
-                                   className={clsx(!onSmallScreen&&"bottom-full","absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md bg-white py-2 ring-1 shadow-lg ring-gray-900/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in")}
+                                   className={clsx(!onSmallScreen&&"bottom-full","absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md bg-surface py-2 ring-1 shadow-lg ring-gray-900/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in")}
                                >
                                    {(isAdmin ? [{ name: 'Administration', href: '/admin' }, ...userNavigation] : userNavigation).map((item) => (
                                        <MenuItem key={item.name}>

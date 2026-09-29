@@ -64,7 +64,7 @@ export default function WorkInputMechanics({
                             onChange={(e) => {
                                 setSelectedMechanicId(e.currentTarget.value);
                             }}
-                            className="col-start-1 row-start-1 w-full appearance-none rounded-l-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 text-sm/6"
+                            className="col-start-1 row-start-1 w-full appearance-none rounded-l-md bg-surface py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary text-sm/6"
                         >
                             <option value={''}></option>
                             {mechanics?.map((item, index) => {
@@ -86,7 +86,7 @@ export default function WorkInputMechanics({
                             setSelectedMechanics(newSet)
                         }
                     }}
-                    className="flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white outline-1 -outline-offset-1 outline-indigo-300 hover:bg-indigo-500 focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                    className="flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-primary px-3 py-2 text-sm font-semibold text-white outline-1 -outline-offset-1 outline-blue-300 hover:bg-primary-hover focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                 >
                     Add
                 </button>
@@ -144,7 +144,7 @@ export default function WorkInputMechanics({
                                         selectedMechanics.splice(selectedMechanics.indexOf(item), 1);
                                         setSelectedMechanics([...selectedMechanics]);
                                     }}
-                                    className="rounded-md bg-white font-medium text-gray-900 hover:text-gray-800">
+                                    className="rounded-md bg-surface font-medium text-gray-900 hover:text-gray-800">
                                     Remove
                                 </button>
                             </div>

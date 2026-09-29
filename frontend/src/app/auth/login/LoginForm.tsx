@@ -69,12 +69,12 @@ export default function LoginForm({ initialState, passwordReset, microsoft }: {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm/6 font-medium">
-              <span className="bg-white px-6 text-gray-900">Or continue with</span>
+              <span className="bg-surface px-6 text-gray-900">Or continue with</span>
             </div>
           </div>
           <div className="mt-6">
             <a href="/auth/microsoft/start"
-              className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
+              className="flex w-full items-center justify-center gap-3 rounded-md bg-surface px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
               <MicrosoftLogo />
               <span className="text-sm/6 font-semibold">Microsoft</span>
             </a>

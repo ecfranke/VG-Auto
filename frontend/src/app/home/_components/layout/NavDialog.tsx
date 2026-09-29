@@ -4,16 +4,19 @@ import { Dialog, DialogBackdrop, DialogPanel, TransitionChild } from "@headlessu
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline"; 
 import Nav from './Nav';
 import ProfileMenu from './ProfileMenu';
+import type { Theme } from '@/_components/ThemeSwitch';
 
 export default function NavDialog({
   
   fullName,
   imageUrl,
   isAdmin = false,
+  theme = 'system',
 }:{ 
   fullName:string,
   imageUrl:string,
-  isAdmin?:boolean
+  isAdmin?:boolean,
+  theme?:Theme
 })
 {
  
@@ -22,7 +25,7 @@ export default function NavDialog({
            <Dialog open={sidebarOpen} onClose={()=>setSidebarOpen(false)} className="relative z-50 lg:hidden">
                     <DialogBackdrop
                       transition
-                      className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-closed:opacity-0"
+                      className="fixed inset-0 bg-slate-950/80 transition-opacity duration-300 ease-linear data-closed:opacity-0"
                     />
           
                     <div className="fixed inset-0 flex">
@@ -39,14 +42,14 @@ export default function NavDialog({
                           </div>
                         </TransitionChild>
                         {/* Sidebar component, swap this element with another sidebar if you like */}
-                        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10">
-                          <Nav fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={true}></Nav>
+                        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-950 px-6 pb-2 ring-1 ring-white/10">
+                          <Nav fullName={fullName} imageUrl={imageUrl} isAdmin={isAdmin} onSmallScreen={true} theme={theme}></Nav>
                         </div>
                       </DialogPanel>
                     </div>
                   </Dialog>
-                  <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-gray-900 px-4 py-4 shadow-xs sm:px-6 lg:hidden">
-          <button type="button" onClick={() => setSidebarOpen(true)} className="-m-2.5 p-2.5 text-gray-400 lg:hidden">
+                  <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-slate-950 px-4 py-4 shadow-xs sm:px-6 lg:hidden">
+          <button type="button" onClick={() => setSidebarOpen(true)} className="-m-2.5 p-2.5 text-slate-400 lg:hidden">
             <span className="sr-only">Open sidebar</span>
             <Bars3Icon aria-hidden="true" className="size-6" />
           </button>

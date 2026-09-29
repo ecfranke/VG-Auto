@@ -147,7 +147,7 @@ export default async function Search(
                         })
                       }
                       <td className="relative py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-0">
-                        <a href={`/home/${pageName}/edit/${item[idField]}`} className="text-indigo-900 hover:text-indigo-500">
+                        <a href={`/home/${pageName}/edit/${item[idField]}`} className="text-link hover:text-link-hover">
                           Edit
                         </a>
                       </td>
@@ -159,7 +159,7 @@ export default async function Search(
           </div>
           <nav
             aria-label="Pagination"
-            className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
+            className="flex items-center justify-between border-t border-gray-200 bg-surface px-4 py-3 sm:px-6"
           >
             <div className="hidden sm:block">
               <p className="text-sm text-gray-700">
@@ -170,10 +170,10 @@ export default async function Search(
             <div className="flex flex-1 justify-between sm:justify-end">
               <Link href={prevPage}
                 className={
-                  clsx(offset <= 0 ? "pointer-events-none text-gray-400" : "text-gray-900", "relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus-visible:outline-offset-0")} >Previous</Link>
+                  clsx(offset <= 0 ? "pointer-events-none text-gray-400" : "text-gray-900", "relative inline-flex items-center rounded-md bg-surface px-3 py-2 text-sm font-semibold ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus-visible:outline-offset-0")} >Previous</Link>
               <Link href={nextPage}
                 className={
-                  clsx(!data.hasMore ? "pointer-events-none text-gray-400" : "text-gray-900", " relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus-visible:outline-offset-0")}>Next</Link>
+                  clsx(!data.hasMore ? "pointer-events-none text-gray-400" : "text-gray-900", " relative ml-3 inline-flex items-center rounded-md bg-surface px-3 py-2 text-sm font-semibold ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus-visible:outline-offset-0")}>Next</Link>
             </div>
           </nav>
         </div>

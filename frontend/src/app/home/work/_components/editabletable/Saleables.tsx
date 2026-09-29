@@ -64,7 +64,7 @@ export default function Saleables({
                                     {edit && <th className="px-2 py-3.5 text-end text-sm font-semibold whitespace-nowrap text-gray-900"></th>}
                                 </tr>
                             </thead>
-                            <tbody className={clsx(!edit && "divide-y divide-gray-200", " bg-white")}>
+                            <tbody className={clsx(!edit && "divide-y divide-gray-200", " bg-surface")}>
                                 {data.filter(x=>x).map((product, index) => {
                                     
                                     return (

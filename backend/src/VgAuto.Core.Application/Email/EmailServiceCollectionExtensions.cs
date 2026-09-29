@@ -30,12 +30,13 @@ namespace VgAuto.Core.Application.Email
 
             services.AddHttpClient(GraphEmailSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(60));
             services.AddSingleton<GraphTokenCache>();
-            services.AddSingleton<SmtpEmailSender>();
-            services.AddSingleton<GraphEmailSender>();
-            services.AddSingleton<IEmailSender>(sp =>
-                sp.GetRequiredService<IOptions<EmailOptions>>().Value.Provider == EmailProvider.Graph
-                    ? sp.GetRequiredService<GraphEmailSender>()
-                    : sp.GetRequiredService<SmtpEmailSender>());
+            services.AddSingleton<SecretProtector>();
+            services.AddSingleton<EmailSenderFactory>();
+            // built-in transport: set by a super administrator in the administration, otherwise the Email section above
+            services.AddSingleton<SystemEmailSender>();
+            services.AddSingleton<IEmailSender>(sp => sp.GetRequiredService<SystemEmailSender>());
+            // estimates and invoices: the company's own transport or, when allowed, the built-in one
+            services.AddScoped<ICompanyEmailSender, CompanyEmailSender>();
             return services;
         }
     }

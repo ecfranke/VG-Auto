@@ -12,7 +12,7 @@ export default async function Page() {
 
     const data = await httpGet('options');
     const options = await data.json() as IUserOptions;
-    const { isAdmin } = await currentAccount();
+    const { isAdmin, companyId } = await currentAccount();
     const countries = await (await httpGet('options/taxregions')).json() as ITaxCountry[];
     const taxes = options.pricing.taxes;
     const country = countries.find(c => c.code === taxes?.country);
@@ -66,19 +66,22 @@ export default async function Page() {
             </div>
             {isAdmin && <div className=" pt-8   px-0">
                 <h3 className="text-base/7 font-semibold text-gray-900">Email delivery</h3>
-                <p className="mt-1 max-w-2xl text-sm/6 text-gray-500">Estimates, invoices and login codes are sent through the transport configured on the server (SMTP or Microsoft Graph).</p>
+                <p className="mt-1 max-w-2xl text-sm/6 text-gray-500">
+                    Estimates and invoices are sent with the email account of the company: its own SMTP, Microsoft 365 or Gmail account, or the built-in email when a super administrator allows it.{' '}
+                    <Link href={`/admin/companies/${companyId}/email`} className="font-semibold text-link hover:text-link-hover">Set it up in the administration →</Link>
+                </p>
             </div>}
             {isAdmin && <form action={sendTestEmail} className="mt-4 flex items-center gap-x-3">
                 <input name="testEmailTo" type="email" required placeholder="you@example.com" defaultValue={options.requisites.email}
-                    className="block w-full max-w-xs rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600" />
-                <button type="submit" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
+                    className="block w-full max-w-xs rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary" />
+                <button type="submit" className="rounded-md bg-surface px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
                     Send test email
                 </button>
             </form>}
              <div className="mt-6 flex items-center justify-end gap-x-6">
                 <Link href={`/home/settings/edit`}
                     type="button"
-                    className="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="inline-flex items-center gap-x-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                     Edit
                 </Link>

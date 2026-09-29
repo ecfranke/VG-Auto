@@ -100,7 +100,7 @@ export default function ClientEmailsInput({
                                             setCurrentEmail(mail);
                                         }}
                                         type="button"
-                                        className="rounded-md bg-white font-medium text-indigo-600 hover:text-indigo-500">
+                                        className="rounded-md bg-surface font-medium text-link hover:text-link-hover">
                                         Set as primary
                                     </button>}
                                 <span aria-hidden="true" className="text-gray-200">
@@ -114,7 +114,7 @@ export default function ClientEmailsInput({
                                             setCurrentEmail(emails[0])
                                         } 
                                     }}
-                                    className="rounded-md bg-white font-medium text-gray-900 hover:text-gray-800">
+                                    className="rounded-md bg-surface font-medium text-gray-900 hover:text-gray-800">
                                     Remove
                                 </button>
                             </div>
