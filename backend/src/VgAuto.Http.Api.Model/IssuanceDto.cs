@@ -41,6 +41,9 @@ namespace VgAuto.Http.Api.Model
         public string Code { get; set; }
         public string AcceptedBy { get; set; }
         public DateTime? AcceptedOn { get; set; }
+        /// <summary>Name the client signed the estimate with online; null when not signed.</summary>
+        public string SignedBy { get; set; }
+        public DateTime? SignedOn { get; set; }
     }
 
     public class WorkIssuanceDto : IssuanceDto

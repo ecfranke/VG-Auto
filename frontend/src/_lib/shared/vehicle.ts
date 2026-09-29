@@ -1,7 +1,7 @@
-/** "2019 Honda Civic" */
-export function vehicleTitle(v: { year?: number | string | null, manufacturer?: string | null, model?: string | null } | null | undefined): string {
+/** "2019 Honda Civic LX" */
+export function vehicleTitle(v: { year?: number | string | null, manufacturer?: string | null, model?: string | null, trim?: string | null } | null | undefined): string {
   if (!v) return ''
-  return [v.year, v.manufacturer, v.model].filter(x => x !== null && x !== undefined && String(x).trim() !== '').join(' ')
+  return [v.year, v.manufacturer, v.model, v.trim].filter(x => x !== null && x !== undefined && String(x).trim() !== '').join(' ')
 }
 
 /** "2019 Honda Civic (ABC 123)" */

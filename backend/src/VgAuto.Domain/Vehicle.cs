@@ -23,14 +23,14 @@ namespace VgAuto.Core.Domain
             string engine = null,
             DateTime? productionDate = null,
             string region = null,
-            string series = null,
+            string trim = null,
             string transmission = null,
             string description = null,
             Guid? id = null,
             int? year = null)
         {  
             IntroducedAt = introducedAt; 
-            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description, year);
+            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, trim, transmission,description, year);
             this.Id = id.GetValueOrDefault();
         }
 
@@ -45,7 +45,7 @@ namespace VgAuto.Core.Domain
                                string engine,
                                DateTime? productionDate,
                                string region,
-                               string series,
+                               string trim,
                                string transmission,
                                string description,
                                int? year)
@@ -70,7 +70,7 @@ namespace VgAuto.Core.Domain
             Engine = engine;
             ProductionDate = productionDate;
             Region = region;
-            Series = series;
+            Trim = string.IsNullOrWhiteSpace(trim) ? null : trim.Trim();
             Transmission = transmission;
         }
          
@@ -80,8 +80,8 @@ namespace VgAuto.Core.Domain
         public  virtual int? Year { get; protected set; }
         public  virtual string LicensePlate { get; protected set; }
 
-        /// <summary>"2019 Honda Civic"</summary>
-        public virtual string Title => string.Join(" ", new[] { Year?.ToString(), Manufacturer, Model }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        /// <summary>"2019 Honda Civic LX": year, manufacturer, model and trim.</summary>
+        public virtual string Title => string.Join(" ", new[] { Year?.ToString(), Manufacturer, Model, Trim }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()));
         public  virtual string Vin { get; protected set; }
         public  virtual int? Odo { get; protected set; }
         public  virtual string Body { get; protected set; }
@@ -89,7 +89,8 @@ namespace VgAuto.Core.Domain
         public  virtual string Engine { get; protected set; }
         public  virtual DateTime? ProductionDate { get; protected set; }
         public  virtual string Region { get; protected set; }
-        public  virtual string Series { get; protected set; }
+        /// <summary>Trim or version, e.g. LX, Touring, Sport (stored in the former series column).</summary>
+        public  virtual string Trim { get; protected set; }
         public  virtual string Transmission { get; protected set; }
 
         public  virtual Client Owner { get 
@@ -110,12 +111,12 @@ namespace VgAuto.Core.Domain
             string engine = null,
             DateTime? productionDate = null,
             string region = null,
-            string series = null,
+            string trim = null,
             string transmission = null,
             string description = null,
             int? year = null)
         {
-            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, series, transmission,description, year);
+            SetValues(licensePlate, manufacturer, model, vin, odo, body, drivingSide, engine, productionDate, region, trim, transmission,description, year);
         }
 
 

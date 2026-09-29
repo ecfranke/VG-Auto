@@ -24,9 +24,10 @@ export async function createOrUpdate(
     }
 
     const body = {
-        model: formData.get('model'),
+        model: formData.get('model')?.toString().trim() || null,
         year,
-        manufacturer: formData.get('manufacturer[name]'),
+        manufacturer: formData.get('manufacturer')?.toString().trim() || null,
+        trim: formData.get('trim')?.toString().trim() || null,
         vin: formData.get('vin'),
         licensePlate: formData.get('licensePlate'),
         odo: odo,

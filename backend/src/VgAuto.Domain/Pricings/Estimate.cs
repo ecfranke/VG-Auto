@@ -40,6 +40,7 @@ namespace VgAuto.Core.Domain
             Code = offer.Work.DocumentCode(isRepair: false, offer.OrderNr == 0 ? null : "-" + offer.OrderNr);
             var newSet = offer.Products.ToArray();
             ApplyClientInformation(offer.Work.Client);
+            ApplyVehicleTitle(offer.Work.Vehicle);
             if (offer.IsVehicleLinesOnEstimate)
             {
                 ApplyVehicleInformation(offer.Work.Vehicle);

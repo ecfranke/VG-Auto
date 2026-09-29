@@ -11,7 +11,7 @@ namespace VgAuto.Core.Domain
 
             Name = name;
             Quantity = quantity <= 0 ? throw new UserException("Quantity must be at least 1.") : quantity;
-            Unit = unit;
+            Unit = unit?.Trim() ?? "";
             Price = price; 
             Discount = discount;
             Id = id.GetValueOrDefault();

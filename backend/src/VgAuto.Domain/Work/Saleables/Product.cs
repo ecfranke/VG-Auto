@@ -16,10 +16,12 @@ namespace VgAuto.Core.Domain
                                 short? discount = null,
                                 Guid? id = null) : base(name, quantity, unit, price, discount, id)
         {
-             
-            Code = code;
+            Code = string.IsNullOrWhiteSpace(code) ? CustomCode : code.Trim();
             Jnr = jnr;
         }
+
+        /// <summary>Code of a line without a product code: a custom product or service.</summary>
+        public const string CustomCode = "CUSTOM";
 
         public virtual short Jnr { get; protected set; }
         public virtual string Code { get; protected set; } 

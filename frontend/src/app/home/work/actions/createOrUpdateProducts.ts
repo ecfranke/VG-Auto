@@ -17,7 +17,7 @@ export async function createOrUpdateProducts(formData: FormData) {
     const apiUrl = `work/${activityName}/${activityId}/productsorservices`;
     
     const ids = formData.getAll('id');
-    const codes = formData.getAll('part[code]');
+    const codes = formData.getAll('code');
     const names = formData.getAll('name');
     const prices = formData.getAll('price');
     const quantities = formData.getAll('quantity');
@@ -35,7 +35,7 @@ export async function createOrUpdateProducts(formData: FormData) {
         }
         return {
             id:id,
-            code:codes[index],
+            code:codes[index]?.toString().trim() ?? '',
             name:names[index],
             price:num(prices[index]),
             quantity:num(quantities[index], 1),

@@ -34,7 +34,8 @@ export default function TypeAheadCombobox<T>({
   clearable,
 }: {
   id?: string | undefined,
-  name: string,
+  /** form field of the selected item (name[property] for objects); none when the caller submits the value itself */
+  name?: string,
   defaultValue: T | null, 
   displayFormatter: IObjectToString<T>,
   optionFormatter: IObjectToString<T>, 

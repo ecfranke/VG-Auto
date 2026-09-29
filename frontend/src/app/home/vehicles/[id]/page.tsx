@@ -28,6 +28,7 @@ export default async function Page({
             <dl className="divide-y divide-gray-100"> 
                 <DescriptionItem label='Manufacturer' value={vehicle.manufacturer}></DescriptionItem>
                 <DescriptionItem label='Model' value={vehicle.model}></DescriptionItem>
+                <DescriptionItem label='Trim' value={vehicle.trim ?? ''}></DescriptionItem>
                 <DescriptionItem label='Year' value={vehicle.year ?? ''}></DescriptionItem>
                 <DescriptionItem label='VIN' value={vehicle.vin}></DescriptionItem>
                 <DescriptionItem label='License plate' value={vehicle.licensePlate}></DescriptionItem>

@@ -384,6 +384,7 @@ Gmail 或 Google Workspace：在后台选 **Gmail**，填写邮箱地址和应�
 |---|---|
 | `JwtOptions:Secret` / `ConsumerSecret` | 安装脚本会随机生成。长度不够或还是占位符时，API 拒绝启动。`ConsumerSecret` 必须和 `web.env` 里的 `SERVER_SECRET` 相同。 |
 | `Cors:AllowedOrigins` | 允许访问 API 的前端地址，填 `APP_URL`。`Cors:Mode=open` 只允许在开发环境使用。 |
+| `App:Url` | 系统的访问地址，报价邮件里的在线签名链接用它；不填时用 `Cors:AllowedOrigins` 的第一个地址。 |
 | `Swagger:Enabled` | API 文档，生产环境默认关闭。 |
 | `Errors:IncludeDetails` | 是否向前端返回异常详情，生产环境默认关闭。 |
 | `Demo:Enabled` | 匿名创建演示租户，默认关闭。 |

@@ -35,7 +35,7 @@ namespace VgAuto.Http.Api.Controllers
         public ClientVehicleDto[] ClientVehicles(Guid clientId)
         {
             var vehicles = repository.GetConnection()
-               .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer as manufacturer,v.model,v.year,v.regnr as licenseplate,v.vin,v.id,r.ownerid from domain.vehicleregistration r
+               .Query<ClientVehicleDto>(SqlDialect.Current.Sql(@" select v.producer as manufacturer,v.model,v.year,v.series as trim,v.regnr as licenseplate,v.vin,v.id,r.ownerid from domain.vehicleregistration r
 										    inner join domain.vehicle v on v.id = r.vehicleid
 											  where r.ownerid = @ownerid  
 												  and r.datetimeto is null and v.company_id = @companyId"), new { ownerid = clientId, companyId = this.CompanyId() })
@@ -64,7 +64,7 @@ namespace VgAuto.Http.Api.Controllers
                 ProductionDate = entity.ProductionDate,
                 Region = entity.Region,
                 LicensePlate = entity.LicensePlate,
-                Series = entity.Series,
+                Trim = entity.Trim,
                 Transmission = entity.Transmission,
                 Vin = entity.Vin
             };
@@ -84,7 +84,7 @@ namespace VgAuto.Http.Api.Controllers
                         model.Engine,
                         model.ProductionDate,
                         model.Region,
-                        model.Series,
+                        model.Trim,
                         model.Transmission,
                         model.Description,
                         year: model.Year);
@@ -107,7 +107,7 @@ namespace VgAuto.Http.Api.Controllers
                         model.Engine,
                         model.ProductionDate,
                         model.Region,
-                        model.Series,
+                        model.Trim,
                         model.Transmission,
                         model.Description,
                         model.Year);
@@ -147,7 +147,7 @@ namespace VgAuto.Http.Api.Controllers
                   .Sortable(SortColumns, "v.id")
                   .SelectSql($@"SELECT 
                         v.id, 
-                        v.regnr as licenseplate,vin, producer as manufacturer,model,v.year,body,drivingside,engine,{SqlDialect.Current.FormatMonthYear("productiondate")} as productiondate,region,series,transmission,
+                        v.regnr as licenseplate,vin, producer as manufacturer,model,v.year,body,drivingside,engine,{SqlDialect.Current.FormatMonthYear("productiondate")} as productiondate,region,series as trim,transmission,
                         concat_ws(' ',p.firstname,p.lastname,l.name)  as ownername,
                         v0.ownerid as ownerid
                         FROM domain.vehicle AS v

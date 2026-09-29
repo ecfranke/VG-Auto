@@ -29,6 +29,7 @@ export function IssuanceBadges({
         <> 
            <GreenBadge text='Issued' title={'Issued on ' + moment(issueance.issuedOn, true).locale('en').format('LLL') + ' by ' + issueance.issuedBy} ></GreenBadge>
            {offerIssuance.acceptedOn && <>{' '}<GreenBadge text='Accepted' title={'Accepted on ' + moment(offerIssuance.acceptedOn, true).locale('en').format('LLL') + ' by ' + offerIssuance.acceptedBy} ></GreenBadge></>}
+           {offerIssuance.signedOn && <>{' '}<GreenBadge text='Signed' title={'Signed online by ' + offerIssuance.signedBy + ' on ' + moment(offerIssuance.signedOn, true).locale('en').format('LLL')} ></GreenBadge></>}
            <EmailSentBadge issueance={issueance}></EmailSentBadge>
            <OverdueBadge issueance={workIssuance}></OverdueBadge>
            {workIssuance.invoiceNumber && workIssuance.isPaid && !isOverDue(workIssuance) && <> <GreenBadge text="Paid"></GreenBadge></>}

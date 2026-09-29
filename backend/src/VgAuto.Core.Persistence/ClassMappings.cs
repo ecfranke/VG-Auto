@@ -432,6 +432,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.VehicleLine2).Column("vehicleline2").Access.BackingField();
             Map(x => x.VehicleLine3).Column("vehicleline3").Access.BackingField();
             Map(x => x.VehicleLine4).Column("vehicleline4").Access.BackingField();
+            Map(x => x.VehicleTitle).Column("vehicle_title").Access.BackingField();
             Map(x => x.IssuedOn).Column("issuedon").Access.BackingField().CustomType<UtcDateType>();//.HasConversion<DateTimeUtcConverter>();
             Map(x => x.Code).Column("code").Access.BackingField();
             Map(x => x.Currency).Column("currency").Access.BackingField();
@@ -478,7 +479,7 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.Engine).Column("engine").Access.BackingField();
             Map(x => x.ProductionDate).Column("productiondate").Access.BackingField().CustomType<UtcDateType>();//.HasConversion<DateTimeUtcConverter>();
             Map(x => x.Region).Column("region").Access.BackingField();
-            Map(x => x.Series).Column("series").Access.BackingField();
+            Map(x => x.Trim).Column("series").Access.BackingField(); // trim, e.g. LX
             Map(x => x.Transmission).Column("transmission").Access.BackingField();
             Map(x => x.Description).Column("description").Access.BackingField();
             Map(x => x.IntroducedAt).Column("introducedat").Access.BackingField().CustomType<UtcDateType>();//.HasConversion<DateTimeUtcConverter>();
