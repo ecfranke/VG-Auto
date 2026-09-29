@@ -21,9 +21,10 @@ using VgAuto.Core.Domain;
 namespace VgAuto.Http.Api.Controllers
 {
     /// <summary>
-    /// User administration used by the /admin pages. Administrators manage normal users; super
-    /// administrators also manage administrators and roles; the owner account can only be changed
-    /// by itself (see <see cref="AdminPermissions"/>). Every change is written to the audit log.
+    /// Administration used by the /admin pages. Super administrators manage all companies and employees,
+    /// administrators and roles; company administrators manage their own company and its normal users;
+    /// the owner account can only be changed by itself (see <see cref="AdminPermissions"/>).
+    /// Every change is written to the audit log.
     /// </summary>
     [TenantRateLimit]
     [Authorize(Policy = "ServerSidePolicy")]
@@ -55,7 +56,8 @@ namespace VgAuto.Http.Api.Controllers
 
         // ---------------------------------------------------------------- models
 
-        public record MeDto(string UserName, string FullName, string Role, bool IsOwner, bool IsAdmin, Guid CompanyId, string Email);
+        public record MeDto(string UserName, string FullName, string Role, bool IsOwner, bool IsAdmin, Guid CompanyId, string Email,
+            bool IsSuperAdmin = false, string CompanyName = null);
 
         public record AdminUserDto(
             Guid EmployeeId, string FirstName, string LastName, string Email, string Phone, string Profession, string Description,
@@ -88,7 +90,17 @@ namespace VgAuto.Http.Api.Controllers
             var me = this.CurrentAccount();
             if (me == null) return Unauthorized();
             var employee = session.Get<Employee>(me.Id.EmployeeId);
-            return new MeDto(me.UserName, employee?.Name ?? me.UserName, me.Role, me.IsOwner, me.IsAdmin, me.CompanyId, employee?.Email);
+            return new MeDto(me.UserName, employee?.Name ?? me.UserName, me.Role, me.IsOwner, me.IsAdmin, me.CompanyId, employee?.Email,
+                IsSuper(me), CompanyNames().TryGetValue(me.CompanyId, out var companyName) ? companyName : null);
+        }
+
+        private static bool IsSuper(User account) => account?.Role == UserRoles.SuperAdmin;
+
+        /// <summary>Super administrators see every company, company administrators only their own.</summary>
+        private bool CanManage(Guid companyId)
+        {
+            var me = this.CurrentAccount();
+            return IsSuper(me) || me?.CompanyId == companyId;
         }
 
         // ---------------------------------------------------------------- users
@@ -99,7 +111,7 @@ namespace VgAuto.Http.Api.Controllers
         {
             var me = this.CurrentAccount();
             var accounts = users.GetAllByTenant(this.TenantName()).ToDictionary(u => u.Id.EmployeeId);
-            var employees = session.Query<Employee>().ToList();
+            var employees = session.Query<Employee>().ToList().Where(e => CanManage(e.CompanyId)).ToList();
             companyNames = CompanyNames();
             var result = new List<AdminUserDto>();
             foreach (var employee in employees.OrderBy(e => e.FirstName).ThenBy(e => e.LastName))
@@ -127,8 +139,9 @@ namespace VgAuto.Http.Api.Controllers
             var me = this.CurrentAccount();
             var employee = new Employee(Required(input.FirstName, "First name"), Required(input.LastName, "Last name"), DateTime.UtcNow,
                 Clean(input.Phone), Clean(input.Email), Clean(input.Profession), Clean(input.Description));
-            var companyId = input.CompanyId ?? me.CompanyId;
+            var companyId = input.CompanyId is Guid chosen && chosen != Guid.Empty ? chosen : me.CompanyId;
             if (!CompanyNames().ContainsKey(companyId)) throw new UserException("Unknown company.");
+            if (!CanManage(companyId)) throw new UserException("You can only add employees to your own company.");
             employee.BelongsTo(companyId);
 
             string temporaryPassword = null;
@@ -140,13 +153,13 @@ namespace VgAuto.Http.Api.Controllers
                 session.Save(employee);
                 session.Flush();
                 temporaryPassword = AddAccount(employee, input.UserName, input.Password, input.Email, role);
-                await Log("user.create", input.UserName.Trim(), $"{employee.Name}, role {role}");
+                await Log("user.create", input.UserName.Trim(), $"{employee.Name}, role {role}", companyId);
             }
             else
             {
                 session.Save(employee);
                 session.Flush();
-                await Log("employee.create", null, employee.Name);
+                await Log("employee.create", null, employee.Name, companyId);
             }
             return new CreatedDto(employee.Id, temporaryPassword);
         }
@@ -185,7 +198,7 @@ namespace VgAuto.Http.Api.Controllers
                 }
                 users.Update(account);
             }
-            await Log("user.edit", account?.UserName, string.Join(", ", changes.Prepend(employee.Name)));
+            await Log("user.edit", account?.UserName, string.Join(", ", changes.Prepend(employee.Name)), employee.CompanyId);
             if (moveTo != null) await MoveToCompany(employee, account, moveTo.Value);
             return Ok();
         }
@@ -202,7 +215,7 @@ namespace VgAuto.Http.Api.Controllers
             Allow(me, TargetOf(me, employee, account), AdminAction.CreateAccount, role);
             ValidateNewAccount(input.UserName, employee.Email);
             var temporaryPassword = AddAccount(employee, input.UserName, input.Password, employee.Email, role);
-            await Log("user.create", input.UserName.Trim(), $"{employee.Name}, role {role}");
+            await Log("user.create", input.UserName.Trim(), $"{employee.Name}, role {role}", employee.CompanyId);
             return new CreatedDto(employee.Id, temporaryPassword);
         }
 
@@ -216,7 +229,7 @@ namespace VgAuto.Http.Api.Controllers
             if (policyError != null) throw new UserException(policyError);
             account.ResetPassword(PasswordHasher.getHash(password));
             users.Update(account);
-            await Log("user.password_reset", account.UserName, "temporary password set, must be changed at next sign in");
+            await Log("user.password_reset", account.UserName, "temporary password set, must be changed at next sign in", employee.CompanyId);
             return new CreatedDto(employee.Id, string.IsNullOrWhiteSpace(input?.Password) ? password : null);
         }
 
@@ -224,10 +237,10 @@ namespace VgAuto.Http.Api.Controllers
         [HttpPost("users/{employeeId:guid}/unlock")]
         public async Task<IActionResult> Unlock(Guid employeeId)
         {
-            var (_, _, account) = Authorize(employeeId, AdminAction.Unlock);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.Unlock);
             account.Unlock();
             users.Update(account);
-            await Log("user.unlock", account.UserName);
+            await Log("user.unlock", account.UserName, null, employee.CompanyId);
             return Ok();
         }
 
@@ -235,10 +248,10 @@ namespace VgAuto.Http.Api.Controllers
         [HttpPost("users/{employeeId:guid}/disable")]
         public async Task<IActionResult> Disable(Guid employeeId)
         {
-            var (_, _, account) = Authorize(employeeId, AdminAction.Disable);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.Disable);
             account.Disable();
             users.Update(account);
-            await Log("user.disable", account.UserName);
+            await Log("user.disable", account.UserName, null, employee.CompanyId);
             return Ok();
         }
 
@@ -246,10 +259,10 @@ namespace VgAuto.Http.Api.Controllers
         [HttpPost("users/{employeeId:guid}/enable")]
         public async Task<IActionResult> Enable(Guid employeeId)
         {
-            var (_, _, account) = Authorize(employeeId, AdminAction.Enable);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.Enable);
             account.Enable();
             users.Update(account);
-            await Log("user.enable", account.UserName);
+            await Log("user.enable", account.UserName, null, employee.CompanyId);
             return Ok();
         }
 
@@ -257,9 +270,9 @@ namespace VgAuto.Http.Api.Controllers
         [HttpDelete("users/{employeeId:guid}/microsoft")]
         public async Task<IActionResult> UnlinkMicrosoft(Guid employeeId)
         {
-            var (_, _, account) = Authorize(employeeId, AdminAction.UnlinkMicrosoft);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.UnlinkMicrosoft);
             await externalLogins.RemoveAsync(account.Id, AuthService.MicrosoftProvider);
-            await Log("user.microsoft_unlink", account.UserName);
+            await Log("user.microsoft_unlink", account.UserName, null, employee.CompanyId);
             return Ok();
         }
 
@@ -268,12 +281,12 @@ namespace VgAuto.Http.Api.Controllers
         public async Task<IActionResult> ChangeRole(Guid employeeId, [FromBody] RoleInput input)
         {
             var role = input?.Role?.Trim().ToLowerInvariant();
-            var (_, _, account) = Authorize(employeeId, AdminAction.ChangeRole, role);
+            var (_, employee, account) = Authorize(employeeId, AdminAction.ChangeRole, role);
             if (account.Role == role) return Ok();
             var previous = account.Role;
             account.ChangeRole(role);
             users.Update(account);
-            await Log("user.role", account.UserName, $"{previous} -> {role}");
+            await Log("user.role", account.UserName, $"{previous} -> {role}", employee.CompanyId);
             return Ok();
         }
 
@@ -300,16 +313,17 @@ namespace VgAuto.Http.Api.Controllers
                 account.MoveToCompany(companyId);
                 users.Update(account);
             }
-            await Log("user.company", account?.UserName, $"{employee.Name}: {previous} -> {names[companyId]}");
+            await Log("user.company", account?.UserName, $"{employee.Name}: {previous} -> {names[companyId]}", companyId);
         }
 
         // ---------------------------------------------------------------- companies
 
         public record CompanyDto(Guid Id, string Name, string RegNo, string Currency, int Employees, int Users);
 
-        public record NewCompanyInput(string Name, string Currency);
+        /// <summary>AllowSystemEmail: the company may send through the built-in email.</summary>
+        public record NewCompanyInput(string Name, string Currency, bool AllowSystemEmail = false);
 
-        [RequireAdmin]
+        [RequireSuperAdmin]
         [HttpGet("companies")]
         public ActionResult<IEnumerable<CompanyDto>> Companies()
         {
@@ -326,7 +340,7 @@ namespace VgAuto.Http.Api.Controllers
                 accounts.TryGetValue(r.Id, out var count) ? count : 0)).ToList();
         }
 
-        [RequireAdmin]
+        [RequireSuperAdmin]
         [HttpPost("companies")]
         public async Task<ActionResult<Guid>> CreateCompany([FromBody] NewCompanyInput input,
             [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
@@ -343,7 +357,12 @@ namespace VgAuto.Http.Api.Controllers
                 Requisites = options.Requisites with { Name = name },
                 Pricing = options.Pricing with { Currency = Currencies.Normalize(input.Currency) },
             });
-            await Log("company.create", null, name);
+            // in the request transaction: the company row is not committed yet
+            session.CreateSQLQuery(SqlDialect.Current.Sql("insert into tenant_config.email (company_id, provider, system_allowed, updated_at) values (:id, :provider, :allowed, :updatedAt)"))
+                .SetParameter("id", id).SetParameter("provider", VgAuto.Core.Application.Email.EmailTransportKind.System)
+                .SetParameter("allowed", input.AllowSystemEmail).SetParameter("updatedAt", DateTime.UtcNow)
+                .ExecuteUpdate();
+            await Log("company.create", null, name + (input.AllowSystemEmail ? ", built-in email allowed" : ""), id);
             return id;
         }
 
@@ -352,7 +371,7 @@ namespace VgAuto.Http.Api.Controllers
         public async Task<ActionResult<VgAuto.Core.Application.Configuration.AppOptions>> CompanyOptions(Guid companyId,
             [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
         {
-            if (!CompanyNames().ContainsKey(companyId)) return NotFound();
+            if (!CompanyNames().ContainsKey(companyId) || !CanManage(companyId)) return NotFound();
             companies.SwitchTo(companyId);
             return await tenantConfig.GetAppOptionsAsync();
         }
@@ -362,7 +381,7 @@ namespace VgAuto.Http.Api.Controllers
         public async Task<IActionResult> SaveCompanyOptions(Guid companyId, [FromBody] VgAuto.Core.Application.Configuration.AppOptions options,
             [FromServices] VgAuto.Core.Application.Services.ITenantConfigService tenantConfig)
         {
-            if (!CompanyNames().ContainsKey(companyId)) return NotFound();
+            if (!CompanyNames().ContainsKey(companyId) || !CanManage(companyId)) return NotFound();
             if (options?.Requisites == null || options.Pricing?.Invoice == null || options.Pricing.Estimate == null)
                 throw new UserException("Incomplete settings.");
             Required(options.Requisites.Name, "Name");
@@ -370,8 +389,40 @@ namespace VgAuto.Http.Api.Controllers
             await tenantConfig.SaveAppOptionsAsync(options);
             session.CreateSQLQuery(SqlDialect.Current.Sql("update domain.company set name = :name where id = :id"))
                 .SetParameter("name", options.Requisites.Name.Trim()).SetParameter("id", companyId).ExecuteUpdate();
-            await Log("settings.update", null, options.Requisites.Name.Trim());
+            await Log("settings.update", null, options.Requisites.Name.Trim(), companyId);
             return Ok();
+        }
+
+        // ---------------------------------------------------------------- overview
+
+        public record OverviewDto(int Companies, int Employees, int Logins, int Administrators, int DisabledLogins,
+            string SystemEmail, bool SystemEmailSaved, int BuiltInEmailCompanies, int OwnEmailCompanies, int NoEmailCompanies,
+            IReadOnlyList<AuditEntry> Recent);
+
+        /// <summary>The whole system at a glance (super administrators).</summary>
+        [RequireSuperAdmin]
+        [HttpGet("overview")]
+        public async Task<ActionResult<OverviewDto>> Overview(
+            [FromServices] VgAuto.Core.Application.Email.IEmailSettingsRepository emailSettings,
+            [FromServices] VgAuto.Core.Application.Email.SystemEmailSender systemEmail)
+        {
+            var names = CompanyNames();
+            var accounts = users.GetAllByTenant(this.TenantName()).ToList();
+            var employees = session.Query<Employee>().Count();
+            var perCompany = await emailSettings.GetCompaniesAsync(this.TenantName());
+            int builtIn = 0, own = 0, none = 0;
+            foreach (var id in names.Keys)
+            {
+                var settings = perCompany.TryGetValue(id, out var saved) ? saved : new VgAuto.Core.Application.Email.EmailTransportSettings();
+                if (settings.IsOwnTransport) own++;
+                else if (settings.SystemAllowed) builtIn++;
+                else none++;
+            }
+            var (_, description) = await systemEmail.ResolveAsync();
+            var system = await emailSettings.GetSystemAsync();
+            var (recent, _) = await audit.PageAsync(this.TenantName(), 8, 0);
+            return new OverviewDto(names.Count, employees, accounts.Count, accounts.Count(a => a.IsAdmin), accounts.Count(a => a.Disabled),
+                description, system?.IsOwnTransport == true, builtIn, own, none, recent);
         }
 
         private Dictionary<Guid, string> companyNames;
@@ -391,7 +442,8 @@ namespace VgAuto.Http.Api.Controllers
         [HttpGet("audit")]
         public async Task<ActionResult<AuditPageDto>> Audit(int limit = 50, int offset = 0)
         {
-            var (items, total) = await audit.PageAsync(this.TenantName(), limit, offset);
+            var me = this.CurrentAccount();
+            var (items, total) = await audit.PageAsync(this.TenantName(), limit, offset, IsSuper(me) ? null : me.CompanyId);
             return new AuditPageDto(items, total);
         }
 
@@ -400,7 +452,7 @@ namespace VgAuto.Http.Api.Controllers
         private (Employee Employee, User Account) Load(Guid employeeId)
         {
             var employee = session.Get<Employee>(employeeId);
-            if (employee == null) return (null, null);
+            if (employee == null || !CanManage(employee.CompanyId)) return (null, null);
             return (employee, users.GetBy(new UserIdentifier(this.TenantName(), employeeId)));
         }
 
@@ -468,8 +520,8 @@ namespace VgAuto.Http.Api.Controllers
                 throw new UserException("An email address is required: sign in codes are sent to it.");
         }
 
-        private Task Log(string action, string target, string details = null) =>
-            audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), action, target, details);
+        private Task Log(string action, string target, string details = null, Guid? companyId = null) =>
+            audit.WriteAsync(this.TenantName(), this.CurrentAccount()?.UserName ?? this.UserName(), action, target, details, companyId);
 
         private static string Required(string value, string field) =>
             string.IsNullOrWhiteSpace(value) ? throw new UserException($"{field} is required.") : value.Trim();

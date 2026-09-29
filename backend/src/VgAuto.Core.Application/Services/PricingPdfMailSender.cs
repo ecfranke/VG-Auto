@@ -5,19 +5,19 @@ using Microsoft.Extensions.Logging;
 
 namespace VgAuto.Core.Application.Services
 {
-    /// <summary>Sends an estimate or invoice as PDF attachment through the configured email transport (SMTP or Microsoft Graph).</summary>
+    /// <summary>Sends an estimate or invoice as PDF attachment through the company's email transport (its own or the built-in one).</summary>
     public class PricingPdfMailSender : IPricingSender
     {
         private readonly ITenantConfigService tenantConfigService;
         private readonly ILogger<PricingPdfMailSender> logger;
         private readonly IPdfGenerator pdfGenerator;
-        private readonly IEmailSender emailSender;
+        private readonly ICompanyEmailSender emailSender;
 
         public PricingPdfMailSender(
             ILogger<PricingPdfMailSender> logger,
             IPdfGenerator pdfGenerator,
             ITenantConfigService tenantConfigService,
-            IEmailSender emailSender)
+            ICompanyEmailSender emailSender)
         {
             this.tenantConfigService = tenantConfigService;
             this.logger = logger;
@@ -55,16 +55,17 @@ namespace VgAuto.Core.Application.Services
             };
             message.Attachments.Add(new EmailAttachment(pricing.GetFileName(), "application/pdf", pdfBytes));
 
+            string transport;
             try
             {
-                await emailSender.SendAsync(message);
+                transport = await emailSender.SendAsync(message);
             }
             catch (EmailDeliveryException ex)
             {
                 // shown to the user, the details are in the log
                 throw new UserException(ex.Message);
             }
-            logger.LogInformation("{type} {subject} sent via {transport}", isInvoice ? "Invoice" : "Estimate", message.Subject, emailSender.Name);
+            logger.LogInformation("{type} {subject} sent via {transport}", isInvoice ? "Invoice" : "Estimate", message.Subject, transport);
         }
     }
 }

@@ -82,7 +82,7 @@ namespace VgAuto.Core.Application.Email
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
                 if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 1)
                 {
-                    tokenCache.Invalidate();
+                    tokenCache.Invalidate(graph);
                     continue;
                 }
                 if ((response.StatusCode == (HttpStatusCode)429 || (int)response.StatusCode >= 500) && attempt < 3)
@@ -140,22 +140,35 @@ namespace VgAuto.Core.Application.Email
         }
     }
 
-    /// <summary>Caches the app-only access token until shortly before it expires.</summary>
+    /// <summary>Caches the app-only access tokens (one per app registration) until shortly before they expire.</summary>
     public class GraphTokenCache
     {
         private readonly SemaphoreSlim gate = new(1, 1);
-        private string token;
-        private DateTimeOffset expiresAt;
+        private readonly Dictionary<string, (string Token, DateTimeOffset ExpiresAt)> tokens = new();
 
-        public void Invalidate() => token = null;
+        private static string KeyOf(EmailOptions.GraphSettings graph) =>
+            $"{graph.Authority}|{graph.TenantId}|{graph.ClientId}|{Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(graph.ClientSecret ?? "")))}";
+
+        public void Invalidate(EmailOptions.GraphSettings graph)
+        {
+            lock (tokens) tokens.Remove(KeyOf(graph));
+        }
+
+        private string Cached(string key)
+        {
+            lock (tokens) return tokens.TryGetValue(key, out var entry) && DateTimeOffset.UtcNow < entry.ExpiresAt ? entry.Token : null;
+        }
 
         public async Task<string> GetTokenAsync(HttpClient client, EmailOptions.GraphSettings graph, CancellationToken cancellationToken)
         {
-            if (token != null && DateTimeOffset.UtcNow < expiresAt) return token;
+            var key = KeyOf(graph);
+            var cached = Cached(key);
+            if (cached != null) return cached;
             await gate.WaitAsync(cancellationToken);
             try
             {
-                if (token != null && DateTimeOffset.UtcNow < expiresAt) return token;
+                cached = Cached(key);
+                if (cached != null) return cached;
 
                 var tokenUrl = $"{graph.Authority.TrimEnd('/')}/{Uri.EscapeDataString(graph.TenantId)}/oauth2/v2.0/token";
                 using var response = await client.PostAsync(tokenUrl, new FormUrlEncodedContent(new Dictionary<string, string>
@@ -171,9 +184,9 @@ namespace VgAuto.Core.Application.Email
                     throw new EmailDeliveryException($"Could not get a Microsoft Graph token ({(int)response.StatusCode}). Check Email:Graph TenantId/ClientId/ClientSecret.");
                 }
                 using var doc = JsonDocument.Parse(body);
-                token = doc.RootElement.GetProperty("access_token").GetString();
+                var token = doc.RootElement.GetProperty("access_token").GetString();
                 var expiresIn = doc.RootElement.TryGetProperty("expires_in", out var e) ? e.GetInt32() : 3600;
-                expiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Max(60, expiresIn - 300));
+                lock (tokens) tokens[key] = (token, DateTimeOffset.UtcNow.AddSeconds(Math.Max(60, expiresIn - 300)));
                 return token;
             }
             finally

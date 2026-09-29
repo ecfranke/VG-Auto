@@ -5,8 +5,8 @@ namespace VgAuto.Core.Application.Authorization
     /// <summary>
     /// Account roles.
     ///   user        - works in the application (work, clients, vehicles, inventory)
-    ///   admin       - additionally company settings and the accounts of normal users
-    ///   superadmin  - additionally administrators and roles
+    ///   admin       - company administrator: the settings, email transport and normal users of their own company
+    ///   superadmin  - all companies and employees, administrators and roles, the built-in email of the system
     /// The owner (the initial administrator) is a super administrator that nobody else can change.
     /// </summary>
     public static class UserRoles
@@ -56,6 +56,8 @@ namespace VgAuto.Core.Application.Authorization
             if (actor == null || !UserRoles.IsAdmin(actor.Role)) return "Administrator rights are required.";
             var super = actor.Role == UserRoles.SuperAdmin;
 
+            // company administrators work inside their own company
+            if (action == AdminAction.ChangeCompany && !super) return "Only a super administrator can move employees to another company.";
             if (action == AdminAction.ChangeCompany && target.IsSelf) return "You cannot move your own account.";
             if (action == AdminAction.ChangeCompany && !target.HasAccount && !target.IsSelf) return null;
 

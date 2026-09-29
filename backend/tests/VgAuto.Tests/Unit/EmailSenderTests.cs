@@ -156,21 +156,53 @@ namespace VgAuto.Tests.Unit
         }
 
         [Fact]
-        public void Provider_is_selected_from_configuration_and_legacy_smtp_section_still_works()
+        public async Task Built_in_email_uses_the_saved_transport_otherwise_the_configuration()
         {
-            IServiceProvider Build(Dictionary<string, string> values) =>
+            IServiceProvider Build(Dictionary<string, string> values, EmailTransportSettings saved = null) =>
                 new ServiceCollection().AddLogging()
+                    .AddSingleton<IEmailSettingsRepository>(new SavedSettings(saved))
                     .AddEmail(new ConfigurationBuilder().AddInMemoryCollection(values).Build())
                     .BuildServiceProvider();
 
-            var graph = Build(new() { ["Email:Provider"] = "Graph" }).GetRequiredService<IEmailSender>();
-            Assert.Equal("Graph", graph.Name);
+            var graph = await Build(new() { ["Email:Provider"] = "Graph", ["Email:Graph:Sender"] = "office@garage.example" })
+                .GetRequiredService<SystemEmailSender>().ResolveAsync();
+            Assert.Equal(EmailProvider.Graph, graph.Options.Provider);
+            Assert.Equal("server configuration: Microsoft 365 (office@garage.example)", graph.Description);
 
             var legacy = Build(new() { ["SmtpOptions:Host"] = "mail.example", ["SmtpOptions:Port"] = "465" });
-            Assert.Equal("Smtp", legacy.GetRequiredService<IEmailSender>().Name);
-            var options = legacy.GetRequiredService<IOptions<EmailOptions>>().Value;
+            Assert.Same(legacy.GetRequiredService<SystemEmailSender>(), legacy.GetRequiredService<IEmailSender>());
+            var (options, _) = await legacy.GetRequiredService<SystemEmailSender>().ResolveAsync();
+            Assert.Equal(EmailProvider.Smtp, options.Provider);
             Assert.Equal("mail.example", options.Smtp.Host);
             Assert.Equal(465, options.Smtp.Port);
+
+            // a transport saved in the administration wins; Gmail is SMTP with an app password
+            var gmail = await Build(new() { ["SmtpOptions:Host"] = "mail.example" },
+                    new EmailTransportSettings { Kind = EmailTransportKind.Gmail, FromAddress = "garage@gmail.com", SmtpPassword = "app-password" })
+                .GetRequiredService<SystemEmailSender>().ResolveAsync();
+            Assert.Equal("smtp.gmail.com", gmail.Options.Smtp.Host);
+            Assert.Equal(587, gmail.Options.Smtp.Port);
+            Assert.Equal(SmtpSecurity.StartTls, gmail.Options.Smtp.Security);
+            Assert.Equal("garage@gmail.com", gmail.Options.Smtp.User);
+            Assert.Equal("garage@gmail.com", gmail.Options.FromAddress);
+            Assert.Equal("Gmail (garage@gmail.com)", gmail.Description);
+
+            // "server configuration" saved: back to the Email section
+            var config = await Build(new() { ["SmtpOptions:Host"] = "mail.example" }, new EmailTransportSettings { Kind = EmailTransportKind.Config })
+                .GetRequiredService<SystemEmailSender>().ResolveAsync();
+            Assert.Equal("mail.example", config.Options.Smtp.Host);
+        }
+
+        private class SavedSettings : IEmailSettingsRepository
+        {
+            private readonly EmailTransportSettings system;
+            public SavedSettings(EmailTransportSettings system) { this.system = system; }
+            public Task<EmailTransportSettings> GetSystemAsync() => Task.FromResult(system);
+            public Task SaveSystemAsync(EmailTransportSettings settings) => Task.CompletedTask;
+            public Task<EmailTransportSettings> GetCompanyAsync(string tenantName, Guid companyId) => Task.FromResult(new EmailTransportSettings());
+            public Task<IReadOnlyDictionary<Guid, EmailTransportSettings>> GetCompaniesAsync(string tenantName) =>
+                Task.FromResult<IReadOnlyDictionary<Guid, EmailTransportSettings>>(new Dictionary<Guid, EmailTransportSettings>());
+            public Task SaveCompanyAsync(string tenantName, Guid companyId, EmailTransportSettings settings) => Task.CompletedTask;
         }
     }
 }

@@ -31,6 +31,24 @@ namespace VgAuto.Tests.Integration
             }
         }
 
+        /// <summary>First column of the first row (PostgreSQL table names, rewritten for MySQL).</summary>
+        public static async Task<object> Scalar(string database, string sql)
+        {
+            var dialect = VgAuto.Core.Application.Database.SqlDialect.For(IsMySql
+                ? VgAuto.Core.Application.Database.DatabaseProvider.MySql
+                : VgAuto.Core.Application.Database.DatabaseProvider.PostgreSql);
+            System.Data.Common.DbConnection connection = IsMySql
+                ? new MySqlConnector.MySqlConnection($"Server={Host};Port={Port};User ID={User};Password={Password};Database={database}")
+                : new Npgsql.NpgsqlConnection($"Host={Host};Port={Port};Username={User};Password={Password};Database={database}");
+            await using (connection)
+            {
+                await connection.OpenAsync();
+                await using var command = connection.CreateCommand();
+                command.CommandText = dialect.Sql(sql);
+                return await command.ExecuteScalarAsync();
+            }
+        }
+
         public static async Task Drop(string database)
         {
             if (string.IsNullOrWhiteSpace(database)) return;

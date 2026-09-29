@@ -79,4 +79,23 @@ namespace VgAuto.Core.Application.Authorization
 
         public void OnActionExecuted(ActionExecutedContext context) { }
     }
+
+    /// <summary>Only super administrators may call the action (all companies, the built-in email).</summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class RequireSuperAdminAttribute : Attribute, IActionFilter
+    {
+        public void OnActionExecuting(ActionExecutingContext context)
+        {
+            var account = context.HttpContext.CurrentAccount();
+            if (account == null || account.Role != UserRoles.SuperAdmin)
+            {
+                context.Result = new ObjectResult(new { isUserError = true, exceptionMessage = "Super administrator rights are required." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden,
+                };
+            }
+        }
+
+        public void OnActionExecuted(ActionExecutedContext context) { }
+    }
 }
