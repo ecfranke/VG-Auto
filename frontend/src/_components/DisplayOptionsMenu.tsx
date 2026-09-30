@@ -19,7 +19,7 @@ export default function DisplayOptionsMenu({
 }:{
     id : string,
     pageName: string,
-    /** server action deleting the item; asked for confirmation first */
+    /** server action deleting the item, asked for confirmation first; without it there is no Delete item */
     onDelete?: (id: string) => Promise<void>,
     deleteTitle?: string,
 }){
@@ -63,12 +63,11 @@ export default function DisplayOptionsMenu({
                     </Link>
                 </MenuItem>
             </div>
-            <div className="py-1">
+            {onDelete && <div className="py-1">
                 <MenuItem  >
                     <Link
                         href="#"
                         onClick={e => {
-                            if (!onDelete) return;
                             e.preventDefault();
                             confirmRef.current?.open({ title: deleteTitle, description: 'Are you sure you want to delete it? This cannot be undone.', confirmObj: id });
                         }}
@@ -77,7 +76,7 @@ export default function DisplayOptionsMenu({
                         Delete
                     </Link>
                 </MenuItem> 
-            </div>
+            </div>}
         </MenuItems>
     </Menu>
         </>

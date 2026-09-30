@@ -237,6 +237,7 @@ const en = {
     'email.allow': 'Built-in email allowed or stopped',
     'email.test': 'Test email sent',
     'work.delete': 'Work deleted',
+    'vehicle.delete': 'Vehicle deleted',
   } as Record<string, string>,
 }
 
@@ -473,6 +474,7 @@ const zh: typeof en = {
     'email.allow': '开放或关闭系统邮箱',
     'email.test': '发送测试邮件',
     'work.delete': '删除工单',
+    'vehicle.delete': '删除车辆',
   },
 }
 

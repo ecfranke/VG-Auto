@@ -6,6 +6,8 @@ import Main from '../../_components/Main';
 import DisplayOptionsMenu from '@/_components/DisplayOptionsMenu';
 import { IVehicleData } from '../model';
 import { CardHeader } from '@/_components/Card';
+import { currentAccount } from '@/_lib/server/account';
+import { deleteVehicle } from '../deleteVehicle';
 
 
 
@@ -17,13 +19,15 @@ export default async function Page({
     const id = (await params).id;
     const data = await httpGet('vehicles/' + id);
     const vehicle = await data.json() as IVehicleData;
+    // only administrators may delete vehicles
+    const me = await currentAccount();
   
     return (
 
         <Main header={
             <CardHeader  >
                  <h3 className="px-1 text-base font-semibold text-gray-900">Vehicle Information</h3>
-                <DisplayOptionsMenu id={id} pageName='vehicles'></DisplayOptionsMenu>
+                <DisplayOptionsMenu id={id} pageName='vehicles' onDelete={me.isAdmin ? deleteVehicle : undefined} deleteTitle='Delete vehicle'></DisplayOptionsMenu>
             </CardHeader>}>
             <dl className="divide-y divide-gray-100"> 
                 <DescriptionItem label='Manufacturer' value={vehicle.manufacturer}></DescriptionItem>
