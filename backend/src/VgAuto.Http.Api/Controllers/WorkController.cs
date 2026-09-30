@@ -623,11 +623,12 @@ order by page.sortkey desc").ToResult();
 
             work.Changed();
             session.Update(work);
+            // saved now: a re-issued offer is new and gets its id (the page opens it), and the email carries a link
+            // to sign the estimate, which refers to it by its id
+            session.Flush();
 
             if (model.SendClientEmail)
             {
-                // saved first: the email carries a link to sign this estimate, which refers to it by its id
-                session.Flush();
                 await offerIssued.Estimate.Send(pricingSender, model.ClientEmail);
                 session.Update(offerIssued.Estimate);
             }
@@ -684,10 +685,22 @@ order by page.sortkey desc").ToResult();
         {
             var work = session.Get<Core.Domain.Work>(id);
             var offer = work.Offers.Single(x => x.OrderNr == offerNumber);
+            var estimate = offer.Estimate;
+            // the client has it (and may sign it online): it stays, like the work of a sent offer
+            if (estimate?.SentOn != null)
+                throw new UserException("Cannot delete an offer that was sent to the client. Issue a new offer instead.");
             work.Remove(offer);
             work.Changed();
             session.Update(work);
             session.Flush();
+            // the issued (unsent) estimate goes with its offer: it kept its number ("15-1"), the next offer of the work
+            // got the same number and issuing it failed on the unique estimate number
+            if (estimate != null)
+            {
+                session.Delete(estimate);
+                session.Flush();
+                DeletePdf(estimate);
+            }
             return Ok();
         }
         [HttpDelete("{id}/repairjob/{jobNumber}")]

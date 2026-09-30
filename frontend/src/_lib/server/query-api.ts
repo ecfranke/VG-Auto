@@ -29,6 +29,21 @@ async function clientAddress(): Promise<string | null> {
   }
 }
 
+/** Address the app is reached at (APP_URL, or the host of this request): the API puts it in links it emails. */
+async function appOrigin(): Promise<string | null> {
+  const configured = process.env.APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  try {
+    const h = await headers();
+    const host = (h.get('x-forwarded-host') ?? h.get('host'))?.split(',')[0].trim();
+    if (!host) return null;
+    const proto = h.get('x-forwarded-proto')?.split(',')[0].trim() || 'http';
+    return `${proto}://${host}`;
+  } catch {
+    return null;
+  }
+}
+
 async function apiCall({
   url,
   authorize=true,
@@ -45,6 +60,8 @@ async function apiCall({
   } 
   const ip = await clientAddress();
   if (ip) requestHeaders["X-Forwarded-For"] = ip;
+  const origin = await appOrigin();
+  if (origin) requestHeaders["X-App-Origin"] = origin;
   const fullUrl = process.env.API_URL +`/api/${url}`;
   const request = {
     method,

@@ -49,9 +49,12 @@ namespace VgAuto.Core.Application.Signing
             this.http = http;
         }
 
+        /// <summary>Header in which the Next.js server passes the address it is reached at.</summary>
+        public const string AppOriginHeader = "X-App-Origin";
+
         /// <summary>
         /// The address people open the application at: App:Url, otherwise the first allowed CORS origin (the installers
-        /// put the application's URL there); null when neither is set.
+        /// put the application's URL there), otherwise the address the Next.js server reports; null when none is known.
         /// </summary>
         public string AppUrl
         {
@@ -59,9 +62,16 @@ namespace VgAuto.Core.Application.Signing
             {
                 var url = configuration["App:Url"];
                 if (string.IsNullOrWhiteSpace(url)) url = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()?.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x) && x != "*");
+                if (string.IsNullOrWhiteSpace(url)) url = Origin(http.HttpContext?.Request.Headers[AppOriginHeader].ToString());
                 return string.IsNullOrWhiteSpace(url) ? null : url.Trim().TrimEnd('/');
             }
         }
+
+        /// <summary>"https://shop.example.com" of an absolute http(s) address; null otherwise.</summary>
+        public static string Origin(string value) =>
+            Uri.TryCreate(value?.Trim(), UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+                ? uri.GetLeftPart(UriPartial.Authority)
+                : null;
 
         public int ValidDays => int.TryParse(configuration["Signing:LinkDays"], out var days) && days > 0 ? days : DefaultValidDays;
 
