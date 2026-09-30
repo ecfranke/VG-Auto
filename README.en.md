@@ -60,6 +60,8 @@ The client list can be searched by name, phone or email. Click a client to see d
 
 When a vehicle changes hands, just change the owner. The ownership history is kept.
 
+Administrators can delete a vehicle: open it and choose **Options → Delete**. After confirming, it is deleted with its ownership history and written to the audit log. A vehicle used by a work order cannot be deleted (the message says how many use it); other users do not see Delete.
+
 ### 4. Create work
 
 **Work → Add new**:
@@ -203,7 +205,7 @@ Administrators manage companies, employees and email at `https://your-domain/adm
 | Role | Can do |
 |---|---|
 | User | Works in the application (work, clients, vehicles, inventory); changes contact details, invoice and offer options, but not the company name, Reg No, Tax ID or currency; no access to the administration |
-| Administrator (company administrator) | Manages **their own company**: its details (name, address, phone, Reg No, Tax ID, currency, taxes, invoice and offer options), its **email**, its employees (creates normal accounts, edits details, resets passwords, unlocks, disables/enables, unlinks Microsoft accounts) and its audit log; does not see other companies |
+| Administrator (company administrator) | Manages **their own company**: its details (name, address, phone, Reg No, Tax ID, currency, taxes, invoice and offer options), its **email**, its employees (creates normal accounts, edits details, resets passwords, unlocks, disables/enables, unlinks Microsoft accounts) and its audit log; deletes vehicles no work order uses; does not see other companies |
 | Super administrator | Manages **every company and every employee**: creates companies, changes the details and email of any company, moves employees to another company, creates administrators and super administrators, changes roles; sets the **built-in email** and decides which companies may use it |
 
 **The super administration**:
@@ -444,7 +446,7 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `GET /api/auth/providers`, `POST /api/auth/microsoft` | Sign in options, Microsoft sign in |
 | `/api/work/*`, `/api/pricings/*` | Work, estimates, repair jobs, invoices, PDFs, email |
 | `/api/clients`, `/api/privateclients`, `/api/legalclients` | Clients |
-| `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
+| `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles (`DELETE /api/vehicles` for administrators only), parts, storage locations |
 | `/api/employees` | Employees (mechanics); creating logins requires an administrator |
 | `/api/admin/*` | Administration: `me`, `overview`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`, email `{id}/email`, allow the built-in email `{id}/email/system`, `{id}/email/test`), `email/system` (built-in email, `test`), `works` (super administrators: all work, details, `{id}/pdf/{documentId}`, delete), `audit` (`companyId` filter) |
 | `/api/public/estimates/{token}/view`, `sign`, `pdf` | Online signing by clients (no sign in; called by the Next.js server with the server secret) |

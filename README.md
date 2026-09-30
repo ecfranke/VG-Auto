@@ -60,6 +60,8 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 
 车辆换了车主时，改 Owner 即可，系统会保留归属变更记录。
 
+管理员可以删除车辆：打开车辆，**Options → Delete**，确认后连同归属记录一起删除，并记入操作日志。已经用在工单里的车辆不能删除（会提示有几个工单在用）；普通用户看不到 Delete。
+
 ### 4. 新建工单
 
 **Work → Add new**：
@@ -203,7 +205,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 | 角色 | 能做什么 |
 |---|---|
 | 普通用户 | 使用系统（工单、客户、车辆、库存）；可以修改公司的联系信息、发票和报价单设置，但不能改公司名称、Reg No、Tax ID 和币种；进不了后台 |
-| 管理员（公司管理员） | 管理**自己的公司**：公司信息（名称、地址、电话、Reg No、Tax ID、币种、税、发票和报价单设置）、公司的**发信设置**、本公司的员工（新建普通员工账号、修改资料、重置密码、解除锁定、禁用/启用、解绑 Microsoft 账号）和本公司的操作日志；看不到其他公司 |
+| 管理员（公司管理员） | 管理**自己的公司**：公司信息（名称、地址、电话、Reg No、Tax ID、币种、税、发票和报价单设置）、公司的**发信设置**、本公司的员工（新建普通员工账号、修改资料、重置密码、解除锁定、禁用/启用、解绑 Microsoft 账号）和本公司的操作日志；删除没有工单在用的车辆；看不到其他公司 |
 | 超级管理员 | 管理**所有公司和所有员工**：新建公司、修改任何公司的信息和发信设置、把员工调到其他公司、新建管理员和超级管理员、修改角色；设置**系统邮箱**并决定哪些公司可以使用它 |
 
 **超级管理员的后台**：
@@ -444,7 +446,7 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `GET /api/auth/providers`、`POST /api/auth/microsoft` | 登录方式、Microsoft 登录 |
 | `/api/work/*`、`/api/pricings/*` | 工单、报价、维修任务、发票、PDF、发送邮件 |
 | `/api/clients`、`/api/privateclients`、`/api/legalclients` | 客户 |
-| `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆、配件、库位 |
+| `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆（`DELETE /api/vehicles` 仅限管理员）、配件、库位 |
 | `/api/employees` | 员工（技师）；创建登录账号需要管理员 |
 | `/api/admin/*` | 管理后台：`me`、`overview`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`、`company`）、`companies`（列表、新建、`{id}/options` 读取和修改、`{id}/email` 发信设置、`{id}/email/system` 开放系统邮箱、`{id}/email/test`）、`email/system`（系统邮箱、`test`）、`works`（超级管理员：所有工单、详情、`{id}/pdf/{documentId}`、删除）、`audit`（`companyId` 筛选） |
 | `/api/public/estimates/{token}/view`、`sign`、`pdf` | 客户在线签名（无需登录，由 Next.js 服务器带服务器密钥调用） |

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using VgAuto.Core;
 using VgAuto.Core.Application;
 using VgAuto.Core.Domain;
@@ -74,7 +75,7 @@ namespace VgAuto.Http.Api.Controllers
 
         [Authorize(Policy = "ServerSidePolicy")]
         [HttpDelete]
-        public OkResult Delete([FromBody] Guid[] ids)
+        public virtual Task<IActionResult> Delete([FromBody] Guid[] ids)
         {
             foreach (var id in ids)
             {
@@ -82,7 +83,7 @@ namespace VgAuto.Http.Api.Controllers
                 BeforeDelete(dObj);
                 repository.Delete(dObj);
             }
-            return Ok();
+            return Task.FromResult<IActionResult>(Ok());
         }
 
         protected virtual void BeforeDelete(DOMAINOBJECT domainObj) { }
