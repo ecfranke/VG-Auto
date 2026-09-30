@@ -10,6 +10,7 @@ import {
   HomeIcon,
   Squares2X2Icon,
   UsersIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 
 const icons = {
@@ -17,6 +18,7 @@ const icons = {
   companies: BuildingOffice2Icon,
   company: HomeIcon,
   users: UsersIcon,
+  works: WrenchScrewdriverIcon,
   email: EnvelopeIcon,
   audit: ClipboardDocumentListIcon,
 }

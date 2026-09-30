@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -19,6 +20,8 @@ namespace VgAuto.Core.Application.Signing
     {
         Task AddAsync(SignatureLink link);
         Task<SignatureLink> FindAsync(string tokenHash);
+        /// <summary>The links of deleted estimates.</summary>
+        Task DeleteForEstimatesAsync(IReadOnlyCollection<Guid> estimateIds);
     }
 
     /// <summary>A client's signature of an estimate. Image: PNG as a data URL.</summary>
@@ -30,6 +33,8 @@ namespace VgAuto.Core.Application.Signing
         Task<EstimateSignature> GetAsync(Guid estimateId);
         /// <returns>false when the estimate was signed already</returns>
         Task<bool> AddAsync(EstimateSignature signature, Guid companyId, string ip);
+        /// <summary>The signature of an estimate that is deleted.</summary>
+        Task DeleteAsync(Guid estimateId);
     }
 
     /// <summary>Creates the links that go into estimate emails and checks the tokens the clients come back with.</summary>

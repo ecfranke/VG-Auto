@@ -211,6 +211,7 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 - **总览**：公司数、员工数、登录账号、管理员和已禁用账号的数量，系统邮箱当前的发信方式，各公司的发信情况（使用系统邮箱 / 使用自己的邮箱 / 无法发信），以及最近的操作。
 - **公司**：列出所有公司（Reg No、币种、员工数、登录账号数、发信方式）。新建公司时填写名称和币种，并可以勾选“允许使用系统邮箱”。
 - **员工**：所有公司的员工，可以按公司筛选。
+- **工单**：所有公司的工单（可按工单号、客户、车辆、发票或公司搜索，按公司筛选），列出报价单的发送和签名情况以及发票。打开工单可以看到它的报价单和发票（出具、发送、接受、签名、付款）并下载 PDF。**删除工单**会连同报价、维修任务、报价单（包括已发给客户或客户已签名的）和发票一起删除，无法恢复，并记入操作日志；如果删除的发票不是该公司最后一张，发票编号会缺一个号。车间里的普通删除规则不变（已发送的报价或发票不能删）。
 - **系统邮箱**：系统自带的发信接口，发送登录验证码、重置密码邮件，以及被允许使用它的公司的报价单和发票。点选发信方式即可切换：
   - **服务器配置**：使用 `appsettings.Secrets.json` 或环境变量里的 `Email` 设置（和以前一样）；
   - **SMTP**：服务器、端口、加密方式、用户名、密码、发件地址和发件人名称；
@@ -255,6 +256,10 @@ VG Auto 是一套自托管的汽修厂管理系统。从接车开报价、客户
 ![公司信息](docs/screenshots/admin-company.png)
 
 ![员工列表](docs/screenshots/admin-users.png)
+
+| 所有公司的工单 | 工单的单据和删除 |
+|---|---|
+| ![工单列表](docs/screenshots/admin-works.png) | ![工单详情](docs/screenshots/admin-work.png) |
 
 | 添加员工后显示临时密码 | 员工详情 |
 |---|---|
@@ -441,7 +446,7 @@ API 配置在 `appsettings.json`，敏感信息放在 `appsettings.Secrets.json`
 | `/api/clients`、`/api/privateclients`、`/api/legalclients` | 客户 |
 | `/api/vehicles`、`/api/spareparts`、`/api/storages` | 车辆、配件、库位 |
 | `/api/employees` | 员工（技师）；创建登录账号需要管理员 |
-| `/api/admin/*` | 管理后台：`me`、`overview`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`、`company`）、`companies`（列表、新建、`{id}/options` 读取和修改、`{id}/email` 发信设置、`{id}/email/system` 开放系统邮箱、`{id}/email/test`）、`email/system`（系统邮箱、`test`）、`audit`（`companyId` 筛选） |
+| `/api/admin/*` | 管理后台：`me`、`overview`、`users`（新建、修改、`account`、`password`、`unlock`、`disable`、`enable`、`role`、`microsoft`、`company`）、`companies`（列表、新建、`{id}/options` 读取和修改、`{id}/email` 发信设置、`{id}/email/system` 开放系统邮箱、`{id}/email/test`）、`email/system`（系统邮箱、`test`）、`works`（超级管理员：所有工单、详情、`{id}/pdf/{documentId}`、删除）、`audit`（`companyId` 筛选） |
 | `/api/public/estimates/{token}/view`、`sign`、`pdf` | 客户在线签名（无需登录，由 Next.js 服务器带服务器密钥调用） |
 | `/api/options`（含 `testemail`） | 当前用户所属公司的设置、测试邮件 |
 | `/api/profile`（含 `changepassword`、`externallogins`） | 个人资料、改密码、Microsoft 账号绑定 |

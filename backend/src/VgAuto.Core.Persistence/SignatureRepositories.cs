@@ -51,6 +51,14 @@ namespace VgAuto.Core.Persistence
             return row == null ? null : new SignatureLink(row.TokenHash, row.TenantName, row.CompanyId, row.EstimateId,
                 AuthChallengeRepository.AsUtc(row.CreatedAt), AuthChallengeRepository.AsUtc(row.ExpiresAt));
         }
+
+        public async Task DeleteForEstimatesAsync(System.Collections.Generic.IReadOnlyCollection<Guid> estimateIds)
+        {
+            if (estimateIds == null || estimateIds.Count == 0) return;
+            await using var db = connections.Open(connections.UserListDatabase);
+            foreach (var estimateId in estimateIds)
+                await db.ExecuteAsync(Sql("DELETE FROM public.signature_link WHERE estimate_id = @estimateId"), new { estimateId });
+        }
     }
 
     /// <summary>
@@ -88,6 +96,14 @@ namespace VgAuto.Core.Persistence
                 .SetParameter("ip", ip, NHibernateUtil.String)
                 .ExecuteUpdate();
             return true;
+        }
+
+        public Task DeleteAsync(Guid estimateId)
+        {
+            session.CreateSQLQuery(Sql("delete from domain.estimate_signature where estimate_id = :id"))
+                .SetParameter("id", estimateId)
+                .ExecuteUpdate();
+            return Task.CompletedTask;
         }
     }
 }

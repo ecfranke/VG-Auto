@@ -18,6 +18,7 @@ function navigation(me: IAccount, t: Dictionary): INavItem[] {
     { href: '/admin', label: t.overview, icon: 'overview', exact: true },
     { href: '/admin/companies', label: t.companies, icon: 'companies' },
     { href: '/admin/users', label: t.users, icon: 'users' },
+    { href: '/admin/works', label: t.works, icon: 'works' },
     { href: '/admin/email', label: t.builtInEmail, icon: 'email' },
     { href: '/admin/audit', label: t.audit, icon: 'audit' },
   ]
