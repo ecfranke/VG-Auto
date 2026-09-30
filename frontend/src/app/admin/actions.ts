@@ -227,3 +227,13 @@ export async function saveCompanyInfo(_: ActionState, form: FormData): Promise<A
       invoice: { ...options.pricing.invoice, vatRate: Math.round(parsed.taxes.tax1Rate + parsed.taxes.tax2Rate) } },
   })
 }
+
+/** Deletes a work with everything in it (super administrators; the API checks it). */
+export async function deleteWork(_: ActionState, form: FormData): Promise<ActionState> {
+  const workId = field(form, 'workId')
+  if (!isId(workId)) return { ok: false, error: 'Unknown work.' }
+  const response = await httpRaw('DELETE', `admin/works/${workId}`)
+  if (!response.ok) return { ok: false, error: await errorOf(response) }
+  revalidatePath('/admin', 'layout')
+  redirect(`/admin/works?deleted=${encodeURIComponent(field(form, 'code'))}`)
+}

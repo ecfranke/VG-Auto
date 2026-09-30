@@ -211,6 +211,7 @@ Administrators manage companies, employees and email at `https://your-domain/adm
 - **Overview**: companies, employees, logins, administrators and disabled logins; what the built-in email sends with; how the companies send (built-in email / own account / cannot send); recent activity.
 - **Companies**: every company (Reg No, currency, employees, logins, email). A new company gets a name and a currency, and "Allow the built-in email" can be ticked.
 - **Employees**: the employees of every company, with a company filter.
+- **Work orders**: the work of every company (search by work number, client, vehicle, invoice or company; filter by company) with the sent and signed estimates and the invoice. A work shows its estimates and invoice (issued, sent, accepted, signed, paid) with their PDFs. **Delete work** removes it with its offers, repair jobs, estimates (also those sent to or signed by the client) and its invoice; it cannot be undone and is written to the audit log. An invoice that is not the company's last one leaves a gap in the invoice numbers. The workshop's own delete keeps its rules (sent estimates and invoices stay).
 - **Built-in email**: the email of the system. It sends sign in codes and password resets, and the estimates and invoices of the companies allowed to use it. Choose how it sends with a click:
   - **Server configuration**: the `Email` section of `appsettings.Secrets.json` or the environment (as before);
   - **SMTP**: server, port, encryption, user name, password, sender address and name;
@@ -255,6 +256,10 @@ Accounts:
 ![Company details](docs/screenshots/admin-company.png)
 
 ![Employees](docs/screenshots/admin-users.png)
+
+| Work of every company | Documents of a work and delete |
+|---|---|
+| ![Work orders](docs/screenshots/admin-works.png) | ![Work details](docs/screenshots/admin-work.png) |
 
 | Temporary password after adding an employee | Employee details |
 |---|---|
@@ -441,7 +446,7 @@ In development the full API is documented at `http://localhost:15567/swagger`. M
 | `/api/clients`, `/api/privateclients`, `/api/legalclients` | Clients |
 | `/api/vehicles`, `/api/spareparts`, `/api/storages` | Vehicles, parts, storage locations |
 | `/api/employees` | Employees (mechanics); creating logins requires an administrator |
-| `/api/admin/*` | Administration: `me`, `overview`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`, email `{id}/email`, allow the built-in email `{id}/email/system`, `{id}/email/test`), `email/system` (built-in email, `test`), `audit` (`companyId` filter) |
+| `/api/admin/*` | Administration: `me`, `overview`, `users` (create, edit, `account`, `password`, `unlock`, `disable`, `enable`, `role`, `microsoft`, `company`), `companies` (list, create, read and change `{id}/options`, email `{id}/email`, allow the built-in email `{id}/email/system`, `{id}/email/test`), `email/system` (built-in email, `test`), `works` (super administrators: all work, details, `{id}/pdf/{documentId}`, delete), `audit` (`companyId` filter) |
 | `/api/public/estimates/{token}/view`, `sign`, `pdf` | Online signing by clients (no sign in; called by the Next.js server with the server secret) |
 | `/api/options` (with `testemail`) | Settings of the signed in user's company, test email |
 | `/api/profile` (with `changepassword`, `externallogins`) | Profile, password, Microsoft account link |

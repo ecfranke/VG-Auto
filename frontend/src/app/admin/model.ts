@@ -105,3 +105,58 @@ export interface IOverview {
   noEmailCompanies: number
   recent: IAuditEntry[]
 }
+
+export interface IAdminWorkRow {
+  id: string
+  companyId: string
+  companyName: string
+  number: number
+  code: string
+  startedOn: string
+  clientName: string | null
+  vehicleYear: number | null
+  vehicleManufacturer: string | null
+  vehicleModel: string | null
+  licensePlate: string | null
+  invoiceNumber: number | null
+  invoiceCode: string | null
+  invoiceSent: boolean
+  invoicePaid: boolean
+  offers: number
+  sentOffers: number
+  signedOffers: number
+  status: string
+}
+
+export interface IAdminWorkDocument {
+  id: string
+  kind: 'estimate' | 'invoice'
+  code: string
+  issuedOn: string
+  issuedBy: string | null
+  sentOn: string | null
+  sentTo: string | null
+  acceptedOn: string | null
+  signedBy: string | null
+  signedOn: string | null
+  total: string
+  paid: boolean | null
+}
+
+export interface IAdminWork {
+  id: string
+  companyId: string
+  companyName: string
+  code: string
+  number: number
+  startedOn: string
+  startedBy: string | null
+  status: string
+  clientName: string | null
+  clientEmail: string | null
+  vehicle: string | null
+  licensePlate: string | null
+  notes: string | null
+  repairJobs: number
+  documents: IAdminWorkDocument[]
+}
