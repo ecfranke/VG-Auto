@@ -50,15 +50,16 @@ export default function Activities({
           const editRef = href + '/edit';
          
           
+          // an offer sent to the client stays (the client has it and may sign it online)
           const options =work.issuance?[ ]: [
             { name: 'Edit' ,href:editRef},
-            { name: 'Delete',onClick:() => {
+            ...(issuance?.sentOn ? [] : [{ name: 'Delete',onClick:() => {
               confirmRemoveActivityRef.current?.open({
                 title: name,
                 description: "Are you sure you want to delete it?",
                 confirmObj: item
               })
-            }}
+            }}])
           ] as IButtonOption[];
 
         

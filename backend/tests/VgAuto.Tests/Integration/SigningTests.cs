@@ -65,6 +65,9 @@ namespace VgAuto.Tests.Integration
             var match = Regex.Match(mail.TextBody, @"http://localhost:3000/sign/([A-Za-z0-9_-]{43})");
             Assert.True(match.Success, mail.TextBody);
             var token = match.Groups[1].Value;
+            // the HTML version has a button to the same page
+            Assert.Contains("Review and sign the estimate", mail.HtmlBody);
+            Assert.Contains($"http://localhost:3000/sign/{token}", mail.HtmlBody);
             var client = api.NewClient();
             var page = $"/api/public/estimates/{token}";
 

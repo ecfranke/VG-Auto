@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using VgAuto.Core.Application.Email;
 using VgAuto.Core.Application.Signing;
@@ -53,15 +54,17 @@ namespace VgAuto.Core.Application.Services
             var isInvoice = pricing is Invoice;
             var body = isInvoice ? pricingConfig.Invoice.EmailContent : pricingConfig.Estimate.EmailContent;
 
+            string html = null;
             if (pricing is Estimate estimate)
             {
-                body = await WithSignatureLink(body, estimate);
+                (body, html) = await WithSignatureLink(body, estimate);
             }
 
             var pdfBytes = await pdfGenerator.Generate(pricing);
 
             var message = new EmailMessage(pricing.Email, pricing.GetDisplayName(), body)
             {
+                HtmlBody = html,
                 FromName = requisites.Name,
                 ReplyTo = requisites.Email,
                 FallbackFromAddress = requisites.Email,
@@ -81,22 +84,34 @@ namespace VgAuto.Core.Application.Services
             logger.LogInformation("{type} {subject} sent via {transport}", isInvoice ? "Invoice" : "Estimate", message.Subject, transport);
         }
 
-        private async Task<string> WithSignatureLink(string body, Estimate estimate)
+        /// <summary>The email text with the link to sign the estimate online, as plain text and as HTML with a button.</summary>
+        private async Task<(string Text, string Html)> WithSignatureLink(string body, Estimate estimate)
         {
             if (estimate.Id == Guid.Empty || estimate.CompanyId == Guid.Empty)
             {
                 logger.LogWarning("Estimate {code} is not saved yet: sent without a signing link", estimate.GetNumber());
-                return body;
+                return (body, null);
             }
             var link = await signatureLinks.CreateAsync(estimate);
             if (link == null)
             {
                 logger.LogWarning("Estimate {code} sent without a signing link: set App:Url to the address of the application", estimate.GetNumber());
-                return body;
+                return (body, null);
             }
             var (url, expires) = link.Value;
-            return (body ?? "").TrimEnd() +
-                   $"\n\nReview and sign the estimate online:\n{url}\n(The link is valid until {expires:yyyy-MM-dd}.)";
+            var content = (body ?? "").TrimEnd();
+            var text = content + $"\n\nReview and sign the estimate online:\n{url}\n(The link is valid until {expires:yyyy-MM-dd}.)";
+            var href = WebUtility.HtmlEncode(url);
+            var html =
+                "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#111827\">" +
+                $"<p>{WebUtility.HtmlEncode(content).Replace("\r\n", "\n").Replace("\n", "<br>")}</p>" +
+                "<p style=\"margin:24px 0\">" +
+                $"<a href=\"{href}\" style=\"display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:6px\">Review and sign the estimate</a>" +
+                "</p>" +
+                $"<p style=\"font-size:12px;color:#6b7280\">No sign in needed. The link is valid until {expires:yyyy-MM-dd}.<br>" +
+                $"If the button does not work, open <a href=\"{href}\" style=\"color:#2563eb\">{href}</a></p>" +
+                "</div>";
+            return (text, html);
         }
     }
 }

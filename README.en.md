@@ -96,18 +96,18 @@ Click **Issue offer**:
 
 ![Issue the estimate](docs/screenshots/issue-offer.png)
 
-After **OK** the estimate gets its code (e.g. `OF_TF_2019_HC_2026_09_28_15`) and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right. Estimates and invoices show the vehicle under their number, e.g. "2019 Honda Civic LX".
+After **OK** the estimate gets its code (e.g. `OF_TF_2019_HC_2026_09_28_15`) and an **Issued** badge; the envelope icon means it was emailed. The download and print icons give you the PDF. To send it again, choose **Resend offer** in the drop-down at the bottom right. Estimates and invoices show the vehicle under their number, e.g. "2019 Honda Civic LX". An offer sent to the client cannot be deleted (issue it again to change it); deleting an unsent offer also deletes its estimate.
 
 ![Estimate issued](docs/screenshots/offer-issued.png)
 
 #### The client accepts and signs online
 
-The estimate email contains a link. Without signing in, the client reviews the estimate, enters their name, signs in the box with a mouse or a finger, ticks "I have read this estimate and accept it" and clicks **Sign estimate**. Then:
+The estimate email has a **Review and sign the estimate** button (a link in the plain text version). Without signing in, the client reviews the estimate, enters their name, signs in the box with a mouse or a finger, ticks "I have read this estimate and accept it" and clicks **Sign estimate**. Then:
 
 - The client can download the **signed estimate as PDF**; the work page shows a **Signed** badge on that estimate (hover for who and when), and the estimate's PDF and printout carry the signature.
 - The workshop starts the repair with **Client accepted** as before (a signature does not turn the estimate into a repair job by itself).
 - The link is valid for 30 days (`Signing:LinkDays`) and an estimate is signed once; an estimate issued again is a new estimate with a new link.
-- The link uses `App:Url` (the address of the application), otherwise the first `Cors:AllowedOrigins` entry (the installers put the app URL there). Without either, the email has no link.
+- The link uses `App:Url` (the address of the application), otherwise the first `Cors:AllowedOrigins` entry (the installers put the app URL there), otherwise the address of the web server (`APP_URL` or the address it was opened at).
 
 | The client opens the link | Signed |
 |---|---|
