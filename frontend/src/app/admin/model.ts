@@ -160,3 +160,30 @@ export interface IAdminWork {
   repairJobs: number
   documents: IAdminWorkDocument[]
 }
+
+/** API: GET admin/clients */
+export interface IAdminClientRow {
+  id: string
+  companyId: string
+  companyName: string
+  name: string
+  phone: string | null
+  email: string | null
+  address: string | null
+  workCount: number
+  vehicleCount: number
+}
+
+/** API: GET admin/vehicles */
+export interface IAdminVehicleRow {
+  id: string
+  companyId: string
+  companyName: string
+  licensePlate: string | null
+  manufacturer: string | null
+  model: string | null
+  year: number | null
+  vin: string | null
+  owner: string | null
+  workCount: number
+}

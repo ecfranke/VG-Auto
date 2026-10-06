@@ -19,12 +19,16 @@ function navigation(me: IAccount, t: Dictionary): INavItem[] {
     { href: '/admin/companies', label: t.companies, icon: 'companies' },
     { href: '/admin/users', label: t.users, icon: 'users' },
     { href: '/admin/works', label: t.works, icon: 'works' },
+    { href: '/admin/clients', label: t.clients, icon: 'clients' },
+    { href: '/admin/vehicles', label: t.vehicles, icon: 'vehicles' },
     { href: '/admin/email', label: t.builtInEmail, icon: 'email' },
     { href: '/admin/audit', label: t.audit, icon: 'audit' },
   ]
   return [
     { href: `/admin/companies/${me.companyId}`, label: t.myCompany, icon: 'company' },
     { href: '/admin/users', label: t.users, icon: 'users' },
+    { href: '/admin/clients', label: t.clients, icon: 'clients' },
+    { href: '/admin/vehicles', label: t.vehicles, icon: 'vehicles' },
     { href: '/admin/audit', label: t.audit, icon: 'audit' },
   ]
 }

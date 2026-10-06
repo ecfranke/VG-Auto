@@ -237,3 +237,16 @@ export async function deleteWork(_: ActionState, form: FormData): Promise<Action
   revalidatePath('/admin', 'layout')
   redirect(`/admin/works?deleted=${encodeURIComponent(field(form, 'code'))}`)
 }
+
+/** Deletes a client or vehicle nothing uses (administrators: their company; super administrators: any; the API checks it). */
+export async function deleteClientOrVehicle(_: ActionState, form: FormData): Promise<ActionState> {
+  const kind = field(form, 'kind')
+  const id = field(form, 'id')
+  if ((kind !== 'clients' && kind !== 'vehicles') || !isId(id)) return { ok: false, error: 'Unknown item.' }
+  const response = await httpRaw('DELETE', `admin/${kind}/${id}`)
+  if (!response.ok) return { ok: false, error: await errorOf(response) }
+  revalidatePath('/admin', 'layout')
+  const back = field(form, 'returnTo')
+  const target = back.startsWith(`/admin/${kind}`) ? back : `/admin/${kind}`
+  redirect(`${target}${target.includes('?') ? '&' : '?'}deleted=${encodeURIComponent(field(form, 'label'))}`)
+}

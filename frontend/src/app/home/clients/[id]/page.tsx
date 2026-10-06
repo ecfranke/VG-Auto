@@ -12,6 +12,7 @@ import BlueBadge from '@/_components/BlueBadge';
 import YellowBadge from '@/_components/YellowBadge'; 
 import { CardHeader } from '@/_components/Card';
 import { deleteClient } from '../deleteClient';
+import { currentAccount } from '@/_lib/server/account';
 
 
 export default async function Page({
@@ -22,6 +23,8 @@ export default async function Page({
     const id = (await params).id;
     const data = await httpGet('clients/' + id);
     const client = await data.json() as IClientData;
+    // only administrators may delete clients
+    const me = await currentAccount();
     return (
 
         <Main header={
@@ -30,7 +33,7 @@ export default async function Page({
                         <BlueBadge text={!client.isPrivate ? ' Company' : ' Private person'}  ></BlueBadge>{' '}
                         {client.isAsshole && <YellowBadge text='complicated' ></YellowBadge>}</h3> 
           
-                <DisplayOptionsMenu id={id} pageName='clients' onDelete={deleteClient} deleteTitle='Delete client'></DisplayOptionsMenu>
+                <DisplayOptionsMenu id={id} pageName='clients' onDelete={me.isAdmin ? deleteClient : undefined} deleteTitle='Delete client'></DisplayOptionsMenu>
         </CardHeader>}> 
                     <div className="  border-gray-100">
                         <dl className="divide-y divide-gray-100">

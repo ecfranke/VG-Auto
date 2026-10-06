@@ -75,6 +75,9 @@ namespace VgAuto.Http.Api.Controllers.Clients
 
         public static void EnsureCanDelete(Microsoft.AspNetCore.Http.HttpContext context, Client client)
         {
+            // like vehicles, clients are deleted by administrators only
+            if (!(VgAuto.Core.Application.Authorization.CurrentAccountExtensions.CurrentAccount(context)?.IsAdmin ?? false))
+                throw new UserException("Only administrators can delete clients.");
             // through the NHibernate session: it runs inside the request's transaction (MySQL requires that)
             var session = (NHibernate.ISession)context.RequestServices.GetService(typeof(NHibernate.ISession));
             long Count(string sql) => Convert.ToInt64(session.CreateSQLQuery(VgAuto.Core.Application.Database.SqlDialect.Current.Sql(sql))
