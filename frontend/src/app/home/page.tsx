@@ -97,7 +97,7 @@ export default async function Page() {
             </div>
             <div className="flex flex-wrap gap-2">
               {quickActions.map(a => (
-                <Link key={a.href} href={a.href}
+                <Link prefetch={false} key={a.href} href={a.href}
                   className={a.primary
                     ? 'inline-flex items-center gap-x-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover'
                     : 'inline-flex items-center gap-x-1.5 rounded-lg bg-white/10 px-3.5 py-2 text-sm font-semibold text-white ring-1 ring-white/15 ring-inset transition hover:bg-white/15'}>
@@ -116,7 +116,7 @@ export default async function Page() {
               className="group relative rounded-xl bg-surface p-4 shadow-sm sm:p-5 ring-1 ring-gray-900/5 transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-blue-500/30 motion-safe:animate-fade-up">
               <div className="flex items-start justify-between gap-3">
                 <dt className="text-sm font-medium text-gray-500">
-                  <Link href={s.href} className="after:absolute after:inset-0">{s.label}</Link>
+                  <Link prefetch={false} href={s.href} className="after:absolute after:inset-0">{s.label}</Link>
                 </dt>
                 <span className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-link transition group-hover:bg-primary group-hover:text-white">
                   <s.icon className="size-5" aria-hidden="true" />
@@ -125,7 +125,7 @@ export default async function Page() {
               <dd className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 tabular-nums">{s.value}</dd>
               <dd className={`mt-1 flex items-center gap-1 text-xs ${s.warning ? 'text-yellow-700' : 'text-gray-500'}`}>
                 {s.warning && <ExclamationTriangleIcon className="size-3.5" aria-hidden="true" />}
-                {s.noteHref ? <Link href={s.noteHref} className="relative z-10 hover:underline">{s.note}</Link> : s.note}
+                {s.noteHref ? <Link prefetch={false} href={s.noteHref} className="relative z-10 hover:underline">{s.note}</Link> : s.note}
               </dd>
             </div>
           ))}
@@ -138,7 +138,7 @@ export default async function Page() {
               <h2 className="text-base font-semibold text-gray-900">Recent work</h2>
               <p className="mt-0.5 text-sm text-gray-500">The 10 most recently updated jobs, finished ones included.</p>
             </div>
-            <Link href="/home/work" className="group inline-flex items-center gap-x-1 text-sm font-semibold text-link hover:text-link-hover">
+            <Link prefetch={false} href="/home/work" className="group inline-flex items-center gap-x-1 text-sm font-semibold text-link hover:text-link-hover">
               All work
               <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
             </Link>
@@ -147,7 +147,7 @@ export default async function Page() {
             ? <div className="px-6 py-14 text-center">
                 <WrenchScrewdriverIcon className="mx-auto size-10 text-gray-300" aria-hidden="true" />
                 <p className="mt-3 text-sm text-gray-500">No work yet.</p>
-                <Link href="/home/work/new" className="mt-4 inline-flex items-center gap-x-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">
+                <Link prefetch={false} href="/home/work/new" className="mt-4 inline-flex items-center gap-x-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">
                   <PlusIcon className="size-4" aria-hidden="true" />
                   Start the first one
                 </Link>
@@ -172,7 +172,7 @@ export default async function Page() {
                       return (
                         <tr key={w.id} className={`transition-colors hover:bg-gray-50 ${w.status === 'closed' ? 'line-through' : ''}`}>
                           <td className="px-4 py-3 whitespace-nowrap sm:pl-5">
-                            <Link href={`/home/work/${w.id}`} className="font-mono text-xs font-semibold text-link hover:text-link-hover">{w.code}</Link>
+                            <Link prefetch={false} href={`/home/work/${w.id}`} className="font-mono text-xs font-semibold text-link hover:text-link-hover">{w.code}</Link>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
@@ -182,11 +182,11 @@ export default async function Page() {
                           </td>
                           <td className="px-4 py-3"><WorkStatusBadge status={w.status} /></td>
                           <td className="px-4 py-3">
-                            {w.clientId ? <Link href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-link">{w.clientName}</Link> : '—'}
+                            {w.clientId ? <Link prefetch={false} href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-link">{w.clientName}</Link> : '—'}
                           </td>
                           <td className="px-4 py-3">
                             {w.vehicleId
-                              ? <Link href={`/home/vehicles/${w.vehicleId}`} className="text-gray-900 hover:text-link">
+                              ? <Link prefetch={false} href={`/home/vehicles/${w.vehicleId}`} className="text-gray-900 hover:text-link">
                                   {w.licensePlate || title}
                                   {w.licensePlate && title && <span className="block text-xs text-gray-500">{title}</span>}
                                 </Link>

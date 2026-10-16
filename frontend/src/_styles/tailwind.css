@@ -201,6 +201,7 @@
   --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
   --animate-status-cycle: status-cycle 12s cubic-bezier(0.6, 0, 0.2, 1) infinite;
   --animate-progress-cycle: progress-cycle 12s cubic-bezier(0.6, 0, 0.2, 1) infinite;
+  --animate-scroll-dot: scroll-dot 1.8s ease-in-out infinite;
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(16px); }
@@ -217,6 +218,11 @@
   @keyframes shine {
     0% { transform: translateX(-120%) skewX(-18deg); }
     55%, 100% { transform: translateX(260%) skewX(-18deg); }
+  }
+  @keyframes scroll-dot {
+    0% { opacity: 0; transform: translateY(0); }
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(12px); }
   }
   @keyframes pulse-dot {
     0%, 100% { opacity: 1; transform: scale(1); }
@@ -256,4 +262,46 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* landing page wheel story: with "reduce motion" the pinned scroll story becomes a still picture with all steps */
+.wheel-story[data-still] {
+  height: auto;
+}
+.wheel-story[data-still] > div {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+}
+.wheel-story[data-still] .story-captions {
+  min-height: 0;
+}
+.wheel-story[data-still] .story-caption {
+  position: relative;
+  margin-bottom: 2rem;
+  opacity: 1 !important;
+  transform: none !important;
+}
+.wheel-story[data-still] .story-estimate,
+.wheel-story[data-still] .story-estimate * {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.wheel-story[data-still] .story-wheel {
+  position: relative;
+  height: 60vh;
+  translate: none;
+  left: 0;
+  width: 100%;
+}
+.wheel-story[data-still] .story-estimate {
+  position: relative;
+  margin: 1rem 0 0 auto;
+}
+.wheel-story[data-still] .story-invoice {
+  display: none;
+}
+/* Chinese headings break at punctuation, not inside a word */
+:lang(zh) :is(h1, h2, h3) {
+  word-break: keep-all;
 }
