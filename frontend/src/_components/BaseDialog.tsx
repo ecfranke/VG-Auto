@@ -1,5 +1,6 @@
 import PrimaryButton from '@/_components/PrimaryButton';
 import SecondaryButton from '@/_components/SecondaryButton';
+import { useMounted } from '@/_lib/client/useMounted';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import clsx from 'clsx';
 import React from 'react';
@@ -30,6 +31,7 @@ const BaseDialog = React.forwardRef<BaseDialogHandle, Props>((props, ref) => {
 
   const { title, description, center = true, noButtonText = 'Cancel', yesButtonText = 'Yes', onConfirm, children } = props;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const mounted = useMounted();
   const [isLoading, setIsLoading] = useState(false);
 
   const confirm = () => {
@@ -53,6 +55,8 @@ const BaseDialog = React.forwardRef<BaseDialogHandle, Props>((props, ref) => {
     };
   }, []);
 
+  // rendered after hydration only (see useMounted)
+  if (!mounted) return null;
   return (
     <Dialog open={isDialogOpen} onClose={setIsDialogOpen} className="relative z-10">
       <DialogBackdrop

@@ -5,6 +5,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Nav from './Nav';
 import ProfileMenu from './ProfileMenu';
 import type { Theme } from '@/_components/ThemeSwitch';
+import { useMounted } from '@/_lib/client/useMounted';
 
 export default function NavDialog({
   
@@ -21,8 +22,9 @@ export default function NavDialog({
 {
  
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const mounted = useMounted()
     return (<>
-           <Dialog open={sidebarOpen} onClose={()=>setSidebarOpen(false)} className="relative z-50 lg:hidden">
+           {mounted && <Dialog open={sidebarOpen} onClose={()=>setSidebarOpen(false)} className="relative z-50 lg:hidden">
                     <DialogBackdrop
                       transition
                       className="fixed inset-0 bg-slate-950/80 transition-opacity duration-300 ease-linear data-closed:opacity-0"
@@ -47,7 +49,7 @@ export default function NavDialog({
                         </div>
                       </DialogPanel>
                     </div>
-                  </Dialog>
+                  </Dialog>}
                   <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-slate-950 px-4 py-4 shadow-xs sm:px-6 lg:hidden">
           <button type="button" onClick={() => setSidebarOpen(true)} className="-m-2.5 p-2.5 text-slate-400 lg:hidden">
             <span className="sr-only">Open sidebar</span>

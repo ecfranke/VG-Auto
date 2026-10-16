@@ -272,6 +272,42 @@ namespace VgAuto.Http.Api.Controllers
             }
             return Ok();
         }
+        /// <summary>Figures of the home page (own company): open work, sent estimates waiting for an answer, unpaid and overdue invoices, work started this month.</summary>
+        public class WorkSummaryDto
+        {
+            public long OpenWork { get; set; }
+            public long OffersAwaiting { get; set; }
+            public long UnpaidInvoices { get; set; }
+            public long OverdueInvoices { get; set; }
+            public long StartedThisMonth { get; set; }
+        }
+
+        [HttpGet("summary")]
+        public WorkSummaryDto Summary()
+        {
+            var d = SqlDialect.Current;
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            return repository.GetConnection().QuerySingle<WorkSummaryDto>(d.Sql($@"select
+                    (select count(*) from domain.work w
+                      where w.company_id = @companyId and w.invoiceid is null and coalesce(w.userstatus, '') <> @closed) as openwork,
+                    (select count(*) from domain.offer o
+                       inner join domain.work w on w.id = o.workid
+                       inner join domain.pricing p on p.id = o.estimateid
+                      where w.company_id = @companyId and w.invoiceid is null and p.senton is not null and o.acceptedon is null) as offersawaiting,
+                    (select count(*) from domain.work w
+                       inner join domain.invoice i on i.id = w.invoiceid
+                      where w.company_id = @companyId and i.ispaid = false and coalesce(i.iscredited, false) = false) as unpaidinvoices,
+                    (select count(*) from domain.work w
+                       inner join domain.invoice i on i.id = w.invoiceid
+                       inner join domain.pricing ip on ip.id = w.invoiceid
+                      where w.company_id = @companyId and i.ispaid = false and coalesce(i.iscredited, false) = false
+                        and {d.AddDays("ip.issuedon", "i.duedays")} <= {d.CurrentTimestamp}) as overdueinvoices,
+                    (select count(*) from domain.work w
+                      where w.company_id = @companyId and w.startedon >= @monthStart) as startedthismonth"),
+                new { companyId = this.CompanyId(), closed = WorkStatus.Closed.ToString(), monthStart });
+        }
+
         [HttpGet("page")]
         public PagedResult<WorkPage> GetPage(
             string searchText,

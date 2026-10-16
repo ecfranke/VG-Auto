@@ -1,6 +1,7 @@
  
 import PrimaryButton from '@/_components/PrimaryButton';
 import SecondaryButton from '@/_components/SecondaryButton';
+import { useMounted } from '@/_lib/client/useMounted';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import React from 'react';
 import { useState,  useImperativeHandle  } from 'react';
@@ -31,6 +32,7 @@ export type ConfirmDialogHandle  = {
 
     const { onConfirm} =props;  
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const mounted = useMounted();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [confirmObjTarget, setConfirmObjTarget] = useState();
@@ -55,6 +57,8 @@ export type ConfirmDialogHandle  = {
         };
       }, []);
 
+   // rendered after hydration only (see useMounted)
+   if (!mounted) return null;
    return (
     <Dialog open={isDialogOpen} onClose={setIsDialogOpen} className="relative z-10">
     <DialogBackdrop

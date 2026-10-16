@@ -15,7 +15,7 @@ export default function AuthShell({ title, subtitle, children }: { title: string
         </div>
       </div>
       <div className="relative hidden w-0 flex-1 lg:block">
-        <Image alt="" src="/m2.webp" width="1840" height="1380" className="absolute inset-0 size-full object-cover" />
+        <Image alt="" src="/m2.webp" width="1840" height="1380" priority sizes="(min-width: 1024px) 60vw, 0px" className="absolute inset-0 size-full object-cover" />
       </div>
     </div>
   );

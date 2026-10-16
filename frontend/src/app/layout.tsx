@@ -38,7 +38,7 @@ export default async function DefaultLayout({
   // light / dark as chosen by the user; without a choice the CSS follows the system
   const theme = await currentTheme()
   return (
-    <html className={clsx(
+    <html lang="en" className={clsx(
       'h-full bg-surface xl:bg-gray-50',
       theme !== 'system' && theme,
       inter.variable,
