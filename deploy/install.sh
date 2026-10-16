@@ -299,8 +299,18 @@ if [[ $SKIP_WEB -eq 0 ]]; then
   rsync -a --delete --exclude node_modules --exclude .next --exclude .env "$REPO_DIR/frontend/" "$PREFIX/web/"
   ln -sfn "$WEB_ENV" "$PREFIX/web/.env"
   chown -R "$RUN_USER" "$PREFIX/web"
+  # the build replaces the script and style files; keep those of the running version, so pages that are still open
+  # (or cached by a browser or proxy) can load them instead of failing with "Application error" (ChunkLoadError)
+  PREV_STATIC="$PREFIX/web-static-previous"
+  rm -rf "$PREV_STATIC"
+  [[ -d "$PREFIX/web/.next/static" ]] && cp -a "$PREFIX/web/.next/static" "$PREV_STATIC"
   # NEXT_PUBLIC_* values are compiled into the app, so it is built on the target machine
-  (cd "$PREFIX/web" && as_user npm ci --no-audit --no-fund && as_user npm run build)
+  (cd "$PREFIX/web" && as_user npm ci --no-audit --no-fund && as_user npm run build) || die "building the web app failed"
+  if [[ -d "$PREV_STATIC" ]]; then
+    cp -a -n "$PREV_STATIC/." "$PREFIX/web/.next/static/" 2>/dev/null || true
+    chown -R "$RUN_USER" "$PREFIX/web/.next/static" 2>/dev/null || true
+    rm -rf "$PREV_STATIC"
+  fi
 fi
 
 # ---- pm2 ---------------------------------------------------------------------------

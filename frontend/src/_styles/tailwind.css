@@ -21,7 +21,8 @@
 }
 
 @theme {
-  --font-sans: Inter, sans-serif;
+  /* the family next/font loads (var), then an installed Inter */
+  --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   --font-sans--font-feature-settings: 'cv11';
   --breakpoint-3xl: 120rem;
 
