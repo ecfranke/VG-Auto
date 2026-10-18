@@ -10,16 +10,16 @@ export async function createOrUpdate(
       
      
     const id = formData.get('id');
-    let vehicleId = formData.get('vehicleId');
-    if(formData.get('onlyClientVehicles')=='on'){
-        vehicleId = formData.get('vehicleId[value]');
-    }
+    // the vehicle comes from the search box (vehicleId[value]) or from the list of the client's vehicles (vehicleId);
+    // without a client only the search box is shown, so look at both (the vehicle was lost before)
+    const pickedVehicle = (formData.get('vehicleId[value]') ?? formData.get('vehicleId'))?.toString() ?? ''
+    const vehicleId = pickedVehicle === '' ? null : pickedVehicle;
     const clientId = formData.get('clientId[value]');
  //Guid? ClientId, string Description, Guid? VehicleId, Guid[] AssignedTo, int? Odo, bool StartWithOffer
     const body = {
        clientId:clientId ==''?null:clientId,
        description: formData.get('about'),
-       vehicleId: vehicleId??null,
+       vehicleId,
        assignedTo:formData.getAll('mechanics'),
        odo: +(formData.get('odo')?.toString()??'0'),
        startWithOffer: formData.get('isOffer') == 'on'

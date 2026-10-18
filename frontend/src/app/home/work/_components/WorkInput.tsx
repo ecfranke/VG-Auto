@@ -38,6 +38,9 @@ export default function WorkInput({
     const [clientVehicles, setClientVehicles] = useState<IVehicleData[]>([]);
     const [selectedClientVehicleId, setSelectedClientVehicleId] = useState(work?.vehicleId ?? '');
     const [clientUndisclosed, setClientUndisclosed] = useState(!work ? false : !work.clientId);
+    const [selectedClientId, setSelectedClientId] = useState(work?.clientId ?? '');
+    // the list of the client's vehicles needs a client that has vehicles; otherwise all vehicles are searched
+    const listClientVehicles = onlyClientVehicles && !clientUndisclosed && clientVehicles.length > 0;
     const populateClientVehicles = (clientId: string) => {
         query({
             url: 'vehicles/client/' + clientId,
@@ -45,6 +48,8 @@ export default function WorkInput({
             onSuccess: (result: IVehicleData[]) => {
                 if (result) {
                     setClientVehicles(result);
+                    // one vehicle: take it; otherwise keep the choice when it is one of the client's vehicles
+                    setSelectedClientVehicleId(current => result.length === 1 ? result[0].id : result.some(v => v.id === current) ? current : '');
                 }
                 else {
                     console.log(result);
@@ -98,9 +103,9 @@ export default function WorkInput({
                             {!clientUndisclosed &&
                                 <ClientsCombobox name='clientId'
                                     onItemChange={(item) => {
-                                        if (onlyClientVehicles && item) {
-                                            populateClientVehicles(item.value);
-                                        }
+                                        setSelectedClientId(item?.value ?? '');
+                                        if (item?.value) populateClientVehicles(item.value);
+                                        else setClientVehicles([]);
                                     }}
                                     defaultValue={{
                                         text: work?.clientName ?? '',
@@ -116,9 +121,10 @@ export default function WorkInput({
                                     <FormSwitch
                                         name='onlyClientVehicles'
                                         small={true}
-                                        checked={!onlyClientVehicles}
+                                        checked={!listClientVehicles}
                                         onChange={(value) => {
                                             setOnlyClientVehicles(!value);
+                                            if (!value && selectedClientId && clientVehicles.length === 0) populateClientVehicles(selectedClientId);
                                         }}></FormSwitch>{' '}
                                 </span>}
 
@@ -126,14 +132,15 @@ export default function WorkInput({
                             <div className='flex'>
 
                                 <div className="-mr-px grid grow grid-cols-1 focus-within:relative">
-                                    <div className= {clsx(onlyClientVehicles&&"mt-2", " sm:col-span-2   grid grid-cols-1")}> 
-                                        {onlyClientVehicles ?
+                                    <div className= {clsx(listClientVehicles&&"mt-2", " sm:col-span-2   grid grid-cols-1")}> 
+                                        {listClientVehicles ?
                                             <Select
                                                 name='vehicleId'
                                                 value={selectedClientVehicleId}
                                                 onChange={(e) => {
                                                     setSelectedClientVehicleId(e.currentTarget.value);
                                                 }} >
+                                                <option value="">— No vehicle —</option>
                                                 {clientVehicles?.map((item, index) => {
                                                     return (<option key={index} value={item.id}>{vehicleLabel(item)}</option>)
                                                 })}
