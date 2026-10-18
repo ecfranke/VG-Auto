@@ -18,6 +18,27 @@ namespace VgAuto.Core.Domain
             if (bankAccount != null) ShowBankAccount = bankAccount.Value;
             if (regNo != null) ShowRegNo = regNo.Value;
         }
+        /// <summary>
+        /// Vehicle details on invoices and on estimates: whether the switch "show vehicle information" is on when a
+        /// document is issued, and which details are printed then (see <see cref="VehicleFields"/>).
+        /// </summary>
+        public virtual bool InvoiceShowVehicle { get; protected set; }
+        public virtual int InvoiceVehicleFields { get; protected set; } = (int)VgAuto.Core.Domain.VehicleFields.All;
+        public virtual bool EstimateShowVehicle { get; protected set; }
+        public virtual int EstimateVehicleFields { get; protected set; } = (int)VgAuto.Core.Domain.VehicleFields.All;
+
+        public virtual VehicleFields InvoiceVehicle => (VehicleFields)InvoiceVehicleFields & VgAuto.Core.Domain.VehicleFields.All;
+        public virtual VehicleFields EstimateVehicle => (VehicleFields)EstimateVehicleFields & VgAuto.Core.Domain.VehicleFields.All;
+
+        /// <summary>Null keeps the current value.</summary>
+        public virtual void VehicleOnDocuments(bool? invoiceShow, VehicleFields? invoiceFields, bool? estimateShow, VehicleFields? estimateFields)
+        {
+            if (invoiceShow != null) InvoiceShowVehicle = invoiceShow.Value;
+            if (invoiceFields != null) InvoiceVehicleFields = (int)(invoiceFields.Value & VgAuto.Core.Domain.VehicleFields.All);
+            if (estimateShow != null) EstimateShowVehicle = estimateShow.Value;
+            if (estimateFields != null) EstimateVehicleFields = (int)(estimateFields.Value & VgAuto.Core.Domain.VehicleFields.All);
+        }
+
         public virtual string InvoiceEmailContent { get; protected set; }
         public virtual string EstimateEmailContent { get; protected set; }
         /// <summary>ISO code of the company currency (see <see cref="Currencies"/>).</summary>

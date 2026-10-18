@@ -2,5 +2,6 @@
 
 namespace VgAuto.Http.Api.Model
 {
-    public record  IssueInvoiceDto(PaymentType PaymentType, short DueDays, bool SendClientEmail, string ClientEmail);
+    /// <param name="ShowVehicleOnPricing">print the vehicle details chosen for invoices; null: the company default</param>
+    public record  IssueInvoiceDto(PaymentType PaymentType, short DueDays, bool SendClientEmail, string ClientEmail, bool? ShowVehicleOnPricing = null);
 }

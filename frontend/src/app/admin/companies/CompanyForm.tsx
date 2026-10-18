@@ -10,11 +10,41 @@ import type { ITaxCountry, ITaxOptions } from '@/_lib/shared/taxes'
 export interface ICompanyOptions {
   requisites: { name: string, phone: string, address: string, email: string, bankAccount: string, regNr: string, kmkr: string }
   pricing: {
-    invoice: { vatRate: number, surCharge: string, disclaimer: string, signatureLine: boolean, emailContent: string, showBankAccount?: boolean, showRegNo?: boolean }
-    estimate: { emailContent: string }
+    invoice: { vatRate: number, surCharge: string, disclaimer: string, signatureLine: boolean, emailContent: string, showBankAccount?: boolean, showRegNo?: boolean, vehicle?: IVehicleInfo | null }
+    estimate: { emailContent: string, vehicle?: IVehicleInfo | null }
     currency: string
     taxes: ITaxOptions | null
   }
+}
+
+/** Vehicle details on invoices or estimates (API: pricing.invoice.vehicle / pricing.estimate.vehicle). */
+export interface IVehicleInfo { showByDefault: boolean, title: boolean, licensePlate: boolean, odometer: boolean, vin: boolean }
+
+const allVehicleInfo: IVehicleInfo = { showByDefault: false, title: true, licensePlate: true, odometer: true, vin: true }
+
+/** "Show vehicle information" by default, and which details are printed then. Field names: <prefix>Show, <prefix>Title … */
+function VehicleInfoFields({ prefix, value, t }: { prefix: 'invoiceVehicle' | 'estimateVehicle', value?: IVehicleInfo | null, t: Dictionary }) {
+  const v = value ?? allVehicleInfo
+  const box = 'size-4 rounded border-gray-300 accent-primary'
+  return (
+    <div className="space-y-3 sm:col-span-2">
+      <label className="flex items-start gap-x-2 text-sm text-gray-900">
+        <input type="checkbox" name={`${prefix}Show`} defaultChecked={v.showByDefault} className={`mt-0.5 ${box}`} />
+        <span><span className="font-medium">{t.vehicleShowByDefault}</span><span className="block text-gray-500">{t.vehicleShowByDefaultHint}</span></span>
+      </label>
+      <fieldset className="ml-6">
+        <legend className="text-sm text-gray-500">{t.vehicleFieldsLegend}</legend>
+        <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
+          {([['Title', v.title, t.vehicleFieldTitle], ['LicensePlate', v.licensePlate, t.licensePlate], ['Odometer', v.odometer, t.vehicleFieldOdometer], ['Vin', v.vin, t.vin]] as const).map(([key, checked, label]) => (
+            <label key={key} className="flex items-center gap-x-2 text-sm text-gray-900">
+              <input type="checkbox" name={`${prefix}${key}`} defaultChecked={checked} className={box} />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
+  )
 }
 
 const areaClass = 'mt-1 block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-primary'
@@ -86,6 +116,7 @@ export function CompanyForm({ t, companyId, options, currencies, countries }: { 
             <input type="checkbox" name="showRegNo" defaultChecked={!!inv.showRegNo} className="size-4 rounded border-gray-300 accent-primary" />
             {t.showRegNo}
           </label>
+          <VehicleInfoFields prefix="invoiceVehicle" value={inv.vehicle} t={t} />
           <Area label={t.disclaimer} name="disclaimer" defaultValue={inv.disclaimer} />
           <Area label={t.invoiceEmail} name="emailContent" defaultValue={inv.emailContent} rows={6} />
         </div>
@@ -93,6 +124,7 @@ export function CompanyForm({ t, companyId, options, currencies, countries }: { 
 
       <Section title={t.offerOptions}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <VehicleInfoFields prefix="estimateVehicle" value={options.pricing.estimate.vehicle} t={t} />
           <Area label={t.offerEmail} name="estimateEmailContent" defaultValue={options.pricing.estimate.emailContent} rows={6} />
         </div>
       </Section>

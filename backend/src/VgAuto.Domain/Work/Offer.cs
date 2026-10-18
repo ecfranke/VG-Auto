@@ -61,13 +61,13 @@ namespace VgAuto.Core.Domain
         }
 
 
-        protected internal virtual void Issue(Taxes taxes, Employee issuer, bool showVehicleOnPricing, string currency = null)
+        protected internal virtual void Issue(Taxes taxes, Employee issuer, bool showVehicleOnPricing, string currency = null, VehicleFields vehicleFields = VehicleFields.All)
         {
             this.DisplayVehicleOnEstimate(showVehicleOnPricing);
 
             var number = $"{this.Work.Number}-{this.OrderNr}";
             With(new Estimate(number)
-                .CreateFor(taxes, this, issuer, currency));
+                .CreateFor(taxes, this, issuer, currency, vehicleFields));
         }
 
         protected internal virtual async Task SendEstimate(IPricingSender sender, string clientEmail)

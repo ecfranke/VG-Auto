@@ -24,17 +24,26 @@ namespace VgAuto.Core.Domain
             return this;
         }
 
-        protected Pricing ApplyVehicleInformation(Vehicle vehicle) 
+        /// <summary>
+        /// The vehicle lines of the document, only the chosen details (company setting) and only those that are known.
+        /// The odometer is the reading of the work when there is one, otherwise the one of the vehicle.
+        /// </summary>
+        protected Pricing ApplyVehicleInformation(Vehicle vehicle, VehicleFields fields = VehicleFields.All, int? odometer = null)
         {
-            if (vehicle == null) 
+            var lines = new List<string>();
+            if (vehicle != null)
             {
-                this.VehicleLine1 = this.VehicleLine2 = this.VehicleLine3 = this.VehicleLine4 = String.Empty;
-                return this;
+                var odo = odometer is > 0 ? odometer : vehicle.Odo;
+                if (fields.HasFlag(VehicleFields.Title) && !string.IsNullOrWhiteSpace(vehicle.Title)) lines.Add("Vehicle: " + vehicle.Title);
+                if (fields.HasFlag(VehicleFields.LicensePlate) && !string.IsNullOrWhiteSpace(vehicle.LicensePlate)) lines.Add("License plate: " + vehicle.LicensePlate);
+                if (fields.HasFlag(VehicleFields.Odometer) && odo is > 0) lines.Add("Odometer: " + odo);
+                if (fields.HasFlag(VehicleFields.Vin) && !string.IsNullOrWhiteSpace(vehicle.Vin)) lines.Add("VIN: " + vehicle.Vin);
             }
-            this.VehicleLine1 = "Vehicle: " + vehicle.Title;
-            this.VehicleLine2 = "License plate: " + vehicle.LicensePlate;
-            this.VehicleLine3 = "Odometer: " + vehicle.Odo;
-            this.VehicleLine4 = "VIN: " + vehicle.Vin;
+            string Line(int i) => i < lines.Count ? lines[i] : string.Empty;
+            this.VehicleLine1 = Line(0);
+            this.VehicleLine2 = Line(1);
+            this.VehicleLine3 = Line(2);
+            this.VehicleLine4 = Line(3);
             return this;
         }
 

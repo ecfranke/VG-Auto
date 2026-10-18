@@ -114,6 +114,12 @@ function text(form: FormData, name: string): string {
   return form.get(name)?.toString() ?? ''
 }
 
+/** Vehicle details on invoices or estimates, from the fields of VehicleInfoFields. */
+function vehicleInfo(form: FormData, prefix: string) {
+  const on = (name: string) => form.get(prefix + name) === 'on'
+  return { showByDefault: on('Show'), title: on('Title'), licensePlate: on('LicensePlate'), odometer: on('Odometer'), vin: on('Vin') }
+}
+
 /** Full settings of any company (administrators only; the API enforces it). */
 export async function saveCompany(_: ActionState, form: FormData): Promise<ActionState> {
   const companyId = field(form, 'companyId')
@@ -140,9 +146,10 @@ export async function saveCompany(_: ActionState, form: FormData): Promise<Actio
         signatureLine: form.get('signatureLine') === 'on',
         showBankAccount: form.get('showBankAccount') === 'on',
         showRegNo: form.get('showRegNo') === 'on',
+        vehicle: vehicleInfo(form, 'invoiceVehicle'),
         emailContent: text(form, 'emailContent'),
       },
-      estimate: { emailContent: text(form, 'estimateEmailContent') },
+      estimate: { emailContent: text(form, 'estimateEmailContent'), vehicle: vehicleInfo(form, 'estimateVehicle') },
       currency: text(form, 'currency'),
       taxes,
     },

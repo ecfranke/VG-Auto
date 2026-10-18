@@ -39,11 +39,13 @@ namespace VgAuto.Core.Application.Services
                 pricing.SignatureLine,
                 pricing.InvoiceEmailContent,
                 pricing.ShowBankAccount,
-                pricing.ShowRegNo
+                pricing.ShowRegNo,
+                VehicleInfoOptions.From(pricing.InvoiceShowVehicle, pricing.InvoiceVehicle)
             );
 
             var estimateOptions = new EstimateOptions(
-                pricing.EstimateEmailContent
+                pricing.EstimateEmailContent,
+                VehicleInfoOptions.From(pricing.EstimateShowVehicle, pricing.EstimateVehicle)
             );
 
             var taxes = pricing.GetTaxes();
@@ -92,6 +94,9 @@ namespace VgAuto.Core.Application.Services
                 pricingOptions.Currency
             );
             pricing.ShowOnDocuments(pricingOptions.Invoice.ShowBankAccount, pricingOptions.Invoice.ShowRegNo);
+            var invoiceVehicle = pricingOptions.Invoice.Vehicle;
+            var estimateVehicle = pricingOptions.Estimate.Vehicle;
+            pricing.VehicleOnDocuments(invoiceVehicle?.ShowByDefault, invoiceVehicle?.Fields, estimateVehicle?.ShowByDefault, estimateVehicle?.Fields);
             var t = pricingOptions.Taxes;
             if (t != null)
             {

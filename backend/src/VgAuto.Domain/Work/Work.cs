@@ -32,7 +32,7 @@ namespace VgAuto.Core.Domain
             this.Number = number;
         }
       
-        public virtual async Task<Offer> Issue(Offer offer, IPricingSender sender, Taxes taxes, Employee issuer, bool showVehicleOnPricing, bool sendClientEmail, string clientEmail, string currency = null)
+        public virtual async Task<Offer> Issue(Offer offer, IPricingSender sender, Taxes taxes, Employee issuer, bool showVehicleOnPricing, bool sendClientEmail, string clientEmail, string currency = null, VehicleFields vehicleFields = VehicleFields.All)
         {
             if (sendClientEmail && string.IsNullOrWhiteSpace(clientEmail))
             {
@@ -45,7 +45,7 @@ namespace VgAuto.Core.Domain
                 this.offers.Add(offer); 
             }
 
-            offer.Issue(taxes, issuer, showVehicleOnPricing, currency);
+            offer.Issue(taxes, issuer, showVehicleOnPricing, currency, vehicleFields);
 
             if (sendClientEmail)
             {
@@ -104,12 +104,13 @@ namespace VgAuto.Core.Domain
             } 
         }
          
-        public virtual void GenerateInvoice(ISequnceNumberProviderFactory numberProvider, Taxes taxes, PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
+        /// <param name="vehicleFields">the vehicle details printed on the invoice; None prints no vehicle lines</param>
+        public virtual void GenerateInvoice(ISequnceNumberProviderFactory numberProvider, Taxes taxes, PaymentType paymentType, short dueDays, Employee issuer, string currency = null, VehicleFields vehicleFields = VehicleFields.None)
         {
             var number = numberProvider.
                 GetNumberProvider<Invoice>();
 
-            this.Invoice = Invoice.CreateFor(this,  number,taxes, paymentType, dueDays, issuer, currency); 
+            this.Invoice = Invoice.CreateFor(this,  number,taxes, paymentType, dueDays, issuer, currency, vehicleFields); 
         }
   
         public virtual void WithNotes(string description)

@@ -48,9 +48,10 @@ namespace VgAuto.Http.Api.Controllers
 
          
         [HttpGet("{id}")]
-        public dynamic Get(Guid id)
+        public async Task<object> Get(Guid id)
         { 
             var work = session.Get<Work>(id);
+            var vehicleDefaults = await VehicleDefaultsAsync();
 
             var status = work.Invoice is not null ? "completed" : (work.UserStatus.ToString().ToLower());
              
@@ -78,6 +79,8 @@ namespace VgAuto.Http.Api.Controllers
                 VehicleLicensePlate = work.Vehicle?.LicensePlate,
                 work.Notes,
                 work.Odo,
+                // the switch "show vehicle information" of the invoice dialog starts like this (company setting)
+                VehicleOnInvoiceByDefault = vehicleDefaults.Invoice.ShowByDefault,
                 Mechanics = work.Mechanics.ToList().Select(x => new { x.Id, x.Name }).ToArray(),
                 Status= status,
                 Issuance = work.Invoice is not null ? 
@@ -164,6 +167,13 @@ namespace VgAuto.Http.Api.Controllers
             NHibernate.NHibernateUtil.Initialize(work);
         }
 
+        /// <summary>Vehicle details on invoices and estimates (company settings).</summary>
+        private async Task<(VgAuto.Core.Application.Configuration.VehicleInfoOptions Invoice, VgAuto.Core.Application.Configuration.VehicleInfoOptions Estimate)> VehicleDefaultsAsync()
+        {
+            var pricing = await tenantConfigService.GetPricingAsync();
+            return (pricing.Invoice?.Vehicle ?? new(), pricing.Estimate?.Vehicle ?? new());
+        }
+
         private async Task<string> GetCurrencyAsync()
         {
             var pricingOptions = await tenantConfigService.GetPricingAsync();
@@ -171,8 +181,9 @@ namespace VgAuto.Http.Api.Controllers
         }
 
         [HttpPost]
-        public OkObjectResult Post([FromBody]PostOrPutWork model)
+        public async Task<OkObjectResult> Post([FromBody]PostOrPutWork model)
         {
+            var vehicleDefaults = await VehicleDefaultsAsync();
 
             var starter = session.Get<Employee>(this.EmployeeId());
             var work = Work.Start(
@@ -190,6 +201,7 @@ namespace VgAuto.Http.Api.Controllers
             if (model.StartWithOffer)
             {
                 offer = work.CreateOffer(starter, model.Description);
+                offer.DisplayVehicleOnEstimate(vehicleDefaults.Estimate.ShowByDefault);
             }
             else
             {
@@ -622,7 +634,9 @@ order by page.sortkey desc").ToResult();
             var work = session.Get<Work>(id);
             var issuer = this.Employee();
 
-            work.GenerateInvoice(numberProviderFactory, await GetTaxesAsync(), model.PaymentType, model.DueDays, issuer, await GetCurrencyAsync());
+            var vehicle = (await VehicleDefaultsAsync()).Invoice;
+            var vehicleFields = (model.ShowVehicleOnPricing ?? vehicle.ShowByDefault) ? vehicle.Fields : VehicleFields.None;
+            work.GenerateInvoice(numberProviderFactory, await GetTaxesAsync(), model.PaymentType, model.DueDays, issuer, await GetCurrencyAsync(), vehicleFields);
 
             session.Save(work.Invoice);
 
@@ -655,7 +669,8 @@ order by page.sortkey desc").ToResult();
             if (model.SendClientEmail && string.IsNullOrWhiteSpace(model.ClientEmail))
                 throw new UserException("Cannot send an estimate, client email not provided.");
 
-            var offerIssued = await work.Issue(offer,pricingSender, await GetTaxesAsync(), issuer,model.ShowVehicleOnPricing, false, null, await GetCurrencyAsync());
+            var offerIssued = await work.Issue(offer,pricingSender, await GetTaxesAsync(), issuer,model.ShowVehicleOnPricing, false, null, await GetCurrencyAsync(),
+                (await VehicleDefaultsAsync()).Estimate.Fields);
 
             work.Changed();
             session.Update(work);
@@ -763,11 +778,13 @@ order by page.sortkey desc").ToResult();
             return Ok(job.Id);
         }
         [HttpPost("{id}/offer")]
-        public OkObjectResult MakeOnOffer(Guid id,[FromBody] string notes)
+        public async Task<OkObjectResult> MakeOnOffer(Guid id,[FromBody] string notes)
         {
-            
+             var vehicleDefaults = await VehicleDefaultsAsync();
              var work = session.Get<Core.Domain.Work>(id);
              var offer =  work.CreateOffer(this.Employee(), notes);
+             // new offers show the vehicle as the company chose for estimates
+             offer.DisplayVehicleOnEstimate(vehicleDefaults.Estimate.ShowByDefault);
             work.Changed();
             session.Update(work);
             session.Flush();

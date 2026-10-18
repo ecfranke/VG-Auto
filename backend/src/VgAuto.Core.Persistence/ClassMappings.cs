@@ -152,6 +152,10 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.SignatureLine).Column("signature_line").Access.BackingField();
             Map(x => x.ShowBankAccount).Column("show_bank_account").Access.BackingField();
             Map(x => x.ShowRegNo).Column("show_reg_no").Access.BackingField();
+            Map(x => x.InvoiceShowVehicle).Column("invoice_show_vehicle").Access.BackingField();
+            Map(x => x.InvoiceVehicleFields).Column("invoice_vehicle_fields").Access.BackingField();
+            Map(x => x.EstimateShowVehicle).Column("estimate_show_vehicle").Access.BackingField();
+            Map(x => x.EstimateVehicleFields).Column("estimate_vehicle_fields").Access.BackingField();
             Map(x => x.InvoiceEmailContent).Column("invoice_email_content").Access.BackingField();
             Map(x => x.EstimateEmailContent).Column("estimate_email_content").Access.BackingField();
             Map(x => x.Currency).Column("currency").Access.BackingField();

@@ -39,7 +39,7 @@ namespace VgAuto.Core.Domain
             }
         }
 
-        internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,Taxes taxes,PaymentType paymentType, short dueDays, Employee issuer, string currency = null)
+        internal static Invoice CreateFor(Work work ,ISequencedNumberProvider numberProvider,Taxes taxes,PaymentType paymentType, short dueDays, Employee issuer, string currency = null, VehicleFields vehicleFields = VehicleFields.None)
         {
             var invoice = new Invoice(numberProvider.Next(), issuer, DateTime.UtcNow,paymentType, dueDays,null);
             // the number sequence stays internal (only the last invoice can be deleted), the invoice is named like the work
@@ -49,7 +49,7 @@ namespace VgAuto.Core.Domain
             
             invoice.ApplyClientInformation(work.Client);
             invoice.ApplyVehicleTitle(work.Vehicle);
-            invoice.ApplyVehicleInformation(null);
+            invoice.ApplyVehicleInformation(vehicleFields == VehicleFields.None ? null : work.Vehicle, vehicleFields, work.Odo);
 
             int counter = 1;
             foreach (var line in work.Jobs.SelectMany((j,i)=>j.Products.Select((p) => invoice.ToLine(taxes,p, Convert.ToInt16(counter)))))

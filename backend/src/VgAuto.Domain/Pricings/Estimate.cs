@@ -32,7 +32,7 @@ namespace VgAuto.Core.Domain
 
         /// <summary>Copy of <see cref="GuidIdentityEntity.CompanyId"/> in the estimate table: numbers are unique per company.</summary>
         public virtual Guid NumberCompanyId { get; protected internal set; }
-        public virtual Estimate CreateFor(Taxes taxes,Offer offer, Employee issuer, string currency = null)
+        public virtual Estimate CreateFor(Taxes taxes,Offer offer, Employee issuer, string currency = null, VehicleFields vehicleFields = VehicleFields.All)
         {
             UseCurrency(currency);
             UseTaxes(taxes);
@@ -43,7 +43,7 @@ namespace VgAuto.Core.Domain
             ApplyVehicleTitle(offer.Work.Vehicle);
             if (offer.IsVehicleLinesOnEstimate)
             {
-                ApplyVehicleInformation(offer.Work.Vehicle);
+                ApplyVehicleInformation(offer.Work.Vehicle, vehicleFields, offer.Work.Odo);
             }
             else ApplyVehicleInformation(null);
             IssuedNowBy(issuer);

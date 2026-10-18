@@ -12,8 +12,25 @@ namespace VgAuto.Core.Application.Configuration
     public record RequisitesOptions(string Name, string Phone, string Address, string Email, string BankAccount, string RegNr, string KMKR) { public RequisitesOptions() : this(default, default, default, default, default, default, default) { } }
     /// <param name="ShowBankAccount">print the bank account on estimates and invoices (null when saving keeps the current value)</param>
     /// <param name="ShowRegNo">print the Reg No on estimates and invoices (null keeps the current value)</param>
-    public record InvoiceOptions(int VatRate,string SurCharge, string Disclaimer, bool SignatureLine, string EmailContent, bool? ShowBankAccount = null, bool? ShowRegNo = null) { public InvoiceOptions() : this(default,default, default, default, default) { } }
-    public record EstimateOptions(string EmailContent) { public EstimateOptions() : this(default(string)) { } }
+    /// <param name="Vehicle">vehicle details on invoices (null when saving keeps the current values)</param>
+    public record InvoiceOptions(int VatRate,string SurCharge, string Disclaimer, bool SignatureLine, string EmailContent, bool? ShowBankAccount = null, bool? ShowRegNo = null, VehicleInfoOptions Vehicle = null) { public InvoiceOptions() : this(default,default, default, default, default) { } }
+    /// <param name="Vehicle">vehicle details on estimates (null when saving keeps the current values)</param>
+    public record EstimateOptions(string EmailContent, VehicleInfoOptions Vehicle = null) { public EstimateOptions() : this(default(string)) { } }
+    /// <summary>Vehicle details on a kind of document.</summary>
+    /// <param name="ShowByDefault">the switch "show vehicle information" is on when such a document is issued</param>
+    /// <param name="Title">year, make and model</param>
+    public record VehicleInfoOptions(bool ShowByDefault, bool Title, bool LicensePlate, bool Odometer, bool Vin)
+    {
+        public VehicleInfoOptions() : this(default, true, true, true, true) { }
+
+        public static VehicleInfoOptions From(bool show, VgAuto.Core.Domain.VehicleFields f) => new(show,
+            f.HasFlag(VgAuto.Core.Domain.VehicleFields.Title), f.HasFlag(VgAuto.Core.Domain.VehicleFields.LicensePlate),
+            f.HasFlag(VgAuto.Core.Domain.VehicleFields.Odometer), f.HasFlag(VgAuto.Core.Domain.VehicleFields.Vin));
+
+        public VgAuto.Core.Domain.VehicleFields Fields =>
+            (Title ? VgAuto.Core.Domain.VehicleFields.Title : 0) | (LicensePlate ? VgAuto.Core.Domain.VehicleFields.LicensePlate : 0) |
+            (Odometer ? VgAuto.Core.Domain.VehicleFields.Odometer : 0) | (Vin ? VgAuto.Core.Domain.VehicleFields.Vin : 0);
+    }
     /// <param name="Country">country of registration (CA, US, OTHER)</param>
     /// <param name="Region">province or state of registration (BC, ON, QC ...)</param>
     /// <param name="Tax2Name">second tax (PST, QST, RST), empty when there is none</param>

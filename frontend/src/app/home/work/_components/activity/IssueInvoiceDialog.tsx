@@ -20,6 +20,8 @@ export default function IssueInvoiceDialog({
     const [dueDays, setDueDays] = useState(1);
     const [sendClientAnEmail,setSendClientAnEmail] = useState(!!work.clientEmail);
     const [clientEmail,setlientEmail] = useState(work.clientEmail??'');
+    // the details printed are chosen by the company (administration); here only whether they are printed
+    const [showVehicle, setShowVehicle] = useState(!!work.vehicleOnInvoiceByDefault && !!work.vehicleId);
 
     return (
         <BaseDialog ref={dialogRef}
@@ -34,6 +36,7 @@ export default function IssueInvoiceDialog({
                     paymentType: selectedPaymentType,
                     sendClientEmail:sendClientAnEmail,
                     clientEmail:clientEmail, 
+                    showVehicleOnPricing: showVehicle,
                 })
 
                 result.finally(() => {
@@ -66,6 +69,16 @@ export default function IssueInvoiceDialog({
                                 </Select>
                             </div>
                         </div>
+                        {work.vehicleId && <div className="col-span-full">
+                            <div className="flex items-end">
+                                <div className="flex-auto  ">
+                                    <FormLabel name="showVehicle" label='Show vehicle information on invoice' ></FormLabel>
+                                </div>
+                                <div className="mt-2  ">
+                                    <FormSwitch name='showVehicle' checked={showVehicle} onChange={(value) => setShowVehicle(value)}></FormSwitch>
+                                </div>
+                            </div>
+                        </div>}
                         <div className="col-span-full">
                             <div className="flex items-end">
                                 <div className="flex-auto  ">

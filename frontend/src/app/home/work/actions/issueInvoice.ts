@@ -9,13 +9,15 @@ export async function issueInvoice({
     dueDays,
     paymentType,
     sendClientEmail,
-    clientEmail
+    clientEmail,
+    showVehicleOnPricing,
 }:{
     workId:string,
     dueDays:number,
     paymentType:number,
     sendClientEmail:boolean,
     clientEmail:string, 
+    showVehicleOnPricing?:boolean,
 }) {
 
     const response = await httpPut({
@@ -24,7 +26,8 @@ export async function issueInvoice({
             dueDays,
             paymentType,
             sendClientEmail,
-            clientEmail
+            clientEmail,
+            showVehicleOnPricing,
         }
     });
     await response.text();
