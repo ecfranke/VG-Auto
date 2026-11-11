@@ -47,9 +47,10 @@ namespace VgAuto.Core.Domain
             invoice.UseCurrency(currency);
             invoice.UseTaxes(taxes);
             
-            invoice.ApplyClientInformation(work.Client);
-            invoice.ApplyVehicleTitle(work.Vehicle);
-            invoice.ApplyVehicleInformation(vehicleFields == VehicleFields.None ? null : work.Vehicle, vehicleFields, work.Odo);
+            invoice.ApplyClientInformation(work.Client, work.WalkInName);
+            var vehicle = work.PricedVehicle;
+            invoice.ApplyVehicleTitle(vehicle);
+            invoice.ApplyVehicleInformation(vehicleFields == VehicleFields.None ? null : vehicle, vehicleFields, work.Odo);
 
             int counter = 1;
             foreach (var line in work.Jobs.SelectMany((j,i)=>j.Products.Select((p) => invoice.ToLine(taxes,p, Convert.ToInt16(counter)))))

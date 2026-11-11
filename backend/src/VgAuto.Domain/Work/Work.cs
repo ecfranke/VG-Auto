@@ -65,6 +65,7 @@ namespace VgAuto.Core.Domain
         public virtual Work CreateCopy( int newNumber,Employee starter)
         {
             var work = new Work(newNumber,DateTime.UtcNow,starter,Client,Vehicle,null,notes:Notes,odo:Odo);
+            if (IsWalkIn) work.ForWalkIn(WalkInName, WalkInPhone, WalkInManufacturer, WalkInModel, WalkInYear, WalkInLicensePlate, WalkInVin);
             foreach (var job in jobs)
             {
                 work.jobs.Add(job.MakeCopy(work, starter));
@@ -142,7 +143,7 @@ namespace VgAuto.Core.Domain
         /// Estimates and invoices keep the code they got when they were issued.
         /// </summary>
         protected internal virtual string DocumentCode(bool isRepair, string suffix = null) =>
-            WorkCode.Format(isRepair, Client?.Name, Vehicle?.Year, Vehicle?.Manufacturer, Vehicle?.Model, StartedOn,
+            WorkCode.Format(isRepair, PartyName, PricedVehicle?.Year, PricedVehicle?.Manufacturer, PricedVehicle?.Model, StartedOn,
                 Number.ToString(CultureInfo.InvariantCulture) + suffix);
 
         public virtual int? Odo { get; protected set; }
@@ -155,6 +156,45 @@ namespace VgAuto.Core.Domain
         public virtual DateTime ChangedOn { get; protected set; } //todo protected and user id too?
 
         public  virtual Client Client { get { return client; } } 
+
+        /// <summary>
+        /// Walk-in customer that was not kept in the clients and vehicles: the name, phone and vehicle typed in
+        /// when the work was started, only on this work (and on its estimates and invoice).
+        /// </summary>
+        public virtual string WalkInName { get; protected set; }
+        public virtual string WalkInPhone { get; protected set; }
+        public virtual string WalkInManufacturer { get; protected set; }
+        public virtual string WalkInModel { get; protected set; }
+        public virtual int? WalkInYear { get; protected set; }
+        public virtual string WalkInLicensePlate { get; protected set; }
+        public virtual string WalkInVin { get; protected set; }
+        public virtual bool IsWalkIn => client == null && !string.IsNullOrWhiteSpace(WalkInName);
+
+        /// <summary>The client's name, or the walk-in customer's.</summary>
+        public virtual string PartyName => Client?.Name ?? (string.IsNullOrWhiteSpace(WalkInName) ? null : WalkInName);
+
+        /// <summary>The vehicle of the work, or the walk-in vehicle (not saved: only read for documents and codes).</summary>
+        public virtual Vehicle PricedVehicle => Vehicle ??
+            (string.IsNullOrWhiteSpace(WalkInLicensePlate) && string.IsNullOrWhiteSpace(WalkInVin) ? null
+                : new Vehicle(WalkInLicensePlate, StartedOn, WalkInManufacturer, WalkInModel, WalkInVin, Odo, year: WalkInYear));
+
+        /// <summary>A walk-in customer kept only on this work: name and license plate or VIN are required.</summary>
+        public virtual void ForWalkIn(string name, string phone, string manufacturer, string model, int? year, string licensePlate, string vin)
+        {
+            static string Clean(string value, int max) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().Length > max ? value.Trim()[..max] : value.Trim();
+            if (string.IsNullOrWhiteSpace(name)) throw new UserException("The name of the walk-in customer is required.");
+            // the same checks as a saved vehicle (license plate or VIN, year)
+            _ = new Vehicle(licensePlate, DateTime.UtcNow, manufacturer, model, vin, year: year);
+            client = null;
+            Vehicle = null;
+            WalkInName = Clean(name, 200);
+            WalkInPhone = Clean(phone, 50);
+            WalkInManufacturer = Clean(manufacturer, 100);
+            WalkInModel = Clean(model, 100);
+            WalkInYear = year;
+            WalkInLicensePlate = Clean(licensePlate, 50);
+            WalkInVin = Clean(vin, 50);
+        }
         public  virtual Vehicle Vehicle { get; protected set; }
         public  virtual Invoice Invoice { get; protected set; } 
         public  virtual void DoneOn(Vehicle vehicle)

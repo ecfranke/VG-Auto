@@ -101,12 +101,13 @@ namespace VgAuto.Http.Api.Controllers
             if (companyId != null) query.ForCompany("w.company_id", companyId.Value);
             return query
                 .FilterBy(searchText)
-                .SearchFields(d.CastToText("w.number"), "p.firstname", "p.lastname", "l.name", "v.regnr", "v.vin", "v.producer", "v.model",
+                .SearchFields(d.CastToText("w.number"), "p.firstname", "p.lastname", "l.name", "v.regnr", "v.vin", "v.producer", "v.model", "w.walkin_name", "w.walkin_licenseplate", "w.walkin_vin",
                     "coalesce(r.name, c.name)", "ip.code")
                 .SelectSql($@"select
                         w.id, w.company_id as companyid, coalesce(r.name, c.name) as companyname, w.number, w.startedon,
-                        concat_ws(' ', p.firstname, p.lastname, l.name) as clientname,
-                        v.year as vehicleyear, v.producer as vehiclemanufacturer, v.model as vehiclemodel, v.regnr as licenseplate,
+                        coalesce(nullif(concat_ws(' ', p.firstname, p.lastname, l.name), ''), w.walkin_name) as clientname,
+                        coalesce(v.year, w.walkin_year) as vehicleyear, coalesce(v.producer, w.walkin_manufacturer) as vehiclemanufacturer,
+                        coalesce(v.model, w.walkin_model) as vehiclemodel, coalesce(v.regnr, w.walkin_licenseplate, w.walkin_vin) as licenseplate,
                         exists (select 1 from domain.repairjob j where j.workid = w.id) as hasrepairs,
                         i.number as invoicenumber, ip.code as invoicecode,
                         (ip.senton is not null) as invoicesent, coalesce(i.ispaid, false) as invoicepaid,

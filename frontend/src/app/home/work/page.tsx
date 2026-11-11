@@ -105,6 +105,8 @@ export default async function Page(
       dataField: 'clientId',
       headerText: 'Client',
       dataFormatter: ({ clientName, clientId }: { clientName: string, clientId: string }) => {
+        // a walk-in customer kept only on the work has a name but no client
+        if (!clientId) return <h5>{clientName}</h5>;
         return (
           <a href={'/home/clients/' + clientId} >
             <h5 >{clientName}</h5>
@@ -116,8 +118,14 @@ export default async function Page(
       dataField: 'vehicleId',
       headerText: 'Vehicle',
       dataFormatter: ({ licensePlate, vehicleId, vehicleManufacturer, vehicleModel, vehicleYear }: { licensePlate: string, vehicleId: string, vehicleManufacturer?: string, vehicleModel?: string, vehicleYear?: number }) => {
-        if (!vehicleId) return <></>;
         const title = vehicleTitle({ year: vehicleYear, manufacturer: vehicleManufacturer, model: vehicleModel });
+        // a walk-in vehicle kept only on the work: shown, not linked
+        if (!vehicleId) return !licensePlate && !title ? <></> : (
+          <div>
+            <h5 className="mb-0 fs--1">{licensePlate || title}</h5>
+            {licensePlate && title && <p className="text-xs text-gray-500">{title}</p>}
+          </div>
+        );
         return (
           <a href={'/home/vehicles/' + vehicleId} >
             <h5 className="mb-0 fs--1">{licensePlate || title}</h5>

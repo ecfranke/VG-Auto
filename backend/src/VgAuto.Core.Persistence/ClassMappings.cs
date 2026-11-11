@@ -349,6 +349,13 @@ namespace VgAuto.Core.Persistence.Repositories
             Map(x => x.ChangedOn).Column("changedon").CustomType<UtcDateType>().Access.BackingField();
             Map(x => x.Odo).Column("odo").Access.BackingField();
             Map(x => x.UserStatus).Column("userstatus").Access.BackingField();
+            Map(x => x.WalkInName).Column("walkin_name").Access.BackingField();
+            Map(x => x.WalkInPhone).Column("walkin_phone").Access.BackingField();
+            Map(x => x.WalkInManufacturer).Column("walkin_manufacturer").Access.BackingField();
+            Map(x => x.WalkInModel).Column("walkin_model").Access.BackingField();
+            Map(x => x.WalkInYear).Column("walkin_year").Access.BackingField();
+            Map(x => x.WalkInLicensePlate).Column("walkin_licenseplate").Access.BackingField();
+            Map(x => x.WalkInVin).Column("walkin_vin").Access.BackingField();
              
             References(x => x.Completer).Column("completerid").Access.BackingField();
 

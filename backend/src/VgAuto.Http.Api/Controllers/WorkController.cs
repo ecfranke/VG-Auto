@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using NHibernate; 
+using NHibernate.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -52,6 +53,7 @@ namespace VgAuto.Http.Api.Controllers
         { 
             var work = session.Get<Work>(id);
             var vehicleDefaults = await VehicleDefaultsAsync();
+            var vehicle = work.PricedVehicle;
 
             var status = work.Invoice is not null ? "completed" : (work.UserStatus.ToString().ToLower());
              
@@ -66,17 +68,19 @@ namespace VgAuto.Http.Api.Controllers
                 Name="work",
                 IsEmpty = !(work.Jobs.Any(x=>x.Products.Any()) || work.Offers.Any(x=>x.Products.Any())), // todo optimize?
                 ClientId = work.Client?.Id,
-                ClientName = work.Client?.Name,
+                // a walk-in customer kept only on the work has a name and a vehicle but no client or vehicle id
+                ClientName = work.PartyName,
                 ClientAddress = work.Client?.Address?.ToString(),//TODO
                 ClientEmail = work.Client?.CurrentEmail,
-                ClientPhone = work.Client?.Phone,
+                ClientPhone = work.Client?.Phone ?? work.WalkInPhone,
+                work.IsWalkIn,
                 VehicleId = work.Vehicle?.Id,
-                VehicleManufacturer = work.Vehicle?.Manufacturer,
-                VehicleModel = work.Vehicle?.Model,
-                VehicleYear = work.Vehicle?.Year,
-                VehicleTrim = work.Vehicle?.Trim,
-                VehicleVin = work.Vehicle?.Vin,
-                VehicleLicensePlate = work.Vehicle?.LicensePlate,
+                VehicleManufacturer = vehicle?.Manufacturer,
+                VehicleModel = vehicle?.Model,
+                VehicleYear = vehicle?.Year,
+                VehicleTrim = vehicle?.Trim,
+                VehicleVin = vehicle?.Vin,
+                VehicleLicensePlate = vehicle?.LicensePlate,
                 work.Notes,
                 work.Odo,
                 // the switch "show vehicle information" of the invoice dialog starts like this (company setting)
@@ -186,13 +190,20 @@ namespace VgAuto.Http.Api.Controllers
             var vehicleDefaults = await VehicleDefaultsAsync();
 
             var starter = session.Get<Employee>(this.EmployeeId());
+            var walkIn = model.WalkIn;
+            var (client, vehicle) = walkIn is { SaveToRecords: true }
+                ? SaveWalkIn(walkIn, model.Odo)
+                : walkIn != null ? (null, null)
+                : (repository.Get<Client>(model.ClientId.GetValueOrDefault(), false), repository.Get<Vehicle>(model.VehicleId.GetValueOrDefault(), false));
             var work = Work.Start(
                 numberProviderFactory,
                 starter,
-                repository.Get<Client>(model.ClientId.GetValueOrDefault(), false),
-                 repository.Get<Vehicle>(model.VehicleId.GetValueOrDefault(), false),
+                client,
+                vehicle,
                  model.StartWithOffer ? null : model.Description,
                  model.Odo);
+            if (walkIn is { SaveToRecords: false })
+                work.ForWalkIn(walkIn.Name, walkIn.Phone, walkIn.Manufacturer, walkIn.Model, walkIn.Year, walkIn.LicensePlate, walkIn.Vin);
 
             if (model.AssignedTo != null) work.Assign(model.AssignedTo.Select(x => repository.Get<Employee>(x)).ToArray());
              
@@ -220,6 +231,34 @@ namespace VgAuto.Http.Api.Controllers
         }
 
 
+
+        /// <summary>
+        /// The walk-in customer as a new private client, and the vehicle registered to them. A vehicle of the company
+        /// with the same license plate or VIN is used as it is (no duplicate, its owner does not change).
+        /// </summary>
+        private (Client, Vehicle) SaveWalkIn(WalkInCustomer walkIn, int? odo)
+        {
+            static string Clean(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var name = Clean(walkIn.Name) ?? throw new UserException("The name of the walk-in customer is required.");
+            var plate = Clean(walkIn.LicensePlate);
+            var vin = Clean(walkIn.Vin);
+            if (plate == null && vin == null) throw new UserException("License plate or VIN is required.");
+
+            var client = new PrivateClient(DateTime.UtcNow, name, phone: Clean(walkIn.Phone));
+            repository.Add(client);
+
+            Vehicle Find(System.Linq.Expressions.Expression<Func<Vehicle, bool>> match) => session.Query<Vehicle>().Where(match).Take(1).ToList().FirstOrDefault();
+            var plateLower = plate?.ToLowerInvariant();
+            var vinLower = vin?.ToLowerInvariant();
+            var existing = (plateLower == null ? null : Find(v => v.LicensePlate.ToLower() == plateLower))
+                ?? (vinLower == null ? null : Find(v => v.Vin.ToLower() == vinLower));
+            if (existing != null) return (client, existing);
+
+            var vehicle = new Vehicle(plate, DateTime.UtcNow, Clean(walkIn.Manufacturer), Clean(walkIn.Model), vin, odo is > 0 ? odo : null, year: walkIn.Year);
+            vehicle.RegisterTo(client);
+            repository.Add(vehicle);
+            return (client, vehicle);
+        }
 
         [HttpPut("{id}")]
         public virtual OkObjectResult Put(Guid id, [FromBody] PostOrPutWork model)
@@ -438,6 +477,7 @@ inner join domain.employee ii on ii.id = ip.issuerid";
                 .SearchFields(
                     d.CastToText("w.number"),
                     "p.firstname", "p.lastname", "l.name", "v.regnr", "v.vin",
+                    "w.walkin_name", "w.walkin_phone", "w.walkin_licenseplate", "w.walkin_vin",
                     $"(select {d.StringAgg("e.number", "/ ")} from domain.offer o inner join domain.estimate e on e.id = o.estimateid where o.workid = w.id)",
                     $"(select {d.CastToText("inv.number")} from domain.invoice inv where inv.id = w.invoiceid)");
 
@@ -462,12 +502,12 @@ from (
 	{(onlyIssued ? issuanceSql : "(select count(*) from domain.offer o where o.workid = w.id) as numberOfOffers")}, 
     {(onlyIssued ? string.Empty : "exists (select 1 from domain.repairjob r where r.workid = w.id) as hasRepairs,")} 
     w.clientid,
-    concat_ws(' ',p.firstname,p.lastname,l.name) as clientname,
+    coalesce(nullif(concat_ws(' ',p.firstname,p.lastname,l.name), ''), w.walkin_name) as clientname,
     w.vehicleid,
-    v.regnr as licenseplate, 
-    v.producer as vehiclemanufacturer,
-    v.model as vehiclemodel,
-    v.year as vehicleyear,
+    coalesce(v.regnr, w.walkin_licenseplate, w.walkin_vin) as licenseplate, 
+    coalesce(v.producer, w.walkin_manufacturer) as vehiclemanufacturer,
+    coalesce(v.model, w.walkin_model) as vehiclemodel,
+    coalesce(v.year, w.walkin_year) as vehicleyear,
 	(select {d.StringAgg("concat_ws(' ',m.firstname, m.lastname)", "/ ")}
 	   from domain.assignment a 
 		inner join domain.employee m on a.mechanicid = m.id and a.workid = w.id

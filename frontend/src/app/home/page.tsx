@@ -182,7 +182,7 @@ export default async function Page() {
                           </td>
                           <td className="px-4 py-3"><WorkStatusBadge status={w.status} /></td>
                           <td className="px-4 py-3">
-                            {w.clientId ? <Link prefetch={false} href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-link">{w.clientName}</Link> : '—'}
+                            {w.clientId ? <Link prefetch={false} href={`/home/clients/${w.clientId}`} className="text-gray-900 hover:text-link">{w.clientName}</Link> : (w.clientName || '—')}
                           </td>
                           <td className="px-4 py-3">
                             {w.vehicleId
@@ -190,7 +190,12 @@ export default async function Page() {
                                   {w.licensePlate || title}
                                   {w.licensePlate && title && <span className="block text-xs text-gray-500">{title}</span>}
                                 </Link>
-                              : '—'}
+                              : (w.licensePlate || title)
+                                ? <span className="text-gray-900">
+                                    {w.licensePlate || title}
+                                    {w.licensePlate && title && <span className="block text-xs text-gray-500">{title}</span>}
+                                  </span>
+                                : '—'}
                           </td>
                           <td className="px-4 py-3 text-gray-700">{w.mechanicNames || '—'}</td>
                           <td className="px-4 py-3 whitespace-nowrap text-gray-700">{moment(w.startedOn).format('LL')}</td>

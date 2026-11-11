@@ -16,10 +16,24 @@ export async function createOrUpdate(
     const vehicleId = pickedVehicle === '' ? null : pickedVehicle;
     const clientId = formData.get('clientId[value]');
  //Guid? ClientId, string Description, Guid? VehicleId, Guid[] AssignedTo, int? Odo, bool StartWithOffer
+    // walk-in customer (new work): typed in instead of chosen; saved as a client and a vehicle unless switched off
+    const text = (key: string) => formData.get(key)?.toString().trim() ?? ''
+    const isWalkIn = formData.get('isWalkIn') == 'on'
+    const walkIn = isWalkIn ? {
+       name: text('walkInName'),
+       phone: text('walkInPhone'),
+       manufacturer: text('walkInManufacturer'),
+       model: text('walkInModel'),
+       year: text('walkInYear') === '' ? null : +text('walkInYear'),
+       licensePlate: text('walkInLicensePlate'),
+       vin: text('walkInVin'),
+       saveToRecords: formData.get('saveWalkIn') == 'on',
+    } : null
     const body = {
-       clientId:clientId ==''?null:clientId,
+       walkIn,
+       clientId: isWalkIn || clientId == '' ? null : clientId,
        description: formData.get('about'),
-       vehicleId,
+       vehicleId: isWalkIn ? null : vehicleId,
        assignedTo:formData.getAll('mechanics'),
        odo: +(formData.get('odo')?.toString()??'0'),
        startWithOffer: formData.get('isOffer') == 'on'

@@ -16,7 +16,13 @@ namespace VgAuto.Http.Api.Models
         public decimal Price { get; set; }
         public short? Discount { get; set; }
     }
-    public record PostOrPutWork(Guid? ClientId, string Description, Guid? VehicleId, Guid[] AssignedTo, int? Odo, bool StartWithOffer);
+    public record PostOrPutWork(Guid? ClientId, string Description, Guid? VehicleId, Guid[] AssignedTo, int? Odo, bool StartWithOffer, WalkInCustomer WalkIn = null);
+
+    /// <summary>
+    /// A walk-in customer typed in when the work is started. <see cref="SaveToRecords"/>: kept as a client and a vehicle
+    /// (an existing vehicle with the same license plate or VIN is used), otherwise only on the work.
+    /// </summary>
+    public record WalkInCustomer(string Name, string Phone, string Manufacturer, string Model, int? Year, string LicensePlate, string Vin, bool SaveToRecords = true);
 
     
     public record WorkPage(

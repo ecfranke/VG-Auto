@@ -39,11 +39,12 @@ namespace VgAuto.Core.Domain
             // named like the work: the first offer OF_TF_2019_HC_2026_09_28_15, a later one OF_TF_2019_HC_2026_09_28_15-1
             Code = offer.Work.DocumentCode(isRepair: false, offer.OrderNr == 0 ? null : "-" + offer.OrderNr);
             var newSet = offer.Products.ToArray();
-            ApplyClientInformation(offer.Work.Client);
-            ApplyVehicleTitle(offer.Work.Vehicle);
+            ApplyClientInformation(offer.Work.Client, offer.Work.WalkInName);
+            var vehicle = offer.Work.PricedVehicle;
+            ApplyVehicleTitle(vehicle);
             if (offer.IsVehicleLinesOnEstimate)
             {
-                ApplyVehicleInformation(offer.Work.Vehicle, vehicleFields, offer.Work.Odo);
+                ApplyVehicleInformation(vehicle, vehicleFields, offer.Work.Odo);
             }
             else ApplyVehicleInformation(null);
             IssuedNowBy(issuer);

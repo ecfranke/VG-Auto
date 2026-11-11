@@ -47,10 +47,11 @@ namespace VgAuto.Core.Domain
             return this;
         }
 
-        protected Pricing ApplyClientInformation(Client client) 
+        /// <param name="walkInName">the name of a walk-in customer that is not in the clients (work without a client)</param>
+        protected Pricing ApplyClientInformation(Client client, string walkInName = null) 
         {
             this.Email = client?.CurrentEmail;
-            this.PartyName = client == null ? "Walk-in customer" : client.Name;
+            this.PartyName = client?.Name ?? (string.IsNullOrWhiteSpace(walkInName) ? "Walk-in customer" : walkInName);
             // the full address, one line per part (street / city, province postal code / country)
             this.PartyAddress = client?.Address == null ? null : string.Join("\n", client.Address.Lines());
              this.PartyCode = client?.RegCode;

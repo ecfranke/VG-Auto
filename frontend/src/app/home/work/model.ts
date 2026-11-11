@@ -4,6 +4,8 @@ export interface IWorkData extends IActivity{
    // starterName:     string;
     clientId:        string;
     clientName:      string;
+    /** a walk-in customer kept only on the work: clientName and the vehicle fields, without client or vehicle id */
+    isWalkIn?: boolean;
     clientAddress:   string;
     clientEmail:     string;
     clientPhone:     string;
